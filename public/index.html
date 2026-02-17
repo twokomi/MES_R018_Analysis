@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MES Individual Performance Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .kpi-card.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .kpi-card.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .kpi-card.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        .kpi-card .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .kpi-card .kpi-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        .upload-zone {
+            border: 3px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        .upload-zone.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .worker-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin: 0.25rem;
+        }
+        .badge-excellent {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-normal {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-poor {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .badge-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:hover {
+            background: #f8fafc;
+        }
+        .pivot-table th {
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            text-align: center;
+            background: #3b82f6;
+            color: white;
+        }
+        .pivot-table td {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .pivot-table .process-cell {
+            font-weight: 700;
+            font-size: 0.95rem;
+            background: #334155;
+            color: white;
+            text-align: left !important;
+            padding-left: 1rem !important;
+        }
+        .pivot-table .worker-cell {
+            text-align: left !important;
+            padding-left: 2rem !important;
+            background: #f8fafc;
+            font-weight: 500;
+        }
+        .pivot-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .pivot-table thead th:first-child {
+            text-align: left !important;
+        }
+        .work-rate-high {
+            background: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .work-rate-normal {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .work-rate-low {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .work-rate-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .filter-section {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        select, input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* Checkbox dropdown styles */
+        .checkbox-dropdown-btn {
+            width: 100%;
+            text-align: left;
+            padding: 0.625rem 0.75rem;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .checkbox-dropdown-btn:hover {
+            border-color: #94a3b8;
+        }
+        .checkbox-dropdown-btn:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 0.625rem 0.75rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .checkbox-item:last-child {
+            border-bottom: none;
+        }
+        .checkbox-item:hover {
+            background: #eff6ff;
+        }
+        .checkbox-item input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 0.75rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+        .checkbox-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width 0.3s;
+        }
+        /* Custom scrollbar styles */
+        #excellentWorkers::-webkit-scrollbar,
+        #poorWorkers::-webkit-scrollbar,
+        #criticalWorkers::-webkit-scrollbar {
+            width: 8px;
+        }
+        #excellentWorkers::-webkit-scrollbar-track,
+        #poorWorkers::-webkit-scrollbar-track,
+        #criticalWorkers::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        #excellentWorkers::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 4px;
+        }
+        #poorWorkers::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 4px;
+        }
+        #criticalWorkers::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 4px;
+        }
+        #excellentWorkers::-webkit-scrollbar-thumb:hover,
+        #poorWorkers::-webkit-scrollbar-thumb:hover,
+        #criticalWorkers::-webkit-scrollbar-thumb:hover {
+            opacity: 0.8;
+        }
+        #pivotReportView table {
+            font-size: 0.875rem;
+            min-width: 100%;
+        }
+        #pivotReportView th {
+            position: sticky;
+            top: 0;
+            background: #1e293b;
+            color: white;
+            z-index: 10;
+            font-weight: 600;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border: 1px solid #475569;
+        }
+        #pivotReportView th:first-child {
+            text-align: left !important;
+            padding-left: 1rem !important;
+        }
+        #pivotReportView td {
+            padding: 0.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        #pivotReportView .process-header {
+            background: #334155;
+            color: white;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-align: left !important;
+            padding-left: 1rem !important;
+        }
+        #pivotReportView .worker-cell {
+            text-align: left !important;
+            padding-left: 2rem !important;
+            background: #f8fafc;
+            font-weight: 500;
+        }
+        #pivotReportView .metric-wo {
+            background: #eff6ff;
+        }
+        #pivotReportView .metric-time {
+            background: #f0fdf4;
+        }
+        #pivotReportView .metric-rate {
+            font-weight: 600;
+        }
+        #pivotReportView .rate-excellent {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        #pivotReportView .rate-normal {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        #pivotReportView .rate-poor {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        #pivotReportView .rate-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">
+                    <i class="fas fa-chart-line text-blue-600 mr-3"></i>
+                    MES Individual Performance Report
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Real-time Individual Productivity Analysis & Reports
+                </p>
+            </div>
+                <div class="flex gap-3">
+                    <button id="exportJsonBtn" class="btn btn-success" disabled>
+                        <i class="fas fa-download"></i>
+                        Export JSON
+                    </button>
+                    <button id="importJsonBtn" class="btn btn-secondary">
+                        <i class="fas fa-upload"></i>
+                        Import JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="flex border-b">
+                <button class="tab-btn tab-active px-6 py-3 font-medium" data-tab="upload">
+                    <i class="fas fa-file-upload mr-2"></i>Data Upload
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="report">
+                    <i class="fas fa-chart-bar mr-2"></i>Report
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="mapping">
+                    <i class="fas fa-sitemap mr-2"></i>Process Mapping
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="manual">
+                    <i class="fas fa-book mr-2"></i>User Guide
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="uploadTab" class="tab-content">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-file-upload text-blue-600 mr-2"></i>
+                    Data File Upload
+                </h2>
+                <div id="uploadZone" class="upload-zone">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">
+                        Drag & Drop Excel or JSON File
+                    </h3>
+                    <p class="text-gray-500 mb-4">
+                        Excel (.xlsx, .xls) or JSON (.json) file
+                    </p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i>
+                        Select File
+                    </button>
+                </div>
+                <input type="file" id="jsonFileInput" accept=".json" class="hidden">
+                
+                <div id="uploadStatus" class="mt-4 hidden">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-blue-500 mr-3"></i>
+                            <span class="text-blue-700 font-medium">Processing file...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="uploadResult" class="mt-4 hidden">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                        <h4 class="font-semibold text-green-800 mb-2">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Upload Successful!
+                        </h4>
+                        <div class="text-sm text-green-700 space-y-1">
+                            <p><strong>Processed Records:</strong> <span id="recordCount">0</span></p>
+                            <p><strong>Date Range:</strong> <span id="dateRange">-</span></p>
+                            <p><strong>Worker Count:</strong> <span id="workerCount">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="reportTab" class="tab-content hidden">
+            <!-- Filters -->
+            <div class="card">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-filter text-blue-600 mr-2"></i>
+                    Filters
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Shift</label>
+                        <select id="filterShift" class="form-select">
+                            <option value="">All</option>
+                            <option value="A">A Shift</option>
+                            <option value="B">B Shift</option>
+                            <option value="C">C Shift</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Working Date (Multi)</label>
+                        <select id="filterWorkingDay" multiple size="1" class="form-select">
+                            <option value="">All</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Ctrl/Cmd + Click</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Working Shift</label>
+                        <select id="filterWorkingShift">
+                            <option value="">All</option>
+                            <option value="Day">Day</option>
+                            <option value="Night">Night</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category (FO Desc 2)</label>
+                        <div class="relative">
+                            <button id="filterCategoryDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('category')">
+                                <span class="text-gray-500">Select...</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterCategoryDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Process (FO Desc 3)</label>
+                        <div class="relative">
+                            <button id="filterProcessDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('process')">
+                                <span class="text-gray-500">Select...</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterProcessDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Worker</label>
+                        <div class="relative">
+                            <button id="filterWorkerDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('worker')">
+                                <span class="text-gray-500">Select...</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterWorkerDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button id="applyFilterBtn" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                        Apply Filters
+                    </button>
+                    <button id="resetFilterBtn" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i>
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="kpi-card">
+                    <div class="text-sm opacity-90 mb-1">Total Workers</div>
+                    <div class="text-3xl font-bold" id="kpiWorkers">0</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="text-sm opacity-90 mb-1">Valid Work Orders</div>
+                    <div class="text-3xl font-bold" id="kpiValidWO">0</div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="text-sm opacity-90 mb-1">Total Work Time (min)</div>
+                    <div class="text-3xl font-bold" id="kpiTotalMinutes">0</div>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="text-sm opacity-90 mb-1">Average Work Rate</div>
+                    <div class="text-3xl font-bold" id="kpiAvgWorkRate">0%</div>
+                </div>
+            </div>
+
+            <!-- Performance Bands -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="card">
+                    <h4 class="font-bold text-green-700 mb-3">
+                        <i class="fas fa-trophy mr-2"></i>
+                        Excellent Workers (≥80%)
+                    </h4>
+                    <div id="excellentWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
+                        <p class="text-gray-500 text-sm">No data available</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4 class="font-bold text-orange-700 mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Low Performers (30-50%)
+                    </h4>
+                    <div id="poorWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
+                        <p class="text-gray-500 text-sm">No data available</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4 class="font-bold text-red-700 mb-3">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        At-Risk Workers (&lt;30%)
+                    </h4>
+                    <div id="criticalWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
+                        <p class="text-gray-500 text-sm">No data available</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">Average Work Rate by Process</h3>
+                    <div style="height: 300px;">
+                        <canvas id="processChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">Worker Performance Distribution</h3>
+                    <div style="height: 300px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pivot Style Report Table -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">
+                        <i class="fas fa-table text-purple-600 mr-2"></i>
+                        Worker Performance Report by Date
+                    </h3>
+                    <button id="toggleViewBtn" class="btn btn-secondary text-sm">
+                        <i class="fas fa-exchange-alt mr-1"></i>
+                        Switch to Detail View
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <div id="pivotReportView">
+                        <p class="text-gray-500 text-center py-8">데이터를 업로드하고 Filters를 적용해주세요</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">
+                        <i class="fas fa-table text-blue-600 mr-2"></i>
+                        Detailed Data
+                    </h3>
+                    <button id="toggleViewBtn2" class="btn btn-secondary text-sm">
+                        <i class="fas fa-exchange-alt mr-1"></i>
+                        Switch to Date Report
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table id="dataTable">
+                        <thead class="sticky top-0 bg-gray-100 z-10">
+                            <tr>
+                                <th>Worker</th>
+                                <th>Process (FO Desc 3)</th>
+                                <th>Work Date</th>
+                                <th>Shift</th>
+                                <th>Day/Night</th>
+                                <th>Work Time (min)</th>
+                                <th>Work Count</th>
+                                <th>Work Rate</th>
+                                <th>Performance Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-gray-500">Please upload data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="mappingTab" class="tab-content hidden">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-sitemap text-purple-600 mr-2"></i>
+                    Process Mapping Management
+                </h2>
+                <p class="text-gray-600 mb-4">
+                    Map Raw data's FD Desc or FO Desc to higher-level Process (FO Desc 2, FO Desc 3).
+                </p>
+                
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Add New Mapping</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                        <input type="text" id="newFDDesc" placeholder="FD Desc / FO Desc" class="p-2 border rounded">
+                        <input type="text" id="newFODesc2" placeholder="FO Desc 2" class="p-2 border rounded">
+                        <input type="text" id="newFODesc3" placeholder="FO Desc 3" class="p-2 border rounded">
+                        <input type="number" id="newSeq" placeholder="Sequence (Seq)" class="p-2 border rounded">
+                    </div>
+                    <button id="addMappingBtn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Add Mapping
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="mappingTable">
+                        <thead>
+                            <tr>
+                                <th class="cursor-pointer hover:bg-gray-200 transition" onclick="sortMappingTable('fdDesc')">
+                                    FD Desc / FO Desc <i class="fas fa-sort text-gray-400"></i>
+                                </th>
+                                <th class="cursor-pointer hover:bg-gray-200 transition" onclick="sortMappingTable('foDesc2')">
+                                    FO Desc 2 <i class="fas fa-sort text-gray-400"></i>
+                                </th>
+                                <th class="cursor-pointer hover:bg-gray-200 transition" onclick="sortMappingTable('foDesc3')">
+                                    FO Desc 3 <i class="fas fa-sort text-gray-400"></i>
+                                </th>
+                                <th class="cursor-pointer hover:bg-gray-200 transition" onclick="sortMappingTable('seq')">
+                                    Sequence (Seq) <i class="fas fa-sort text-gray-400"></i>
+                                </th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappingTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center text-gray-500">No mapping data available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="manualTab" class="tab-content hidden">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-book text-indigo-600 mr-2"></i>
+                    User Guide
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column: Instructions -->
+                    <div class="space-y-6">
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
+                                <li><strong>JSON file</strong> (.json) - Previously exported data</li>
+                                <li>Drag & drop file or click 'Select File' button</li>
+                                <li><strong>Tip:</strong> Include ShiftCalendar sheet in Excel for Shift (A/B/C) filtering</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. Required Headers (Raw Sheet)</h3>
+                            <p class="text-gray-700 mb-2">Raw sheet must include these headers:</p>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Worker Name</strong>: Worker name</li>
+                                <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description</li>
+                                <li><strong>Start Datetime</strong> or <strong>End Datetime</strong>: Work start/end time</li>
+                                <li><strong>Worker Act</strong> or <strong>Worker Act (mins)</strong>: Work time (minutes)</li>
+                                <li><strong>Result Cnt</strong>: Work result count (X = completed)</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Performance Grades</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><span class="worker-badge badge-excellent">Excellent</span>: Work rate ≥ 80%</li>
+                                <li><span class="worker-badge badge-normal">Normal</span>: Work rate 50-80%</li>
+                                <li><span class="worker-badge badge-poor">Poor</span>: Work rate 30-50%</li>
+                                <li><span class="worker-badge badge-critical">At-Risk</span>: Work rate &lt; 30%</li>
+                            </ul>
+                            <p class="text-sm text-gray-600 mt-2">
+                                <strong>Work Rate Formula:</strong> (Valid Work Minutes / 660) × 100%
+                            </p>
+                        </section>
+                    </div>
+
+                    <!-- Right Column: Shift Calendar -->
+                    <div>
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                                <span id="calendarMonthTitle">February 2026</span> - Shift Calendar
+                            </h3>
+                            
+                            <!-- Month Navigation -->
+                            <div class="flex gap-2 mb-3">
+                                <button id="calendarPrevMonth" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+                                    <i class="fas fa-chevron-left"></i> Prev
+                                </button>
+                                <button id="calendarNextMonth" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <div class="flex-1"></div>
+                                <button id="calendarFeb" class="px-3 py-1 text-sm bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 transition font-semibold">
+                                    Feb
+                                </button>
+                                <button id="calendarMar" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+                                    Mar
+                                </button>
+                                <button id="calendarApr" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 transition">
+                                    Apr
+                                </button>
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                                <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold mb-2">
+                                    <div class="text-gray-600">Sun</div>
+                                    <div class="text-gray-600">Mon</div>
+                                    <div class="text-gray-600">Tue</div>
+                                    <div class="text-gray-600">Wed</div>
+                                    <div class="text-gray-600">Thu</div>
+                                    <div class="text-gray-600">Fri</div>
+                                    <div class="text-gray-600">Sat</div>
+                                </div>
+                                <div id="shiftCalendarGrid" class="grid grid-cols-7 gap-1">
+                                    <!-- Calendar will be generated by JavaScript -->
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);"></div>
+                                        <span class="text-sm text-gray-700"><strong>A Shift</strong> - Day</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div>
+                                        <span class="text-sm text-gray-700"><strong>B Shift</strong> - Day</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"></div>
+                                        <span class="text-sm text-gray-700"><strong>C Shift</strong> - Night</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-4 rounded bg-gray-200"></div>
+                                        <span class="text-sm text-gray-700">No shift</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-3">
+                                    <strong>Note:</strong> Day shift (06:00-18:00), Night shift (18:00-06:00)
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mappingTab" class="tab-content hidden">
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Process 매핑</h3>
+                        <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                            <li>Process 매핑 탭에서 FD Desc/FO Desc를 상위 Process으로 매핑합니다.</li>
+                            <li>매핑 데이터는 JSON 내보내기 시 함께 저장됩니다.</li>
+                            <li>순서(Seq)를 지정하여 리포트에서 Process 정렬 순서를 제어할 수 있습니다.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">7. 문제 해결</h3>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+                            <p class="font-semibold text-yellow-800 mb-2">데이터가 업로드되지 않을 때:</p>
+                            <ul class="list-disc list-inside text-yellow-700 space-y-1 ml-4 text-sm">
+                                <li>엑셀 파일에 'Raw' 시트가 있는지 확인</li>
+                                <li>필수 헤더가 모두 포함되어 있는지 확인</li>
+                                <li>날짜/시간 데이터가 올바른 형식인지 확인</li>
+                                <li>브라우저 콘솔(F12)에서 오류 메시지 확인</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

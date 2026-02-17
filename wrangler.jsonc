@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mes-r018-analysis",
+  "compatibility_date": "2026-02-17",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mes-r018-analysis-production",
+      "database_id": "5e4ee820-dcbe-418b-907a-4fe0bbda6483"
+    }
+  ]
+}
