@@ -932,7 +932,10 @@ function updateWorkingDayOptions(selectedShift) {
     // Month group buttons
     html += '<div class="flex gap-2 mb-2 pb-2 border-b border-gray-200">';
     Object.keys(datesByMonth).forEach(month => {
-        const monthName = new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        // Parse month correctly: YYYY-MM format
+        const [year, monthNum] = month.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         html += `
             <button onclick="toggleMonthDates('${month}')" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
                 ${monthName}
@@ -943,7 +946,9 @@ function updateWorkingDayOptions(selectedShift) {
     
     // Date checkboxes grouped by month
     Object.keys(datesByMonth).sort().forEach(month => {
-        const monthName = new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        const [year, monthNum] = month.split('-');
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         html += `
             <div class="mb-3">
                 <div class="flex items-center justify-between px-1 py-1 mb-1">
@@ -1936,6 +1941,9 @@ function initJsonImportExport() {
             importFromJson(e.target.files[0]);
         }
     });
+    
+    // Load last upload button
+    document.getElementById('loadLastUploadBtn')?.addEventListener('click', loadLastUpload);
 }
 
 // Export to JSON
@@ -2227,6 +2235,90 @@ async function saveToDatabase(filename, fileSize) {
         console.error('❌ Failed to save to database:', error);
         // Don't show alert - just log the error
         // User can still use the app even if DB save fails
+    }
+}
+
+// Load last upload from database
+async function loadLastUpload() {
+    try {
+        console.log('📥 Loading last upload from database...');
+        showUploadStatus(true);
+        updateProgress(20);
+        
+        // Get list of uploads
+        const listResponse = await fetch('/api/uploads');
+        if (!listResponse.ok) {
+            throw new Error(`Failed to fetch uploads: ${listResponse.status}`);
+        }
+        
+        updateProgress(40);
+        const listResult = await listResponse.json();
+        
+        if (!listResult.success || !listResult.uploads || listResult.uploads.length === 0) {
+            alert('No uploads found in database.');
+            showUploadStatus(false);
+            return;
+        }
+        
+        // Get the most recent upload
+        const lastUpload = listResult.uploads[0];
+        console.log('📄 Last upload:', lastUpload);
+        
+        updateProgress(60);
+        
+        // Fetch full data for this upload
+        const dataResponse = await fetch(`/api/uploads/${lastUpload.id}`);
+        if (!dataResponse.ok) {
+            throw new Error(`Failed to fetch upload data: ${dataResponse.status}`);
+        }
+        
+        updateProgress(80);
+        const dataResult = await dataResponse.json();
+        
+        if (!dataResult.success) {
+            throw new Error('Failed to load upload data');
+        }
+        
+        // Restore data to AppState
+        AppState.rawData = dataResult.rawData || [];
+        AppState.processMapping = (dataResult.processMapping || []).map(m => ({
+            fdDesc: m.fd_desc,
+            foDesc2: m.fo_desc_2,
+            foDesc3: m.fo_desc_3,
+            seq: m.seq
+        }));
+        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
+            date: s.date,
+            dayShift: s.day_shift,
+            nightShift: s.night_shift
+        }));
+        
+        // Process raw data
+        AppState.processedData = processData(AppState.rawData);
+        
+        updateProgress(100);
+        
+        // Update UI
+        updateMappingTable();
+        showUploadResult(AppState.processedData);
+        updateReport();
+        
+        // Enable export button
+        document.getElementById('exportJsonBtn').disabled = false;
+        
+        console.log('✅ Data loaded successfully!');
+        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
+        console.log(`📅 Upload date: ${lastUpload.upload_date}`);
+        console.log(`📁 Filename: ${lastUpload.filename}`);
+        
+        setTimeout(() => {
+            showUploadStatus(false);
+        }, 1000);
+        
+    } catch (error) {
+        console.error('❌ Failed to load from database:', error);
+        alert('Failed to load last upload:\n' + error.message);
+        showUploadStatus(false);
     }
 }
 
