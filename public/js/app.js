@@ -880,18 +880,15 @@ function onShiftFilterChange() {
 
 // Update working day options based on selected shift
 function updateWorkingDayOptions(selectedShift) {
-    const daySelect = document.getElementById('filterWorkingDay');
+    const dropdown = document.getElementById('filterWorkingDayDropdown');
+    
+    if (!dropdown) return;
+    
+    let availableDates = [];
     
     if (!selectedShift) {
         // Show all dates
-        const uniqueDays = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
-        daySelect.innerHTML = '';
-        uniqueDays.forEach(day => {
-            const option = document.createElement('option');
-            option.value = day;
-            option.textContent = day;
-            daySelect.appendChild(option);
-        });
+        availableDates = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
     } else {
         // Show only dates where selected shift is working
         const relevantDates = new Set();
@@ -911,24 +908,69 @@ function updateWorkingDayOptions(selectedShift) {
             });
         }
         
-        const sortedDates = [...relevantDates].sort();
-        daySelect.innerHTML = '';
-        
-        if (sortedDates.length === 0) {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No working days for this shift';
-            option.disabled = true;
-            daySelect.appendChild(option);
-        } else {
-            sortedDates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date;
-                option.textContent = date;
-                daySelect.appendChild(option);
-            });
-        }
+        availableDates = [...relevantDates].sort();
     }
+    
+    if (availableDates.length === 0) {
+        dropdown.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">No working days available</div>';
+        return;
+    }
+    
+    // Group dates by month
+    const datesByMonth = {};
+    availableDates.forEach(date => {
+        const month = date.substring(0, 7); // YYYY-MM
+        if (!datesByMonth[month]) {
+            datesByMonth[month] = [];
+        }
+        datesByMonth[month].push(date);
+    });
+    
+    // Generate HTML with month groups
+    let html = '<div class="p-2">';
+    
+    // Month group buttons
+    html += '<div class="flex gap-2 mb-2 pb-2 border-b border-gray-200">';
+    Object.keys(datesByMonth).forEach(month => {
+        const monthName = new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        html += `
+            <button onclick="toggleMonthDates('${month}')" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
+                ${monthName}
+            </button>
+        `;
+    });
+    html += '</div>';
+    
+    // Date checkboxes grouped by month
+    Object.keys(datesByMonth).sort().forEach(month => {
+        const monthName = new Date(month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        html += `
+            <div class="mb-3">
+                <div class="flex items-center justify-between px-1 py-1 mb-1">
+                    <span class="text-xs font-semibold text-gray-700">${monthName}</span>
+                    <div class="flex gap-1">
+                        <button onclick="selectAllMonthDates('${month}', true)" class="text-xs text-blue-600 hover:text-blue-800 font-medium">All</button>
+                        <span class="text-xs text-gray-400">|</span>
+                        <button onclick="selectAllMonthDates('${month}', false)" class="text-xs text-gray-600 hover:text-gray-800">Clear</button>
+                    </div>
+                </div>
+                <div class="month-dates space-y-0.5" data-month="${month}">
+        `;
+        
+        datesByMonth[month].forEach(date => {
+            html += `
+                <label class="flex items-center px-2 py-1.5 hover:bg-blue-50 cursor-pointer rounded">
+                    <input type="checkbox" value="${date}" class="mr-2 h-4 w-4 text-blue-600 workingDay-checkbox" data-month="${month}" onchange="updateCheckboxDisplay('workingDay')">
+                    <span class="text-sm text-gray-700">${date}</span>
+                </label>
+            `;
+        });
+        
+        html += '</div></div>';
+    });
+    
+    html += '</div>';
+    dropdown.innerHTML = html;
 }
 
 // Update filter options
@@ -1002,7 +1044,7 @@ function toggleCheckboxDropdown(type) {
     }
     
     // Close other dropdowns
-    const types = ['category', 'process', 'worker'];
+    const types = ['workingDay', 'category', 'process', 'worker'];
     types.forEach(t => {
         if (t !== type) {
             const otherDropdown = document.getElementById(`filter${t.charAt(0).toUpperCase() + t.slice(1)}Dropdown`);
@@ -1011,6 +1053,23 @@ function toggleCheckboxDropdown(type) {
             }
         }
     });
+}
+
+// Select/deselect all dates in a month
+function selectAllMonthDates(month, select) {
+    const checkboxes = document.querySelectorAll(`.workingDay-checkbox[data-month="${month}"]`);
+    checkboxes.forEach(cb => {
+        cb.checked = select;
+    });
+    updateCheckboxDisplay('workingDay');
+}
+
+// Toggle month visibility (collapse/expand)
+function toggleMonthDates(month) {
+    const monthDiv = document.querySelector(`.month-dates[data-month="${month}"]`);
+    if (monthDiv) {
+        monthDiv.classList.toggle('hidden');
+    }
 }
 
 // Update checkbox display
@@ -1036,8 +1095,9 @@ function updateCheckboxDisplay(type) {
 
 // Apply filters
 function applyFilters() {
-    const daySelect = document.getElementById('filterWorkingDay');
-    const selectedDays = Array.from(daySelect.selectedOptions).map(opt => opt.value);
+    // Get checked working days
+    const dayCheckboxes = document.querySelectorAll('.workingDay-checkbox:checked');
+    const selectedDays = Array.from(dayCheckboxes).map(cb => cb.value).filter(v => v);
     
     // Get checked categories
     const categoryCheckboxes = document.querySelectorAll('.category-checkbox:checked');
@@ -1067,15 +1127,16 @@ function applyFilters() {
 // Reset filters
 function resetFilters() {
     document.getElementById('filterShift').value = '';
-    document.getElementById('filterWorkingDay').innerHTML = '';
     document.getElementById('filterWorkingShift').value = '';
     
     // Uncheck all checkboxes
+    document.querySelectorAll('.workingDay-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.process-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.worker-checkbox').forEach(cb => cb.checked = false);
     
     // Reset displays
+    updateCheckboxDisplay('workingDay');
     updateCheckboxDisplay('category');
     updateCheckboxDisplay('process');
     updateCheckboxDisplay('worker');
@@ -2174,3 +2235,5 @@ window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
 window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
+window.selectAllMonthDates = selectAllMonthDates;
+window.toggleMonthDates = toggleMonthDates;
