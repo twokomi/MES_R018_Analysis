@@ -11,8 +11,8 @@ const app = new Hono<{ Bindings: Bindings }>()
 // CORS 설정
 app.use('/api/*', cors())
 
-// 정적 파일 서빙
-app.use('/*', serveStatic({ root: './public' }))
+// 정적 파일 서빙 (Cloudflare Pages는 자동으로 public/ 폴더 처리)
+app.use('/*', serveStatic({ root: './' }))
 
 // API: 엑셀 데이터 저장
 app.post('/api/upload', async (c) => {
