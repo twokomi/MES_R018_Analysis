@@ -444,10 +444,32 @@
 
         <!-- Tab Contents -->
         <div id="uploadTab" class="tab-content">
+            <!-- Upload File List Section -->
+            <div class="card mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">
+                        <i class="fas fa-database text-blue-600 mr-2"></i>
+                        Saved Uploads
+                    </h2>
+                    <button id="refreshUploadsBtn" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="uploadsList" class="space-y-2">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No saved uploads yet. Upload a file to get started.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upload New File Section -->
             <div class="card">
                 <h2 class="text-xl font-bold mb-4">
                     <i class="fas fa-file-upload text-blue-600 mr-2"></i>
-                    Data File Upload
+                    Upload New File
                 </h2>
                 <div id="uploadZone" class="upload-zone">
                     <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>

@@ -1952,6 +1952,14 @@ function initJsonImportExport() {
     document.getElementById('saveToDatabaseBtn')?.addEventListener('click', () => {
         saveToDatabase();
     });
+    
+    // Refresh uploads list button
+    document.getElementById('refreshUploadsBtn')?.addEventListener('click', () => {
+        loadUploadsList();
+    });
+    
+    // Load uploads list on page load
+    loadUploadsList();
 }
 
 // Export to JSON
@@ -2264,6 +2272,9 @@ async function saveToDatabase() {
             saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
             saveBtn.classList.add('bg-green-600');
             
+            // Refresh uploads list
+            loadUploadsList();
+            
             setTimeout(() => {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
@@ -2280,6 +2291,169 @@ async function saveToDatabase() {
         // Reset button
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
+    }
+}
+
+// Load uploads list
+async function loadUploadsList() {
+    const uploadsListDiv = document.getElementById('uploadsList');
+    
+    try {
+        // Show loading
+        uploadsListDiv.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                <p>Loading uploads...</p>
+            </div>
+        `;
+        
+        const response = await fetch('/api/uploads');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch uploads: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success || !result.uploads || result.uploads.length === 0) {
+            uploadsListDiv.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                    <p>No saved uploads yet. Upload a file to get started.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Display uploads as cards
+        uploadsListDiv.innerHTML = result.uploads.map(upload => {
+            const date = new Date(upload.upload_date).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return `
+                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer" onclick="loadUploadById(${upload.id})">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-file-excel text-green-600 mr-2"></i>
+                                <h3 class="font-semibold text-gray-800">${upload.filename}</h3>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                <div><i class="fas fa-calendar mr-1"></i> ${date}</div>
+                                <div><i class="fas fa-database mr-1"></i> ${(upload.file_size / 1024).toFixed(0)} KB</div>
+                                <div><i class="fas fa-list mr-1"></i> ${upload.total_records.toLocaleString()} records</div>
+                                <div><i class="fas fa-users mr-1"></i> ${upload.unique_workers} workers</div>
+                            </div>
+                            ${upload.date_range_start ? `
+                                <div class="text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-clock mr-1"></i> ${upload.date_range_start} ~ ${upload.date_range_end || 'N/A'}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition ml-4">
+                            <i class="fas fa-download mr-1"></i> Load
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        console.log(`✅ Loaded ${result.uploads.length} uploads`);
+        
+    } catch (error) {
+        console.error('❌ Failed to load uploads list:', error);
+        uploadsListDiv.innerHTML = `
+            <div class="text-center text-red-500 py-8">
+                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                <p>Failed to load uploads</p>
+                <p class="text-sm">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Load specific upload by ID
+async function loadUploadById(uploadId) {
+    try {
+        console.log(`📥 Loading upload #${uploadId}...`);
+        showUploadStatus(true);
+        updateProgress(20);
+        
+        // Fetch full data for this upload
+        const dataResponse = await fetch(`/api/uploads/${uploadId}`);
+        if (!dataResponse.ok) {
+            throw new Error(`Failed to fetch upload data: ${dataResponse.status}`);
+        }
+        
+        updateProgress(60);
+        const dataResult = await dataResponse.json();
+        
+        if (!dataResult.success) {
+            throw new Error('Failed to load upload data');
+        }
+        
+        updateProgress(80);
+        
+        // Restore data to AppState - convert DB format to app format
+        AppState.rawData = (dataResult.rawData || []).map(d => ({
+            workerName: d.worker_name,
+            foDesc: d.fo_desc,
+            fdDesc: d.fd_desc,
+            startDatetime: d.start_datetime,
+            endDatetime: d.end_datetime,
+            workerAct: d.worker_act,
+            resultCnt: d.result_cnt,
+            workingDay: d.working_day,
+            workingShift: d.working_shift,
+            actualShift: d.actual_shift,
+            workRate: d.work_rate
+        }));
+        
+        AppState.processMapping = (dataResult.processMapping || []).map(m => ({
+            fdDesc: m.fd_desc,
+            foDesc2: m.fo_desc_2,
+            foDesc3: m.fo_desc_3,
+            seq: m.seq
+        }));
+        
+        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
+            date: s.date,
+            dayShift: s.day_shift,
+            nightShift: s.night_shift
+        }));
+        
+        // Use rawData as processedData (it's already processed)
+        AppState.processedData = AppState.rawData;
+        
+        updateProgress(100);
+        
+        // Update UI
+        updateMappingTable();
+        showUploadResult(AppState.processedData);
+        updateReport();
+        
+        // Enable export button
+        document.getElementById('exportJsonBtn').disabled = false;
+        
+        // Switch to Report tab
+        switchTab('report');
+        
+        console.log('✅ Data loaded successfully!');
+        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${uploadId}`);
+        console.log(`📅 Upload: ${dataResult.upload.filename}`);
+        
+        setTimeout(() => {
+            showUploadStatus(false);
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ Failed to load upload:', error);
+        alert('Failed to load upload:\n' + error.message);
+        showUploadStatus(false);
     }
 }
 
@@ -2388,3 +2562,4 @@ window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.selectAllMonthDates = selectAllMonthDates;
 window.toggleMonthDates = toggleMonthDates;
+window.loadUploadById = loadUploadById;
