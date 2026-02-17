@@ -6,17 +6,21 @@
 
 MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자별 생산 데이터를 분석하고, 직관적인 대시보드로 실시간 성과를 시각화하는 웹 애플리케이션입니다.
 
-**✨ 새로운 기능**: 엑셀 업로드 데이터를 Cloudflare D1 데이터베이스에 자동 저장!
+**✨ 새로운 기능**: 
+- 엑셀 업로드 후 수동으로 데이터베이스 저장
+- 월별 그룹핑으로 날짜 필터 개선
+- 저장된 데이터 불러오기 기능
 
 ### 주요 특징
 
 - ✅ **엑셀 파일 업로드**: Raw 데이터 시트에서 자동으로 데이터 추출 및 처리
-- 💾 **클라우드 데이터 저장**: 업로드된 데이터를 Cloudflare D1에 자동 저장
+- 💾 **클라우드 데이터 저장**: "Save to Database" 버튼으로 데이터 저장
+- 📥 **데이터 불러오기**: "Load Last Upload" 버튼으로 이전 데이터 복원
 - 🔄 **자동 데이터 처리**: 작업일, 교대(Shift), 작업률 자동 계산
 - 📊 **다양한 리포트**: KPI 타일, 성과 밴드, 차트, 날짜별 피벗 리포트
 - 🎨 **모던 UI 디자인**: 그라데이션, 애니메이션, 반응형 카드 디자인
 - 🌍 **Full English Interface**: 전체 영어 인터페이스
-- 🔍 **고급 필터링**: Shift(A/B/C), 날짜(다중 선택), 체크박스 필터
+- 🔍 **고급 필터링**: Shift(A/B/C), 월별 그룹 날짜 선택, 체크박스 필터
 - 📅 **3개월 Shift Calendar**: 2026년 2월~4월 일정 관리
 
 ## 📊 현재 완료된 기능
@@ -24,7 +28,8 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 ### ✅ 데이터 관리
 - [x] 엑셀 파일 업로드 및 파싱
 - [x] Cloudflare D1 데이터베이스 통합
-- [x] 자동 데이터 저장 (Raw Data, Process Mapping, Shift Calendar)
+- [x] 수동 데이터 저장 (Save to Database 버튼)
+- [x] 저장된 데이터 불러오기 (Load Last Upload)
 - [x] JSON 내보내기/불러오기
 
 ### ✅ 리포트 기능
@@ -37,7 +42,8 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 
 ### ✅ 필터링
 - [x] Shift 필터 (A/B/C)
-- [x] 작업 일자 다중 선택
+- [x] 작업 일자 다중 선택 (월별 그룹핑)
+- [x] 월별 전체 선택/해제 (Feb, Mar, Apr)
 - [x] 교대 필터 (Day/Night)
 - [x] 공정 체크박스 필터
 - [x] 작업자 체크박스 필터
