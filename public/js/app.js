@@ -269,18 +269,30 @@ function initTabs() {
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.dataset.tab;
-            
-            // Update active tab button
-            tabButtons.forEach(btn => btn.classList.remove('tab-active'));
-            button.classList.add('tab-active');
-            
-            // Show target tab content
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById(targetTab + 'Tab').classList.remove('hidden');
+            switchTab(targetTab);
         });
     });
+}
+
+// Switch to a specific tab
+function switchTab(tabName) {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // Update active tab button
+    tabButtons.forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+            btn.classList.add('tab-active');
+        } else {
+            btn.classList.remove('tab-active');
+        }
+    });
+    
+    // Show target tab content
+    tabContents.forEach(content => {
+        content.classList.add('hidden');
+    });
+    document.getElementById(tabName + 'Tab')?.classList.remove('hidden');
 }
 
 // File upload initialization
@@ -2563,3 +2575,4 @@ window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.selectAllMonthDates = selectAllMonthDates;
 window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;
+window.switchTab = switchTab;

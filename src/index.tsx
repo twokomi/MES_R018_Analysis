@@ -49,7 +49,9 @@ app.post('/api/upload', async (c) => {
         const values = batch.map((d: any) => {
           // SQL injection 방지를 위해 문자열 escape
           const escape = (str: any) => String(str || '').replace(/'/g, "''")
-          return `(${uploadId}, '${escape(d.workerName)}', '${escape(d.foDesc)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0})`
+          // foDesc2, foDesc3 저장 (process mapping 결과)
+          const foDescValue = d.foDesc2 || d.foDesc || ''
+          return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0})`
         }).join(',')
         
         await env.DB.prepare(`
