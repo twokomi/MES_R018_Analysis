@@ -18,6 +18,14 @@ app.post('/api/upload', async (c) => {
     
     const { filename, fileSize, rawData, processedData, processMapping, shiftCalendar } = body
     
+    console.log('Received upload request:', {
+      filename,
+      fileSize,
+      processedDataCount: processedData?.length,
+      processMappingCount: processMapping?.length,
+      shiftCalendarCount: shiftCalendar?.length
+    })
+    
     // 업로드 기록 생성
     const uploadResult = await env.DB.prepare(`
       INSERT INTO excel_uploads (filename, file_size, total_records, unique_workers, date_range_start, date_range_end)
@@ -26,21 +34,23 @@ app.post('/api/upload', async (c) => {
       filename,
       fileSize,
       processedData?.length || 0,
-      new Set(processedData?.map((d: any) => d.worker_name)).size || 0,
-      processedData?.[0]?.working_day || null,
-      processedData?.[processedData.length - 1]?.working_day || null
+      new Set(processedData?.map((d: any) => d.workerName)).size || 0,
+      processedData?.[0]?.workingDay || null,
+      processedData?.[processedData.length - 1]?.workingDay || null
     ).run()
     
     const uploadId = uploadResult.meta.last_row_id
     
-    // Raw 데이터 저장
+    // Raw 데이터 저장 (processedData 사용)
     if (processedData && processedData.length > 0) {
       const batchSize = 100
       for (let i = 0; i < processedData.length; i += batchSize) {
         const batch = processedData.slice(i, i + batchSize)
-        const values = batch.map((d: any) => 
-          `(${uploadId}, '${d.worker_name}', '${d.fo_desc || ''}', '${d.fd_desc || ''}', '${d.start_datetime || ''}', '${d.end_datetime || ''}', ${d.worker_act || 0}, '${d.result_cnt || ''}', '${d.working_day || ''}', '${d.working_shift || ''}', '${d.actual_shift || ''}', ${d.work_rate || 0})`
-        ).join(',')
+        const values = batch.map((d: any) => {
+          // SQL injection 방지를 위해 문자열 escape
+          const escape = (str: any) => String(str || '').replace(/'/g, "''")
+          return `(${uploadId}, '${escape(d.workerName)}', '${escape(d.foDesc)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0})`
+        }).join(',')
         
         await env.DB.prepare(`
           INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate)
@@ -57,10 +67,10 @@ app.post('/api/upload', async (c) => {
           VALUES (?, ?, ?, ?, ?, ?)
         `).bind(
           uploadId,
-          mapping.fd_desc || null,
-          mapping.fo_desc || null,
-          mapping.fo_desc_2 || null,
-          mapping.fo_desc_3 || null,
+          mapping.fdDesc || null,
+          mapping.foDesc || mapping.fdDesc || null,
+          mapping.foDesc2 || null,
+          mapping.foDesc3 || null,
           mapping.seq || null
         ).run()
       }
@@ -75,8 +85,8 @@ app.post('/api/upload', async (c) => {
         `).bind(
           uploadId,
           shift.date || null,
-          shift.day || null,
-          shift.night || null
+          shift.dayShift || null,
+          shift.nightShift || null
         ).run()
       }
     }
@@ -87,7 +97,7 @@ app.post('/api/upload', async (c) => {
       message: 'Data saved successfully',
       stats: {
         totalRecords: processedData?.length || 0,
-        uniqueWorkers: new Set(processedData?.map((d: any) => d.worker_name)).size || 0
+        uniqueWorkers: new Set(processedData?.map((d: any) => d.workerName)).size || 0
       }
     })
   } catch (error: any) {

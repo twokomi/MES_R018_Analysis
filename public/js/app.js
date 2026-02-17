@@ -8,6 +8,8 @@ const AppState = {
     processedData: [],
     processMapping: [],
     shiftCalendar: [],
+    currentFileName: '',
+    currentFileSize: 0,
     filters: {
         shift: '',
         workingDays: [],
@@ -505,8 +507,9 @@ function handleFileUpload(file) {
             // Enable export button
             document.getElementById('exportJsonBtn').disabled = false;
             
-            // Save to database
-            saveToDatabase(file.name, file.size);
+            // Store filename and size for later database save
+            AppState.currentFileName = file.name;
+            AppState.currentFileSize = file.size;
             
             setTimeout(() => {
                 showUploadStatus(false);
@@ -1944,6 +1947,11 @@ function initJsonImportExport() {
     
     // Load last upload button
     document.getElementById('loadLastUploadBtn')?.addEventListener('click', loadLastUpload);
+    
+    // Save to database button
+    document.getElementById('saveToDatabaseBtn')?.addEventListener('click', () => {
+        saveToDatabase();
+    });
 }
 
 // Export to JSON
@@ -2197,13 +2205,33 @@ function initCalendarNavigation() {
 }
 
 // Save data to database
-async function saveToDatabase(filename, fileSize) {
+async function saveToDatabase() {
+    const saveBtn = document.getElementById('saveToDatabaseBtn');
+    const saveStatus = document.getElementById('saveStatus');
+    
+    if (!AppState.processedData || AppState.processedData.length === 0) {
+        alert('No data to save. Please upload an Excel file first.');
+        return;
+    }
+    
     try {
+        // Disable button and show loading
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        saveStatus.classList.add('hidden');
+        
         console.log('💾 Saving data to database...');
+        console.log('📊 Data to save:', {
+            filename: AppState.currentFileName,
+            fileSize: AppState.currentFileSize,
+            processedDataCount: AppState.processedData.length,
+            processMappingCount: AppState.processMapping.length,
+            shiftCalendarCount: AppState.shiftCalendar.length
+        });
         
         const payload = {
-            filename: filename,
-            fileSize: fileSize,
+            filename: AppState.currentFileName || 'Unknown',
+            fileSize: AppState.currentFileSize || 0,
             rawData: AppState.rawData,
             processedData: AppState.processedData,
             processMapping: AppState.processMapping,
@@ -2219,7 +2247,8 @@ async function saveToDatabase(filename, fileSize) {
         });
         
         if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
         
         const result = await response.json();
@@ -2228,13 +2257,29 @@ async function saveToDatabase(filename, fileSize) {
             console.log('✅ Data saved successfully!', result);
             console.log(`📊 Upload ID: ${result.uploadId}`);
             console.log(`📈 Stats:`, result.stats);
+            
+            // Show success status
+            saveStatus.classList.remove('hidden');
+            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved';
+            saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            saveBtn.classList.add('bg-green-600');
+            
+            setTimeout(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
+                saveBtn.classList.remove('bg-green-600');
+                saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }, 3000);
         } else {
-            console.error('❌ Save failed:', result.error);
+            throw new Error(result.error || 'Save failed');
         }
     } catch (error) {
         console.error('❌ Failed to save to database:', error);
-        // Don't show alert - just log the error
-        // User can still use the app even if DB save fails
+        alert('Failed to save to database:\n' + error.message);
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
     }
 }
 
@@ -2279,22 +2324,36 @@ async function loadLastUpload() {
             throw new Error('Failed to load upload data');
         }
         
-        // Restore data to AppState
-        AppState.rawData = dataResult.rawData || [];
+        // Restore data to AppState - convert DB format to app format
+        AppState.rawData = (dataResult.rawData || []).map(d => ({
+            workerName: d.worker_name,
+            foDesc: d.fo_desc,
+            fdDesc: d.fd_desc,
+            startDatetime: d.start_datetime,
+            endDatetime: d.end_datetime,
+            workerAct: d.worker_act,
+            resultCnt: d.result_cnt,
+            workingDay: d.working_day,
+            workingShift: d.working_shift,
+            actualShift: d.actual_shift,
+            workRate: d.work_rate
+        }));
+        
         AppState.processMapping = (dataResult.processMapping || []).map(m => ({
             fdDesc: m.fd_desc,
             foDesc2: m.fo_desc_2,
             foDesc3: m.fo_desc_3,
             seq: m.seq
         }));
+        
         AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
             date: s.date,
             dayShift: s.day_shift,
             nightShift: s.night_shift
         }));
         
-        // Process raw data
-        AppState.processedData = processData(AppState.rawData);
+        // Use rawData as processedData (it's already processed)
+        AppState.processedData = AppState.rawData;
         
         updateProgress(100);
         
