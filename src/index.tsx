@@ -155,9 +155,4 @@ app.get('/api/uploads/:id', async (c) => {
   }
 })
 
-// 메인 페이지
-app.get('/', (c) => {
-  return c.redirect('/index.html')
-})
-
 export default app
