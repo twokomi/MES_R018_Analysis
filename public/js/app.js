@@ -1388,21 +1388,28 @@ function aggregateByWorkerOnly(workerAgg) {
                 validCount: 0,
                 foDesc3: item.foDesc3, // Keep first process for display
                 workingDay: item.workingDay, // Keep first day for display
-                recordCount: 0
+                recordCount: 0,
+                shifts: new Set() // Track unique shifts
             };
         }
         
         byWorker[workerName].totalMinutes += item.totalMinutes || 0;
         byWorker[workerName].validCount += item.validCount || 0;
         byWorker[workerName].recordCount += 1;
+        
+        // Track unique shifts (workingDay + workingShift)
+        const shiftKey = `${item.workingDay}_${item.workingShift}`;
+        byWorker[workerName].shifts.add(shiftKey);
     });
     
     // Calculate work rate for each worker
     const result = Object.values(byWorker).map(worker => {
-        // Calculate work rate as: total work time / standard day (660 min) * 100
-        const workRate = (worker.totalMinutes / 660) * 100;
+        const shiftCount = worker.shifts.size;
+        // Calculate work rate as: total valid work time / (660 min * shift count) * 100
+        const workRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
         return {
             ...worker,
+            shiftCount: shiftCount,
             workRate: workRate,
             performanceBand: getPerformanceBand(workRate)
         };
@@ -1414,8 +1421,10 @@ function aggregateByWorkerOnly(workerAgg) {
     console.log('📊 Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
         name: w.workerName,
         totalMinutes: w.totalMinutes.toFixed(0),
+        shifts: w.shiftCount,
         workRate: w.workRate.toFixed(1) + '%',
-        band: w.performanceBand
+        band: w.performanceBand,
+        calculation: `${w.totalMinutes.toFixed(0)} / (660 * ${w.shiftCount}) * 100`
     })));
     
     return result;
@@ -1569,11 +1578,9 @@ function aggregateByWorker(data) {
             };
         }
         
-        // Accumulate ALL work time (both valid and invalid)
-        aggregated[key].totalMinutes += record.workerActMins || 0;
-        
-        // Count VALID work orders
+        // Accumulate VALID work time only (validFlag === 1)
         if (record.validFlag === 1) {
+            aggregated[key].totalMinutes += record.workerActMins || 0;
             aggregated[key].validCount += 1;
             validRecords++;
         } else {
