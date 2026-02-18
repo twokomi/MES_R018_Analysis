@@ -977,19 +977,12 @@ function initFilters() {
     document.getElementById('applyFilterBtn').addEventListener('click', applyFilters);
     document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
     
-    // Shift filter change handler
-    document.getElementById('filterShift').addEventListener('change', onShiftFilterChange);
+    // Note: Shift filter is now handled by radio buttons with updateSingleSelect
 }
 
 // Handle shift filter change
 function onShiftFilterChange() {
-    const selectedShift = document.getElementById('filterShift').value;
-    updateWorkingDayOptions(selectedShift);
-}
-
-// Handle shift filter change
-function onShiftFilterChange() {
-    const selectedShift = document.getElementById('filterShift').value;
+    const selectedShift = getRadioValue('shift');
     updateWorkingDayOptions(selectedShift);
 }
 
@@ -1100,7 +1093,7 @@ function updateFilterOptions() {
     console.log(`🔧 Updating filter options with ${data.length} records`);
     
     // Update working day options based on current shift filter
-    const selectedShift = document.getElementById('filterShift').value;
+    const selectedShift = getRadioValue('shift');
     updateWorkingDayOptions(selectedShift);
     
     // Category (FO Desc 2) - Sort alphabetically
@@ -1176,7 +1169,7 @@ function toggleCheckboxDropdown(type) {
     }
     
     // Close other dropdowns
-    const types = ['workingDay', 'category', 'process', 'worker'];
+    const types = ['shift', 'workingDay', 'workingShift', 'category', 'process', 'worker'];
     types.forEach(t => {
         if (t !== type) {
             const otherDropdown = document.getElementById(`filter${t.charAt(0).toUpperCase() + t.slice(1)}Dropdown`);
@@ -1185,6 +1178,40 @@ function toggleCheckboxDropdown(type) {
             }
         }
     });
+}
+
+// Update single select filter (for Shift and Working Shift)
+function updateSingleSelect(type, value) {
+    const displayButton = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Display`);
+    const dropdown = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+    
+    if (displayButton) {
+        const span = displayButton.querySelector('span');
+        if (span) {
+            if (value === '') {
+                span.textContent = 'All';
+                span.className = 'text-gray-500';
+            } else {
+                if (type === 'shift') {
+                    span.textContent = `${value} Shift`;
+                } else if (type === 'workingShift') {
+                    span.textContent = value;
+                }
+                span.className = 'text-gray-900';
+            }
+        }
+    }
+    
+    // Close dropdown
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// Get radio button value
+function getRadioValue(name) {
+    const radio = document.querySelector(`input[name="${name}"]:checked`);
+    return radio ? radio.value : '';
 }
 
 // Filter worker list based on search input
@@ -1260,9 +1287,9 @@ function applyFilters() {
     const selectedWorkers = Array.from(workerCheckboxes).map(cb => cb.value).filter(v => v);
     
     AppState.filters = {
-        shift: document.getElementById('filterShift').value,
+        shift: getRadioValue('shift'),
         workingDays: selectedDays,
-        workingShift: document.getElementById('filterWorkingShift').value,
+        workingShift: getRadioValue('workingShift'),
         categories: selectedCategories,
         processes: selectedProcesses,
         workers: selectedWorkers
@@ -1274,8 +1301,14 @@ function applyFilters() {
 
 // Reset filters
 function resetFilters() {
-    document.getElementById('filterShift').value = '';
-    document.getElementById('filterWorkingShift').value = '';
+    // Reset radio buttons
+    const shiftRadio = document.querySelector('input[name="shift"][value=""]');
+    if (shiftRadio) shiftRadio.checked = true;
+    updateSingleSelect('shift', '');
+    
+    const workingShiftRadio = document.querySelector('input[name="workingShift"][value=""]');
+    if (workingShiftRadio) workingShiftRadio.checked = true;
+    updateSingleSelect('workingShift', '');
     
     // Uncheck all checkboxes
     document.querySelectorAll('.workingDay-checkbox').forEach(cb => cb.checked = false);
@@ -3156,6 +3189,7 @@ window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
 window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
+window.updateSingleSelect = updateSingleSelect;
 window.selectAllMonthDates = selectAllMonthDates;
 window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;

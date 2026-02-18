@@ -523,12 +523,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Shift</label>
-                        <select id="filterShift" class="form-select">
-                            <option value="">All</option>
-                            <option value="A">A Shift</option>
-                            <option value="B">B Shift</option>
-                            <option value="C">C Shift</option>
-                        </select>
+                        <div class="relative">
+                            <button id="filterShiftDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('shift')">
+                                <span class="text-gray-500">All</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="p-2">
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="shift" value="" class="mr-2" checked onchange="updateSingleSelect('shift', '')">
+                                        <span>All</span>
+                                    </label>
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="shift" value="A" class="mr-2" onchange="updateSingleSelect('shift', 'A')">
+                                        <span>A Shift</span>
+                                    </label>
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="shift" value="B" class="mr-2" onchange="updateSingleSelect('shift', 'B')">
+                                        <span>B Shift</span>
+                                    </label>
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="shift" value="C" class="mr-2" onchange="updateSingleSelect('shift', 'C')">
+                                        <span>C Shift</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Working Date (Multi)</label>
@@ -544,11 +564,28 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Working Shift</label>
-                        <select id="filterWorkingShift">
-                            <option value="">All</option>
-                            <option value="Day">Day</option>
-                            <option value="Night">Night</option>
-                        </select>
+                        <div class="relative">
+                            <button id="filterWorkingShiftDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('workingShift')">
+                                <span class="text-gray-500">All</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterWorkingShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="p-2">
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="workingShift" value="" class="mr-2" checked onchange="updateSingleSelect('workingShift', '')">
+                                        <span>All</span>
+                                    </label>
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="workingShift" value="Day" class="mr-2" onchange="updateSingleSelect('workingShift', 'Day')">
+                                        <span>Day</span>
+                                    </label>
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="radio" name="workingShift" value="Night" class="mr-2" onchange="updateSingleSelect('workingShift', 'Night')">
+                                        <span>Night</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Category (FO Desc 2)</label>
