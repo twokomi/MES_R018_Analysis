@@ -1394,6 +1394,9 @@ function updateReport() {
     
     const filteredData = getFilteredData();
     
+    // Store filtered data in AppState for use in Worker Detail modal
+    AppState.filteredData = filteredData;
+    
     // Aggregate by worker (detailed: worker+date+shift+process)
     const workerAgg = aggregateByWorker(filteredData);
     
@@ -2971,11 +2974,14 @@ let modalCharts = {
 };
 
 function showWorkerDetail(workerName) {
-    // Filter records for this worker
-    const workerRecords = AppState.processedData.filter(r => r.workerName === workerName);
+    // Use filtered data if available, otherwise use all processed data
+    const dataSource = AppState.filteredData || AppState.processedData;
+    
+    // Filter records for this worker from the current filtered dataset
+    const workerRecords = dataSource.filter(r => r.workerName === workerName);
     
     if (workerRecords.length === 0) {
-        alert('No records found for this worker');
+        alert('No records found for this worker in the current filter');
         return;
     }
     
