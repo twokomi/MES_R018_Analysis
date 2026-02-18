@@ -1735,6 +1735,7 @@ function updateProcessChart(filteredData) {
             processData[record.foDesc3] = {
                 totalMinutes: 0,
                 count: 0,
+                workers: new Set(), // Track unique workers
                 seq: seq !== null && seq !== undefined ? seq : 999,
                 categorySeq: categorySeq,
                 foDesc2: record.foDesc2
@@ -1742,27 +1743,38 @@ function updateProcessChart(filteredData) {
         }
         processData[record.foDesc3].totalMinutes += record.workerActMins || 0;
         processData[record.foDesc3].count += 1;
+        processData[record.foDesc3].workers.add(record.workerName); // Add worker to set
     });
     
     // Debug: Show sample process data before calculation
     const sampleProcesses = Object.entries(processData).slice(0, 3);
     console.log('🔍 Sample process data:');
     sampleProcesses.forEach(([name, data]) => {
-        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, count=${data.count}, avg=${(data.totalMinutes/data.count).toFixed(1)}min`);
+        const workerCount = data.workers.size;
+        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, records=${data.count}, workers=${workerCount}, avgPerWorker=${(data.totalMinutes/workerCount).toFixed(1)}min`);
     });
     
     // Sort processes by category first, then by seq within category
     const sortedProcesses = Object.entries(processData)
-        .map(([name, data]) => ({
-            name,
-            avgWorkRate: ((data.totalMinutes / data.count / 660) * 100).toFixed(1),
-            totalMinutes: data.totalMinutes,
-            count: data.count,
-            avgMinutes: (data.totalMinutes / data.count).toFixed(1),
-            seq: data.seq,
-            categorySeq: data.categorySeq,
-            foDesc2: data.foDesc2
-        }))
+        .map(([name, data]) => {
+            const workerCount = data.workers.size;
+            // Correct formula: (total minutes / number of workers / 660) * 100
+            const avgWorkRate = workerCount > 0 
+                ? ((data.totalMinutes / workerCount / 660) * 100).toFixed(1)
+                : '0.0';
+            
+            return {
+                name,
+                avgWorkRate: avgWorkRate,
+                totalMinutes: data.totalMinutes,
+                count: data.count,
+                workerCount: workerCount,
+                avgMinutesPerWorker: workerCount > 0 ? (data.totalMinutes / workerCount).toFixed(1) : '0',
+                seq: data.seq,
+                categorySeq: data.categorySeq,
+                foDesc2: data.foDesc2
+            };
+        })
         .sort((a, b) => {
             // Primary sort: by category
             if (a.categorySeq !== b.categorySeq) {
@@ -1776,8 +1788,9 @@ function updateProcessChart(filteredData) {
     console.log('📊 Top 3 processes:', sortedProcesses.slice(0, 3).map(p => ({
         name: p.name,
         totalMinutes: p.totalMinutes.toFixed(1),
-        count: p.count,
-        avgMinutes: p.avgMinutes,
+        records: p.count,
+        workers: p.workerCount,
+        avgMinutesPerWorker: p.avgMinutesPerWorker,
         workRate: p.avgWorkRate + '%'
     })));
     
