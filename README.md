@@ -6,8 +6,9 @@
 
 MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자별 생산 데이터를 분석하고, 직관적인 대시보드로 실시간 성과를 시각화하는 웹 애플리케이션입니다.
 
-**✨ 새로운 기능 (v2.3.0)**: 
+**✨ 새로운 기능 (v2.4.0)**: 
 - 📁 **업로드 파일 리스트 관리**: 저장된 파일 목록을 한눈에 확인
+- 🗑️ **업로드 삭제 기능**: 불필요한 업로드 파일을 클릭 한 번으로 삭제
 - 💾 **수동 저장**: "Save to Database" 버튼으로 확인 후 저장
 - 📥 **간편한 데이터 로드**: 카드 클릭으로 저장된 데이터 불러오기
 - 📅 **월별 그룹핑**: February, March, April 월별로 날짜 필터링
@@ -100,7 +101,7 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
-- **최신 배포**: https://bc25d73e.mes-r018-analysis.pages.dev
+- **최신 배포**: https://48f048eb.mes-r018-analysis.pages.dev
 
 ### 테스트 서버 (샌드박스)
 - **개발 URL**: https://3000-i6mqjfqm4prwz2zcvnapn-583b4d74.sandbox.novita.ai
@@ -276,6 +277,13 @@ npm run deploy
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
 ## 🎉 업데이트 내역
+
+### v2.4.0 (2026-02-18)
+- ✅ 업로드 삭제 기능 추가
+- ✅ 각 업로드 카드에 Delete 버튼 추가
+- ✅ 삭제 확인 다이얼로그 추가
+- ✅ DELETE API 엔드포인트 구현 (CASCADE 삭제)
+- ✅ 시간 중복 제거 기능 검증 완료 (436개 중복, 33,604분 제거)
 
 ### v2.3.0 (2026-02-18)
 - ✅ 작업자별 시간 중복 제거 알고리즘 추가
