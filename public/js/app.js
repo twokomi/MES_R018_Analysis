@@ -1662,12 +1662,23 @@ function updateCharts(workerAgg, rawData) {
 function updateProcessChart(workerAgg) {
     const processData = {};
     
+    // First, create a map of process -> seq from processMapping
+    const processSeqMap = {};
+    AppState.processMapping.forEach(mapping => {
+        const processName = mapping.foDesc3 || mapping.foDesc2;
+        if (processName && !processSeqMap[processName]) {
+            processSeqMap[processName] = mapping.seq;
+        }
+    });
+    
     workerAgg.forEach(item => {
         if (!processData[item.foDesc3]) {
+            // Get seq from mapping, fallback to 999 if not found
+            const seq = processSeqMap[item.foDesc3];
             processData[item.foDesc3] = {
                 totalMinutes: 0,
                 count: 0,
-                seq: item.seq !== null && item.seq !== undefined ? item.seq : 999  // Store seq for sorting, null becomes 999
+                seq: seq !== null && seq !== undefined ? seq : 999
             };
         }
         processData[item.foDesc3].totalMinutes += item.totalMinutes;
