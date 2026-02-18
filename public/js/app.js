@@ -2650,6 +2650,28 @@ async function loadUploadById(uploadId) {
             seq: m.seq
         }));
         
+        // Merge with default mappings to fill in missing seq values
+        loadDefaultProcessMapping();
+        const defaultMappings = AppState.processMapping;
+        AppState.processMapping = (dataResult.processMapping || []).map(m => {
+            const dbMapping = {
+                fdDesc: m.fd_desc,
+                foDesc2: m.fo_desc_2,
+                foDesc3: m.fo_desc_3,
+                seq: m.seq
+            };
+            // If seq is null/undefined, try to find it from default mappings
+            if (dbMapping.seq === null || dbMapping.seq === undefined) {
+                const defaultMatch = defaultMappings.find(dm => 
+                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
+                );
+                if (defaultMatch) {
+                    dbMapping.seq = defaultMatch.seq;
+                }
+            }
+            return dbMapping;
+        });
+        
         AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
             date: s.date,
             dayShift: s.day_shift,
@@ -2755,6 +2777,28 @@ async function loadLastUpload() {
             foDesc3: m.fo_desc_3,
             seq: m.seq
         }));
+        
+        // Merge with default mappings to fill in missing seq values
+        loadDefaultProcessMapping();
+        const defaultMappings = AppState.processMapping;
+        AppState.processMapping = (dataResult.processMapping || []).map(m => {
+            const dbMapping = {
+                fdDesc: m.fd_desc,
+                foDesc2: m.fo_desc_2,
+                foDesc3: m.fo_desc_3,
+                seq: m.seq
+            };
+            // If seq is null/undefined, try to find it from default mappings
+            if (dbMapping.seq === null || dbMapping.seq === undefined) {
+                const defaultMatch = defaultMappings.find(dm => 
+                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
+                );
+                if (defaultMatch) {
+                    dbMapping.seq = defaultMatch.seq;
+                }
+            }
+            return dbMapping;
+        });
         
         AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
             date: s.date,
