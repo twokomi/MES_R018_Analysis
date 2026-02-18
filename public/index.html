@@ -259,9 +259,9 @@
         .checkbox-item {
             display: flex;
             align-items: center;
-            padding: 0.625rem 0.75rem;
+            padding: 0.5rem 0.75rem;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: all 0.15s;
             border-bottom: 1px solid #f1f5f9;
         }
         .checkbox-item:last-child {
@@ -270,18 +270,73 @@
         .checkbox-item:hover {
             background: #eff6ff;
         }
-        .checkbox-item input[type="checkbox"] {
+        .checkbox-item input[type="checkbox"],
+        .checkbox-item input[type="radio"] {
             width: 1rem;
             height: 1rem;
             margin-right: 0.75rem;
             accent-color: #3b82f6;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .checkbox-item label {
             flex: 1;
             cursor: pointer;
             font-size: 0.875rem;
             color: #374151;
+        }
+        /* Grid layout for category/process dropdowns */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+        }
+        .checkbox-grid .checkbox-item {
+            border-right: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .checkbox-grid .checkbox-item:nth-child(2n) {
+            border-right: none;
+        }
+        /* Month group styling */
+        .month-group {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .month-group:last-child {
+            border-bottom: none;
+        }
+        .month-header {
+            padding: 0.75rem;
+            background: #f9fafb;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+            transition: background 0.15s;
+        }
+        .month-header:hover {
+            background: #f3f4f6;
+        }
+        .month-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .month-content.expanded {
+            max-height: 500px;
+        }
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+            padding: 0.5rem;
+        }
+        .date-item {
+            padding: 0.5rem;
+            font-size: 0.8125rem;
         }
         .hidden {
             display: none !important;
@@ -595,6 +650,7 @@
                                 <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
                             </button>
                             <div id="filterCategoryDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                <!-- Categories will be populated by JavaScript in grid layout -->
                             </div>
                         </div>
                     </div>
@@ -606,6 +662,7 @@
                                 <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
                             </button>
                             <div id="filterProcessDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                <!-- Processes will be populated by JavaScript in grid layout -->
                             </div>
                         </div>
                     </div>
