@@ -2973,6 +2973,19 @@ window.closeWorkerDetailModal = closeWorkerDetailModal;
 
 // ===== ANALYSIS PAGE FUNCTIONS =====
 
+// Helper function to safely destroy charts
+function destroyChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    return canvas;
+}
+
 // Analysis charts state
 const AnalysisCharts = {
     shiftComparison: null,
@@ -3075,10 +3088,8 @@ function updateShiftComparisonChart() {
         (shiftData[shift].minutes / shiftData[shift].total).toFixed(0)
     );
     
-    const ctx = document.getElementById('shiftComparisonChart');
-    if (AnalysisCharts.shiftComparison) {
-        AnalysisCharts.shiftComparison.destroy();
-    }
+    const ctx = destroyChart('shiftComparisonChart');
+    if (!ctx) return;
     
     AnalysisCharts.shiftComparison = new Chart(ctx, {
         type: 'bar',
@@ -3129,10 +3140,8 @@ function updateHourlyProductivityChart() {
         hourlyData[hour] += r.workerActMins || 0;
     });
     
-    const ctx = document.getElementById('hourlyProductivityChart');
-    if (AnalysisCharts.hourlyProductivity) {
-        AnalysisCharts.hourlyProductivity.destroy();
-    }
+    const ctx = destroyChart('hourlyProductivityChart');
+    if (!ctx) return;
     
     AnalysisCharts.hourlyProductivity = new Chart(ctx, {
         type: 'bar',
@@ -3183,13 +3192,11 @@ function updateProcessTimeChart() {
         .sort((a, b) => b.avg - a.avg)
         .slice(0, 10);
     
-    const ctx = document.getElementById('processTimeChart');
-    if (AnalysisCharts.processTime) {
-        AnalysisCharts.processTime.destroy();
-    }
+    const ctx = destroyChart('processTimeChart');
+    if (!ctx) return;
     
     AnalysisCharts.processTime = new Chart(ctx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: sorted.map(p => p.name.substring(0, 25)),
             datasets: [{
@@ -3239,13 +3246,11 @@ function updateProcessQualityChart() {
         .sort((a, b) => a.rate - b.rate)
         .slice(0, 10);
     
-    const ctx = document.getElementById('processQualityChart');
-    if (AnalysisCharts.processQuality) {
-        AnalysisCharts.processQuality.destroy();
-    }
+    const ctx = destroyChart('processQualityChart');
+    if (!ctx) return;
     
     AnalysisCharts.processQuality = new Chart(ctx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: sorted.map(p => p.name.substring(0, 25)),
             datasets: [{
@@ -3295,10 +3300,8 @@ function updateWorkerDistributionChart() {
         else distribution['Critical (<30%)']++;
     });
     
-    const ctx = document.getElementById('workerDistributionChart');
-    if (AnalysisCharts.workerDistribution) {
-        AnalysisCharts.workerDistribution.destroy();
-    }
+    const ctx = destroyChart('workerDistributionChart');
+    if (!ctx) return;
     
     AnalysisCharts.workerDistribution = new Chart(ctx, {
         type: 'doughnut',
@@ -3345,13 +3348,11 @@ function updateOverlapWorkersChart() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
     
-    const ctx = document.getElementById('overlapWorkersChart');
-    if (AnalysisCharts.overlapWorkers) {
-        AnalysisCharts.overlapWorkers.destroy();
-    }
+    const ctx = destroyChart('overlapWorkersChart');
+    if (!ctx) return;
     
     AnalysisCharts.overlapWorkers = new Chart(ctx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: sorted.map(([name, _]) => name.substring(0, 20)),
             datasets: [{
@@ -3394,10 +3395,8 @@ function updateDailyTrendChart() {
     const sorted = Object.entries(dailyData)
         .sort((a, b) => a[0].localeCompare(b[0]));
     
-    const ctx = document.getElementById('dailyTrendChart');
-    if (AnalysisCharts.dailyTrend) {
-        AnalysisCharts.dailyTrend.destroy();
-    }
+    const ctx = destroyChart('dailyTrendChart');
+    if (!ctx) return;
     
     AnalysisCharts.dailyTrend = new Chart(ctx, {
         type: 'line',
