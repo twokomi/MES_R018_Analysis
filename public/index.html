@@ -283,6 +283,14 @@
             font-size: 0.875rem;
             color: #374151;
         }
+        /* Radio button styles for Shift and Working Shift filters */
+        input[type="radio"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
         .hidden {
             display: none !important;
         }
@@ -530,21 +538,21 @@
                             </button>
                             <div id="filterShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                                 <div class="p-2">
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="shift" value="" class="mr-2" checked onchange="updateSingleSelect('shift', '')">
-                                        <span>All</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="" class="mr-3" checked onchange="updateSingleSelect('shift', '')">
+                                        <span class="text-sm text-gray-700">All</span>
                                     </label>
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="shift" value="A" class="mr-2" onchange="updateSingleSelect('shift', 'A')">
-                                        <span>A Shift</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="A" class="mr-3" onchange="updateSingleSelect('shift', 'A')">
+                                        <span class="text-sm text-gray-700">A Shift</span>
                                     </label>
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="shift" value="B" class="mr-2" onchange="updateSingleSelect('shift', 'B')">
-                                        <span>B Shift</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="B" class="mr-3" onchange="updateSingleSelect('shift', 'B')">
+                                        <span class="text-sm text-gray-700">B Shift</span>
                                     </label>
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="shift" value="C" class="mr-2" onchange="updateSingleSelect('shift', 'C')">
-                                        <span>C Shift</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
+                                        <input type="radio" name="shift" value="C" class="mr-3" onchange="updateSingleSelect('shift', 'C')">
+                                        <span class="text-sm text-gray-700">C Shift</span>
                                     </label>
                                 </div>
                             </div>
@@ -571,17 +579,17 @@
                             </button>
                             <div id="filterWorkingShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                                 <div class="p-2">
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="workingShift" value="" class="mr-2" checked onchange="updateSingleSelect('workingShift', '')">
-                                        <span>All</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="workingShift" value="" class="mr-3" checked onchange="updateSingleSelect('workingShift', '')">
+                                        <span class="text-sm text-gray-700">All</span>
                                     </label>
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="workingShift" value="Day" class="mr-2" onchange="updateSingleSelect('workingShift', 'Day')">
-                                        <span>Day</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="workingShift" value="Day" class="mr-3" onchange="updateSingleSelect('workingShift', 'Day')">
+                                        <span class="text-sm text-gray-700">Day</span>
                                     </label>
-                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                        <input type="radio" name="workingShift" value="Night" class="mr-2" onchange="updateSingleSelect('workingShift', 'Night')">
-                                        <span>Night</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
+                                        <input type="radio" name="workingShift" value="Night" class="mr-3" onchange="updateSingleSelect('workingShift', 'Night')">
+                                        <span class="text-sm text-gray-700">Night</span>
                                     </label>
                                 </div>
                             </div>
