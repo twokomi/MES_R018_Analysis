@@ -1034,40 +1034,55 @@ function updateWorkingDayOptions(selectedShift) {
         datesByMonth[month].push(date);
     });
     
-    // Generate HTML with collapsible month groups
-    let html = '';
+    // Generate HTML with month groups
+    let html = '<div class="p-2">';
     
-    // Date checkboxes grouped by month (collapsible)
+    // Month group buttons
+    html += '<div class="flex gap-2 mb-2 pb-2 border-b border-gray-200">';
+    Object.keys(datesByMonth).forEach(month => {
+        // Parse month correctly: YYYY-MM format
+        const [year, monthNum] = month.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+        html += `
+            <button onclick="toggleMonthDates('${month}')" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
+                ${monthName}
+            </button>
+        `;
+    });
+    html += '</div>';
+    
+    // Date checkboxes grouped by month
     Object.keys(datesByMonth).sort().forEach(month => {
         const [year, monthNum] = month.split('-');
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         html += `
-            <div class="month-group">
-                <div class="month-header" onclick="toggleMonthGroup('${month}')">
-                    <span>${monthName} (${datesByMonth[month].length} days)</span>
-                    <div class="flex items-center gap-2">
-                        <button onclick="event.stopPropagation(); selectAllMonthDates('${month}', true)" class="text-xs text-blue-600 hover:text-blue-800 font-medium px-2">All</button>
-                        <button onclick="event.stopPropagation(); selectAllMonthDates('${month}', false)" class="text-xs text-gray-600 hover:text-gray-800 px-2">Clear</button>
-                        <i class="fas fa-chevron-down transition-transform month-icon-${month}"></i>
+            <div class="mb-3">
+                <div class="flex items-center justify-between px-1 py-1 mb-1">
+                    <span class="text-xs font-semibold text-gray-700">${monthName}</span>
+                    <div class="flex gap-1">
+                        <button onclick="selectAllMonthDates('${month}', true)" class="text-xs text-blue-600 hover:text-blue-800 font-medium">All</button>
+                        <span class="text-xs text-gray-400">|</span>
+                        <button onclick="selectAllMonthDates('${month}', false)" class="text-xs text-gray-600 hover:text-gray-800">Clear</button>
                     </div>
                 </div>
-                <div class="month-content" data-month="${month}" id="month-content-${month}">
-                    <div class="date-grid">
+                <div class="month-dates space-y-0.5" data-month="${month}">
         `;
         
         datesByMonth[month].forEach(date => {
             html += `
-                <label class="checkbox-item date-item">
-                    <input type="checkbox" value="${date}" class="workingDay-checkbox" data-month="${month}" onchange="updateCheckboxDisplay('workingDay')">
-                    <span>${date.substring(8)}</span>
+                <label class="flex items-center px-2 py-1.5 hover:bg-blue-50 cursor-pointer rounded">
+                    <input type="checkbox" value="${date}" class="mr-2 h-4 w-4 text-blue-600 workingDay-checkbox" data-month="${month}" onchange="updateCheckboxDisplay('workingDay')">
+                    <span class="text-sm text-gray-700">${date}</span>
                 </label>
             `;
         });
         
-        html += '</div></div></div>';
+        html += '</div></div>';
     });
     
+    html += '</div>';
     dropdown.innerHTML = html;
 }
 
@@ -1087,16 +1102,12 @@ function updateFilterOptions() {
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
-        categoryDropdown.innerHTML = `
-            <div class="checkbox-grid">
-                ${uniqueCategories.map(category => `
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="${category}" class="category-checkbox" onchange="updateCheckboxDisplay('category')">
-                        <span>${category}</span>
-                    </label>
-                `).join('')}
-            </div>
-        `;
+        categoryDropdown.innerHTML = uniqueCategories.map(category => `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
+                <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')">
+                <span class="text-sm text-gray-700">${category}</span>
+            </label>
+        `).join('');
     }
     console.log(`✅ Category dropdown updated with ${uniqueCategories.length} options`);
     
@@ -1117,16 +1128,12 @@ function updateFilterOptions() {
     
     const processDropdown = document.getElementById('filterProcessDropdown');
     if (processDropdown) {
-        processDropdown.innerHTML = `
-            <div class="checkbox-grid">
-                ${processes.map(process => `
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="${process}" class="process-checkbox" onchange="updateCheckboxDisplay('process')">
-                        <span>${process}</span>
-                    </label>
-                `).join('')}
-            </div>
-        `;
+        processDropdown.innerHTML = processes.map(process => `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
+                <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')">
+                <span class="text-sm text-gray-700">${process}</span>
+            </label>
+        `).join('');
     }
     
     // Worker - Store workers globally for search
@@ -1136,9 +1143,9 @@ function updateFilterOptions() {
     const workerList = document.getElementById('filterWorkerList');
     if (workerList) {
         workerList.innerHTML = uniqueWorkers.map(worker => `
-            <label class="checkbox-item worker-item">
-                <input type="checkbox" value="${worker}" class="worker-checkbox" onchange="updateCheckboxDisplay('worker')">
-                <span>${worker}</span>
+            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 worker-item">
+                <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')">
+                <span class="text-sm text-gray-700">${worker}</span>
             </label>
         `).join('');
     }
@@ -1232,20 +1239,12 @@ function selectAllMonthDates(month, select) {
     updateCheckboxDisplay('workingDay');
 }
 
-// Toggle month group (collapse/expand)
-function toggleMonthGroup(month) {
-    const monthContent = document.getElementById(`month-content-${month}`);
-    const icon = document.querySelector(`.month-icon-${month}`);
-    
-    if (monthContent && icon) {
-        monthContent.classList.toggle('expanded');
-        icon.classList.toggle('fa-rotate-180');
-    }
-}
-
-// Legacy function - kept for compatibility
+// Toggle month visibility (collapse/expand)
 function toggleMonthDates(month) {
-    toggleMonthGroup(month);
+    const monthDiv = document.querySelector(`.month-dates[data-month="${month}"]`);
+    if (monthDiv) {
+        monthDiv.classList.toggle('hidden');
+    }
 }
 
 // Update checkbox display
@@ -3192,7 +3191,6 @@ window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.updateSingleSelect = updateSingleSelect;
 window.selectAllMonthDates = selectAllMonthDates;
-window.toggleMonthGroup = toggleMonthGroup;
 window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;
 window.deleteUpload = deleteUpload;
