@@ -1433,8 +1433,9 @@ function aggregateByWorkerOnly(workerAgg) {
     // First, get all original records to calculate shifts based on startDatetime
     const byWorker = {};
     
-    // We need to re-aggregate from processedData to get startDatetime
-    AppState.processedData.forEach(record => {
+    // Use filteredData instead of processedData to respect current filters
+    const dataToAggregate = AppState.filteredData || AppState.processedData;
+    dataToAggregate.forEach(record => {
         if (record.validFlag !== 1) return; // Only valid records
         
         const workerName = record.workerName;
