@@ -1060,7 +1060,7 @@ function updateWorkingDayOptions(selectedShift) {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         html += `
-            <button onclick="selectAllMonthDates('${month}', true)" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
+            <button onclick="selectAllMonthDates('${month}', true)" class="px-3 py-1.5 text-xs bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 rounded font-medium transition-all active:bg-blue-700 active:scale-95 shadow-sm hover:shadow-md">
                 ${monthName}
             </button>
         `;
@@ -1085,7 +1085,7 @@ function updateWorkingDayOptions(selectedShift) {
             const weekLabel = `WK${weekNum}: ${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
             const weekDatesStr = dates.join(',');
             html += `
-                <button onclick="selectWeekDates('${weekDatesStr}')" class="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium transition">
+                <button onclick="selectWeekDates('${weekDatesStr}')" class="px-3 py-1.5 text-xs bg-green-100 hover:bg-green-600 hover:text-white text-green-700 rounded font-medium transition-all active:bg-green-700 active:scale-95 shadow-sm hover:shadow-md">
                     ${weekLabel}
                 </button>
             `;
@@ -1306,6 +1306,14 @@ function selectAllMonthDates(month, select) {
         cb.checked = select;
     });
     updateCheckboxDisplay('workingDay');
+    
+    // Close dropdown after selection (only if selecting, not clearing)
+    if (select) {
+        const dropdown = document.getElementById('filterWorkingDayDropdown');
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+        }
+    }
 }
 
 // Select week dates
@@ -1324,6 +1332,12 @@ function selectWeekDates(weekDatesStr) {
     });
     
     updateCheckboxDisplay('workingDay');
+    
+    // Close dropdown after selection
+    const dropdown = document.getElementById('filterWorkingDayDropdown');
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+    }
 }
 
 // Toggle month visibility (collapse/expand)
@@ -1383,6 +1397,14 @@ function applyFilters() {
     };
     
     console.log('🎯 Applied filters:', AppState.filters);
+    
+    // Close all dropdowns after applying filters
+    document.getElementById('filterWorkingDayDropdown')?.classList.add('hidden');
+    document.getElementById('filterCategoryDropdown')?.classList.add('hidden');
+    document.getElementById('filterProcessDropdown')?.classList.add('hidden');
+    document.getElementById('filterWorkerDropdown')?.classList.add('hidden');
+    document.getElementById('filterWorkingShiftDropdown')?.classList.add('hidden');
+    
     updateReport();
 }
 
