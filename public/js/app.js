@@ -1426,7 +1426,8 @@ function aggregateByWorkerOnly(workerAgg) {
                 foDesc3: '', // Will be set from workerAgg
                 workingDay: '', // Will be set from workerAgg
                 recordCount: 0,
-                shifts: new Set() // Track unique shifts based on startDatetime
+                shifts: new Set(), // Track unique shifts based on startDatetime
+                processTimes: {} // Track time spent on each process
             };
         }
         
@@ -1437,15 +1438,34 @@ function aggregateByWorkerOnly(workerAgg) {
         // This properly handles overnight shifts and O/T
         const shiftKey = `${record.workingDay}_${record.workingShift}`;
         byWorker[workerName].shifts.add(shiftKey);
+        
+        // Track time per process to find the primary process
+        if (record.foDesc3) {
+            if (!byWorker[workerName].processTimes[record.foDesc3]) {
+                byWorker[workerName].processTimes[record.foDesc3] = 0;
+            }
+            byWorker[workerName].processTimes[record.foDesc3] += record.workerActMins || 0;
+        }
+        
+        // Keep the latest working day
+        if (record.workingDay) {
+            byWorker[workerName].workingDay = record.workingDay;
+        }
     });
     
-    // Update with display info from workerAgg
+    // Set primary process (process with most time spent)
+    Object.values(byWorker).forEach(worker => {
+        if (Object.keys(worker.processTimes).length > 0) {
+            // Find process with maximum time
+            const primaryProcess = Object.entries(worker.processTimes)
+                .sort((a, b) => b[1] - a[1])[0][0];
+            worker.foDesc3 = primaryProcess;
+        }
+    });
+    
+    // Update record count from workerAgg
     workerAgg.forEach(item => {
         if (byWorker[item.workerName]) {
-            if (!byWorker[item.workerName].foDesc3) {
-                byWorker[item.workerName].foDesc3 = item.foDesc3;
-                byWorker[item.workerName].workingDay = item.workingDay;
-            }
             byWorker[item.workerName].recordCount += 1;
         }
     });
@@ -1472,6 +1492,7 @@ function aggregateByWorkerOnly(workerAgg) {
         shifts: w.shiftCount,
         workRate: w.workRate.toFixed(1) + '%',
         band: w.performanceBand,
+        process: w.foDesc3,
         calculation: `${w.totalMinutes.toFixed(0)} / (660 * ${w.shiftCount}) * 100`
     })));
     
