@@ -1667,7 +1667,7 @@ function updateProcessChart(workerAgg) {
             processData[item.foDesc3] = {
                 totalMinutes: 0,
                 count: 0,
-                seq: item.seq || 999  // Store seq for sorting
+                seq: item.seq !== null && item.seq !== undefined ? item.seq : 999  // Store seq for sorting, null becomes 999
             };
         }
         processData[item.foDesc3].totalMinutes += item.totalMinutes;
@@ -1681,7 +1681,14 @@ function updateProcessChart(workerAgg) {
             avgWorkRate: ((data.totalMinutes / data.count / 660) * 100).toFixed(1),
             seq: data.seq
         }))
-        .sort((a, b) => a.seq - b.seq);
+        .sort((a, b) => {
+            // Handle null/undefined - put at end
+            const seqA = a.seq !== null && a.seq !== undefined ? a.seq : 999;
+            const seqB = b.seq !== null && b.seq !== undefined ? b.seq : 999;
+            return seqA - seqB;
+        });
+    
+    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} (Seq: ${p.seq})`).join(', '));
     
     const processes = sortedProcesses.map(p => p.name);
     const avgWorkRates = sortedProcesses.map(p => p.avgWorkRate);
