@@ -960,9 +960,9 @@
 
     <!-- Worker Detail Modal -->
     <div id="workerDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" onclick="closeWorkerDetailModal(event)">
-        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden" onclick="event.stopPropagation()">
             <!-- Modal Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4 flex justify-between items-center">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
                 <h3 class="text-2xl font-bold" id="modalWorkerName">
                     <i class="fas fa-user-circle mr-2"></i>
                     Worker Details
@@ -973,7 +973,7 @@
             </div>
             
             <!-- Modal Body -->
-            <div class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+            <div class="flex-1 overflow-y-auto p-6">
                 <!-- Summary Section -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
@@ -1002,11 +1002,15 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
                         <h4 class="font-bold text-gray-800 mb-3">Daily Work Time</h4>
-                        <canvas id="modalDailyChart" height="200"></canvas>
+                        <div style="height: 200px;">
+                            <canvas id="modalDailyChart"></canvas>
+                        </div>
                     </div>
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
                         <h4 class="font-bold text-gray-800 mb-3">Process Distribution</h4>
-                        <canvas id="modalProcessChart" height="200"></canvas>
+                        <div style="height: 200px;">
+                            <canvas id="modalProcessChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -1016,9 +1020,9 @@
                         <i class="fas fa-list mr-2"></i>
                         Detailed Work Records
                     </h4>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-100 border-b-2 border-gray-300">
+                            <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0">
                                 <tr>
                                     <th class="text-left p-2 font-semibold text-gray-700">Date</th>
                                     <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
