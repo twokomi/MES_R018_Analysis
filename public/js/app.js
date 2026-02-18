@@ -1024,33 +1024,68 @@ function updateWorkingDayOptions(selectedShift) {
         return;
     }
     
-    // Group dates by month
+    // Group dates by week and month
     const datesByMonth = {};
+    const datesByWeek = {};
+    
     availableDates.forEach(date => {
         const month = date.substring(0, 7); // YYYY-MM
         if (!datesByMonth[month]) {
             datesByMonth[month] = [];
         }
         datesByMonth[month].push(date);
+        
+        // Calculate week number (ISO week)
+        const d = new Date(date);
+        const dayOfWeek = d.getDay() || 7; // Sunday = 7
+        const weekStart = new Date(d);
+        weekStart.setDate(d.getDate() - dayOfWeek + 1); // Monday of the week
+        const weekKey = weekStart.toISOString().substring(0, 10);
+        
+        if (!datesByWeek[weekKey]) {
+            datesByWeek[weekKey] = [];
+        }
+        datesByWeek[weekKey].push(date);
     });
     
-    // Generate HTML with month groups
+    // Generate HTML with month and week groups
     let html = '<div class="p-2">';
     
     // Month group buttons
-    html += '<div class="flex gap-2 mb-2 pb-2 border-b border-gray-200">';
+    html += '<div class="mb-2 pb-2 border-b border-gray-200">';
+    html += '<div class="text-xs font-semibold text-gray-500 mb-1 px-1">BY MONTH:</div>';
+    html += '<div class="flex flex-wrap gap-2">';
     Object.keys(datesByMonth).forEach(month => {
-        // Parse month correctly: YYYY-MM format
         const [year, monthNum] = month.split('-');
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
         html += `
-            <button onclick="toggleMonthDates('${month}')" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
+            <button onclick="selectAllMonthDates('${month}', true)" class="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-medium transition">
                 ${monthName}
             </button>
         `;
     });
-    html += '</div>';
+    html += '</div></div>';
+    
+    // Week group buttons
+    const sortedWeeks = Object.keys(datesByWeek).sort();
+    if (sortedWeeks.length > 0) {
+        html += '<div class="mb-2 pb-2 border-b border-gray-200">';
+        html += '<div class="text-xs font-semibold text-gray-500 mb-1 px-1">BY WEEK:</div>';
+        html += '<div class="flex flex-wrap gap-2">';
+        sortedWeeks.forEach(weekStart => {
+            const dates = datesByWeek[weekStart].sort();
+            const weekEnd = dates[dates.length - 1];
+            const weekLabel = `${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
+            const weekDatesStr = dates.join(',');
+            html += `
+                <button onclick="selectWeekDates('${weekDatesStr}')" class="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium transition">
+                    ${weekLabel}
+                </button>
+            `;
+        });
+        html += '</div></div>';
+    }
     
     // Date checkboxes grouped by month
     Object.keys(datesByMonth).sort().forEach(month => {
@@ -1264,6 +1299,24 @@ function selectAllMonthDates(month, select) {
     checkboxes.forEach(cb => {
         cb.checked = select;
     });
+    updateCheckboxDisplay('workingDay');
+}
+
+// Select week dates
+function selectWeekDates(weekDatesStr) {
+    const weekDates = weekDatesStr.split(',');
+    const allCheckboxes = document.querySelectorAll('.workingDay-checkbox');
+    
+    // First, uncheck all
+    allCheckboxes.forEach(cb => cb.checked = false);
+    
+    // Then check only the week dates
+    allCheckboxes.forEach(cb => {
+        if (weekDates.includes(cb.value)) {
+            cb.checked = true;
+        }
+    });
+    
     updateCheckboxDisplay('workingDay');
 }
 
@@ -3252,6 +3305,7 @@ window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.updateSingleSelect = updateSingleSelect;
 window.selectAllMonthDates = selectAllMonthDates;
+window.selectWeekDates = selectWeekDates;
 window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;
 window.deleteUpload = deleteUpload;
