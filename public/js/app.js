@@ -1366,7 +1366,6 @@ function aggregateByWorkerOnly(workerAgg) {
             byWorker[workerName] = {
                 workerName: workerName,
                 totalMinutes: 0,
-                validMinutes: 0,
                 validCount: 0,
                 foDesc3: item.foDesc3, // Keep first process for display
                 workingDay: item.workingDay, // Keep first day for display
@@ -1375,16 +1374,14 @@ function aggregateByWorkerOnly(workerAgg) {
         }
         
         byWorker[workerName].totalMinutes += item.totalMinutes || 0;
-        byWorker[workerName].validMinutes += item.validMinutes || 0;
         byWorker[workerName].validCount += item.validCount || 0;
         byWorker[workerName].recordCount += 1;
     });
     
     // Calculate work rate for each worker
     const result = Object.values(byWorker).map(worker => {
-        const workRate = worker.totalMinutes > 0 
-            ? (worker.validMinutes / worker.totalMinutes * 100) 
-            : 0;
+        // Calculate work rate as: total work time / standard day (660 min) * 100
+        const workRate = (worker.totalMinutes / 660) * 100;
         return {
             ...worker,
             workRate: workRate,
@@ -1394,6 +1391,13 @@ function aggregateByWorkerOnly(workerAgg) {
     
     // Sort by work rate descending
     result.sort((a, b) => b.workRate - a.workRate);
+    
+    console.log('📊 Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
+        name: w.workerName,
+        totalMinutes: w.totalMinutes.toFixed(0),
+        workRate: w.workRate.toFixed(1) + '%',
+        band: w.performanceBand
+    })));
     
     return result;
 }
@@ -1530,7 +1534,6 @@ function aggregateByWorker(data) {
                 workingShift: record.workingShift,
                 actualShift: record.actualShift,
                 totalMinutes: 0,
-                validMinutes: 0,
                 validCount: 0,
                 seq: record.seq
             };
@@ -1539,9 +1542,8 @@ function aggregateByWorker(data) {
         // Accumulate ALL work time (both valid and invalid)
         aggregated[key].totalMinutes += record.workerActMins || 0;
         
-        // Count VALID work orders and their time
+        // Count VALID work orders
         if (record.validFlag === 1) {
-            aggregated[key].validMinutes += record.workerActMins || 0;
             aggregated[key].validCount += 1;
             validRecords++;
         } else {
@@ -1553,8 +1555,8 @@ function aggregateByWorker(data) {
     
     // Convert to array and calculate work rate
     const result = Object.values(aggregated).map(item => {
-        // Calculate work rate as: valid work time / total work time * 100
-        const workRate = item.totalMinutes > 0 ? (item.validMinutes / item.totalMinutes * 100) : 0;
+        // Calculate work rate as: total work time / standard day (660 min) * 100
+        const workRate = (item.totalMinutes / 660) * 100;
         return {
             ...item,
             workRate: workRate,
@@ -1585,7 +1587,7 @@ function getPerformanceBand(workRate) {
 function updateKPIs(workerAgg) {
     const totalWorkers = new Set(workerAgg.map(w => w.workerName)).size;
     const totalValidWO = workerAgg.reduce((sum, w) => sum + w.validCount, 0);
-    const totalMinutes = workerAgg.reduce((sum, w) => sum + w.validMinutes, 0); // Use validMinutes for total
+    const totalMinutes = workerAgg.reduce((sum, w) => sum + w.totalMinutes, 0);
     const avgWorkRate = workerAgg.length > 0 
         ? workerAgg.reduce((sum, w) => sum + w.workRate, 0) / workerAgg.length 
         : 0;
@@ -2860,10 +2862,9 @@ function showWorkerDetail(workerName) {
     const totalMinutes = workerRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
     const totalRecords = workerRecords.length;
     const validRecords = workerRecords.filter(r => r.resultCnt === 'X').length;
-    const validMinutes = workerRecords.filter(r => r.resultCnt === 'X').reduce((sum, r) => sum + (r.workerActMins || 0), 0);
     
-    // Calculate work rate: valid work time / total work time * 100
-    const avgWorkRate = totalMinutes > 0 ? (validMinutes / totalMinutes * 100) : 0;
+    // Calculate work rate: total work time / standard day (660 min) * 100
+    const avgWorkRate = (totalMinutes / 660) * 100;
     
     const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
                            avgWorkRate >= 50 ? 'Normal' :
@@ -2871,11 +2872,11 @@ function showWorkerDetail(workerName) {
     
     console.log(`📊 Worker Detail for ${workerName}:`, {
         totalMinutes,
-        validMinutes,
         totalRecords,
         validRecords,
         avgWorkRate: avgWorkRate.toFixed(1) + '%',
-        performanceBand
+        performanceBand,
+        calculation: `${totalMinutes} / 660 * 100 = ${avgWorkRate.toFixed(1)}%`
     });
     
     // Update modal header and summary
