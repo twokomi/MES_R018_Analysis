@@ -883,29 +883,53 @@
                     <!-- Left Column: Instructions -->
                     <div class="space-y-6">
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload & Save</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
-                                <li><strong>JSON file</strong> (.json) - Previously exported data</li>
+                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
                                 <li>Drag & drop file or click 'Select File' button</li>
+                                <li>Review the processed data and reports</li>
+                                <li><strong>Click "Save to Database"</strong> to store data in Cloudflare D1</li>
                                 <li><strong>Tip:</strong> Include ShiftCalendar sheet in Excel for Shift (A/B/C) filtering</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. Required Headers (Raw Sheet)</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. Load Saved Data</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li>View <strong>Saved Uploads</strong> list in Upload tab</li>
+                                <li><strong>Click any card</strong> to load saved data</li>
+                                <li>Automatically switches to Report tab after loading</li>
+                                <li>Delete uploads using the <strong>Delete button</strong> on each card</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Apply Filters</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
+                                <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
+                                <li><strong>Working Shift</strong>: Day / Night</li>
+                                <li><strong>Category</strong>: BT Process, DS, BT Complete, WT, IM, etc.</li>
+                                <li><strong>Process</strong>: Specific processes (FO Desc 3)</li>
+                                <li><strong>Worker</strong>: Individual workers (searchable)</li>
+                                <li><strong>Click "Apply Filter"</strong> to update reports</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Required Headers (Raw Sheet)</h3>
                             <p class="text-gray-700 mb-2">Raw sheet must include these headers:</p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Worker Name</strong>: Worker name</li>
                                 <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description</li>
-                                <li><strong>Start Datetime</strong> or <strong>End Datetime</strong>: Work start/end time</li>
-                                <li><strong>Worker Act</strong> or <strong>Worker Act (mins)</strong>: Work time (minutes)</li>
+                                <li><strong>Start Datetime</strong>: Work start time</li>
+                                <li><strong>Worker Act</strong>: Work time (minutes)</li>
                                 <li><strong>Result Cnt</strong>: Work result count (X = completed)</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Performance Grades</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Performance Grades</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><span class="worker-badge badge-excellent">Excellent</span>: Work rate ≥ 80%</li>
                                 <li><span class="worker-badge badge-normal">Normal</span>: Work rate 50-80%</li>
@@ -913,8 +937,20 @@
                                 <li><span class="worker-badge badge-critical">At-Risk</span>: Work rate &lt; 30%</li>
                             </ul>
                             <p class="text-sm text-gray-600 mt-2">
-                                <strong>Work Rate Formula:</strong> (Valid Work Minutes / 660) × 100%
+                                <strong>Work Rate Formula:</strong> (Total Valid Minutes / Total Shifts / 660) × 100%
+                                <br><span class="text-xs">• 660 minutes = 11 hours per shift</span>
+                                <br><span class="text-xs">• Total Shifts = Number of unique (workingDay + workingShift) combinations</span>
                             </p>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Worker Detail Modal</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Click any worker card</strong> to view detailed information</li>
+                                <li>View daily work time trends (line chart)</li>
+                                <li>See hourly work distribution (donut chart)</li>
+                                <li>Check detailed work records (date, shift, process, time)</li>
+                            </ul>
                         </section>
                     </div>
 
