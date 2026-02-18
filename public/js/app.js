@@ -1568,8 +1568,8 @@ function updatePivotReport(workerAgg) {
     // Build HTML table
     let html = '<table class="pivot-table">';
     
-    // Header row
-    html += '<thead><tr>';
+    // Header row with sticky positioning
+    html += '<thead class="sticky top-0 bg-gray-100 z-10"><tr>';
     html += '<th rowspan="2" style="min-width: 200px; text-align: left;">Worker Name</th>';
     allDates.forEach(date => {
         html += `<th colspan="3">${date}</th>`;
