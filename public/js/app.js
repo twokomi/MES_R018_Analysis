@@ -2798,7 +2798,8 @@ async function loadLastUpload() {
 
 // Sort Performance Bands
 function sortPerformanceBand(bandType, order) {
-    const aggregatedData = aggregateData(AppState.processedData);
+    const workerAgg = aggregateByWorker(AppState.processedData);
+    const aggregatedData = aggregateByWorkerOnly(workerAgg);
     
     let workers;
     if (bandType === 'excellent') {
