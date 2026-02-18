@@ -1717,14 +1717,14 @@ function updatePerformanceBands(workerAgg) {
     const excellentDiv = document.getElementById('excellentWorkers');
     if (excellent.length > 0) {
         excellentDiv.innerHTML = '<div class="space-y-2">' + excellent.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-green-900">${w.workerName}</span>
+                    <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-green-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-1 text-xs">
-                    <span class="text-green-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-green-600">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-gray-500">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
@@ -1736,14 +1736,14 @@ function updatePerformanceBands(workerAgg) {
     const poorDiv = document.getElementById('poorWorkers');
     if (poor.length > 0) {
         poorDiv.innerHTML = '<div class="space-y-2">' + poor.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-orange-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-orange-900">${w.workerName}</span>
+                    <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-orange-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-1 text-xs">
-                    <span class="text-orange-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-orange-600">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-gray-500">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
@@ -1755,14 +1755,14 @@ function updatePerformanceBands(workerAgg) {
     const criticalDiv = document.getElementById('criticalWorkers');
     if (critical.length > 0) {
         criticalDiv.innerHTML = '<div class="space-y-2">' + critical.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-red-50 to-rose-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-red-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-red-900">${w.workerName}</span>
+                    <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-red-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-1 text-xs">
-                    <span class="text-red-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-red-600">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-gray-500">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
