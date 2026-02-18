@@ -2456,9 +2456,9 @@ async function loadUploadsList() {
             });
             
             return `
-                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer" onclick="loadUploadById(${upload.id})">
+                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition">
                     <div class="flex justify-between items-start">
-                        <div class="flex-1">
+                        <div class="flex-1 cursor-pointer" onclick="loadUploadById(${upload.id})">
                             <div class="flex items-center mb-2">
                                 <i class="fas fa-file-excel text-green-600 mr-2"></i>
                                 <h3 class="font-semibold text-gray-800">${upload.filename}</h3>
@@ -2475,9 +2475,14 @@ async function loadUploadsList() {
                                 </div>
                             ` : ''}
                         </div>
-                        <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition ml-4">
-                            <i class="fas fa-download mr-1"></i> Load
-                        </button>
+                        <div class="flex flex-col gap-2 ml-4">
+                            <button onclick="loadUploadById(${upload.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition">
+                                <i class="fas fa-download mr-1"></i> Load
+                            </button>
+                            <button onclick="deleteUpload(${upload.id}, event)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2494,6 +2499,49 @@ async function loadUploadsList() {
                 <p class="text-sm">${error.message}</p>
             </div>
         `;
+    }
+}
+
+// Delete upload by ID
+async function deleteUpload(uploadId, event) {
+    // Prevent card click event
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete this upload?\n\nThis will permanently delete:\n- Upload record\n- ${AppState.processedData?.length || 'All'} raw data records\n- Process mappings\n- Shift calendar data\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        console.log(`🗑️  Deleting upload #${uploadId}...`);
+        
+        const response = await fetch(`/api/uploads/${uploadId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`✅ Upload #${uploadId} deleted successfully`);
+            
+            // Refresh uploads list
+            loadUploadsList();
+            
+            // Show success message
+            alert(`Upload deleted successfully!\n\n${result.message}`);
+        } else {
+            throw new Error(result.error || 'Delete failed');
+        }
+    } catch (error) {
+        console.error(`❌ Failed to delete upload #${uploadId}:`, error);
+        alert('Failed to delete upload:\n' + error.message);
     }
 }
 
@@ -2702,4 +2750,5 @@ window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.selectAllMonthDates = selectAllMonthDates;
 window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;
+window.deleteUpload = deleteUpload;
 window.switchTab = switchTab;

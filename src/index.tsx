@@ -167,4 +167,56 @@ app.get('/api/uploads/:id', async (c) => {
   }
 })
 
+// API: 업로드 삭제
+app.delete('/api/uploads/:id', async (c) => {
+  try {
+    const { env } = c
+    const uploadId = c.req.param('id')
+    
+    // 업로드 정보 확인
+    const upload = await env.DB.prepare(`
+      SELECT * FROM excel_uploads WHERE id = ?
+    `).bind(uploadId).first()
+    
+    if (!upload) {
+      return c.json({ success: false, error: 'Upload not found' }, 404)
+    }
+    
+    // 관련 데이터 삭제 (순서 중요: 외래 키 제약 고려)
+    // 1. raw_data 삭제
+    const rawDataResult = await env.DB.prepare(`
+      DELETE FROM raw_data WHERE upload_id = ?
+    `).bind(uploadId).run()
+    
+    // 2. process_mapping 삭제
+    const mappingResult = await env.DB.prepare(`
+      DELETE FROM process_mapping WHERE upload_id = ?
+    `).bind(uploadId).run()
+    
+    // 3. shift_calendar 삭제
+    const calendarResult = await env.DB.prepare(`
+      DELETE FROM shift_calendar WHERE upload_id = ?
+    `).bind(uploadId).run()
+    
+    // 4. excel_uploads 삭제
+    const uploadResult = await env.DB.prepare(`
+      DELETE FROM excel_uploads WHERE id = ?
+    `).bind(uploadId).run()
+    
+    return c.json({
+      success: true,
+      message: `Deleted upload #${uploadId}: ${upload.filename}`,
+      deleted: {
+        rawData: rawDataResult.meta.changes,
+        processMapping: mappingResult.meta.changes,
+        shiftCalendar: calendarResult.meta.changes,
+        upload: uploadResult.meta.changes
+      }
+    })
+  } catch (error: any) {
+    console.error('Delete error:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 export default app
