@@ -160,18 +160,21 @@
             position: sticky;
             z-index: 100;
         }
-        /* Worker Name 셀 (rowspan=2) */
-        .pivot-table thead tr:first-child th:first-child {
+        /* Worker Name 컬럼 (왼쪽, 2줄) */
+        .pivot-table .worker-name-header {
+            top: 0;
+            left: 0;
+            z-index: 102;
+        }
+        /* 날짜 헤더 (첫 번째 행) */
+        .pivot-table .date-header {
             top: 0;
             z-index: 101;
         }
-        /* 첫 번째 행의 날짜 헤더 */
-        .pivot-table thead tr:first-child th:not(:first-child) {
-            top: 0;
-        }
-        /* 두 번째 행의 서브헤더 (WO Count 등) */
-        .pivot-table thead tr:nth-child(2) th {
+        /* 서브 헤더 (두 번째 행: WO Count, Std Time, Work Rate) */
+        .pivot-table .sub-header {
             top: 40px;
+            z-index: 101;
         }
         .pivot-table thead th:first-child {
             text-align: left !important;

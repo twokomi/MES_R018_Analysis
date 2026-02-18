@@ -1568,17 +1568,17 @@ function updatePivotReport(workerAgg) {
     // Build HTML table
     let html = '<table class="pivot-table">';
     
-    // Header row - CSS에서 sticky 처리
-    html += '<thead><tr>';
-    html += '<th rowspan="2" style="min-width: 200px; text-align: left;">Worker Name</th>';
+    // Header row - 명시적 클래스 추가
+    html += '<thead><tr class="header-row-1">';
+    html += '<th class="worker-name-header" rowspan="2" style="min-width: 200px; text-align: left;">Worker Name</th>';
     allDates.forEach(date => {
-        html += `<th colspan="3">${date}</th>`;
+        html += `<th class="date-header" colspan="3">${date}</th>`;
     });
-    html += '</tr><tr>';
+    html += '</tr><tr class="header-row-2">';
     allDates.forEach(() => {
-        html += '<th style="font-size: 0.7rem;">WO Count</th>';
-        html += '<th style="font-size: 0.7rem;">Std Time(m)</th>';
-        html += '<th style="font-size: 0.7rem;">Work Rate</th>';
+        html += '<th class="sub-header" style="font-size: 0.7rem;">WO Count</th>';
+        html += '<th class="sub-header" style="font-size: 0.7rem;">Std Time(m)</th>';
+        html += '<th class="sub-header" style="font-size: 0.7rem;">Work Rate</th>';
     });
     html += '</tr></thead>';
     
