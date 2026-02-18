@@ -2942,9 +2942,9 @@ function showWorkerDetail(workerName) {
     const totalRecords = workerRecords.length;
     const validRecords = validRecordsList.length;
     
-    // Count unique shifts based on startDatetime
+    // Count unique shifts based on startDatetime (ONLY for valid records)
     const uniqueShifts = new Set();
-    workerRecords.forEach(r => {
+    validRecordsList.forEach(r => {  // validRecordsList만 사용!
         if (r.startDatetime) {
             const date = new Date(r.startDatetime);
             const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
