@@ -1664,9 +1664,7 @@ function updateProcessChart(workerAgg) {
     const processData = {};
     
     // Category (FO Desc 2) order mapping
-    // Pre-Blasting is category 0 (first)
     const categoryOrder = {
-        'Pre-Blasting': 0,     // Pre-Blasting 맨 앞
         'BT Process': 1,
         'DS': 2,
         'BT Complete': 3,
@@ -1691,14 +1689,8 @@ function updateProcessChart(workerAgg) {
         if (!processData[item.foDesc3]) {
             // Get seq from mapping
             const seq = processSeqMap[item.foDesc3];
-            
-            // Special handling for Pre-Blasting: force to category 0 (first)
-            let categorySeq;
-            if (item.foDesc3 === 'Pre-Blasting') {
-                categorySeq = 0;  // Pre-Blasting 맨 앞
-            } else {
-                categorySeq = categoryOrder[item.foDesc2] || 999;
-            }
+            // Get category order (foDesc2)
+            const categorySeq = categoryOrder[item.foDesc2] || 999;
             
             processData[item.foDesc3] = {
                 totalMinutes: 0,
