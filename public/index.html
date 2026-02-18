@@ -152,14 +152,19 @@
             font-weight: 500;
         }
         .pivot-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 100;
             background: #1f2937;
         }
         .pivot-table thead th {
             background: #1f2937 !important;
             color: white !important;
+            position: sticky;
+            z-index: 100;
+        }
+        .pivot-table thead tr:first-child th {
+            top: 0;
+        }
+        .pivot-table thead tr:nth-child(2) th {
+            top: 37px;  /* 첫 번째 행 높이만큼 아래 */
         }
         .pivot-table thead th:first-child {
             text-align: left !important;
