@@ -2904,24 +2904,35 @@ function showWorkerDetail(workerName) {
     }
     
     // Calculate summary stats
-    const totalMinutes = workerRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+    // Only sum workerActMins for valid records (Result Cnt = 'X')
+    const validRecordsList = workerRecords.filter(r => r.validFlag === 1);
+    const totalMinutes = validRecordsList.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
     const totalRecords = workerRecords.length;
-    const validRecords = workerRecords.filter(r => r.resultCnt === 'X').length;
+    const validRecords = validRecordsList.length;
     
-    // Calculate work rate: total work time / standard day (660 min) * 100
-    const avgWorkRate = (totalMinutes / 660) * 100;
+    // Count unique shifts for this worker
+    const uniqueShifts = new Set();
+    workerRecords.forEach(r => {
+        const shiftKey = `${r.workingDay}_${r.workingShift}`;
+        uniqueShifts.add(shiftKey);
+    });
+    const shiftCount = uniqueShifts.size;
+    
+    // Calculate work rate: total valid work time / (660 min * shift count) * 100
+    const avgWorkRate = shiftCount > 0 ? (totalMinutes / (660 * shiftCount)) * 100 : 0;
     
     const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
                            avgWorkRate >= 50 ? 'Normal' :
                            avgWorkRate >= 30 ? 'Poor' : 'Critical';
     
     console.log(`📊 Worker Detail for ${workerName}:`, {
-        totalMinutes,
+        totalMinutes: totalMinutes.toFixed(1),
         totalRecords,
         validRecords,
+        shiftCount,
         avgWorkRate: avgWorkRate.toFixed(1) + '%',
         performanceBand,
-        calculation: `${totalMinutes} / 660 * 100 = ${avgWorkRate.toFixed(1)}%`
+        calculation: `${totalMinutes.toFixed(1)} / (660 * ${shiftCount}) * 100 = ${avgWorkRate.toFixed(1)}%`
     });
     
     // Update modal header and summary
