@@ -419,6 +419,9 @@
                 <button class="tab-btn px-6 py-3 font-medium" data-tab="report">
                     <i class="fas fa-chart-bar mr-2"></i>Report
                 </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="analysis">
+                    <i class="fas fa-chart-line mr-2"></i>Analysis
+                </button>
                 <button class="tab-btn px-6 py-3 font-medium" data-tab="mapping">
                     <i class="fas fa-sitemap mr-2"></i>Process Mapping
                 </button>
@@ -742,6 +745,132 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tab -->
+        <div id="analysisTab" class="tab-content hidden">
+            <!-- Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Overlap Removed</p>
+                            <p id="analysisOverlapTime" class="text-2xl font-bold text-red-600">0 min</p>
+                        </div>
+                        <i class="fas fa-clock text-red-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Avg Efficiency</p>
+                            <p id="analysisAvgEfficiency" class="text-2xl font-bold text-blue-600">0%</p>
+                        </div>
+                        <i class="fas fa-tachometer-alt text-blue-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Quality Rate</p>
+                            <p id="analysisQualityRate" class="text-2xl font-bold text-green-600">0%</p>
+                        </div>
+                        <i class="fas fa-check-circle text-green-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">Bottleneck Process</p>
+                            <p id="analysisBottleneck" class="text-lg font-bold text-orange-600">-</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-orange-600 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1: Time Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Shift Performance Comparison -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-moon text-indigo-600 mr-2"></i>
+                        Shift Performance Comparison
+                    </h3>
+                    <canvas id="shiftComparisonChart" height="250"></canvas>
+                </div>
+
+                <!-- Time-of-Day Productivity -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        Hourly Productivity Heatmap
+                    </h3>
+                    <canvas id="hourlyProductivityChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 2: Process Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Process Efficiency -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-cogs text-purple-600 mr-2"></i>
+                        Process Average Time (Top 10)
+                    </h3>
+                    <canvas id="processTimeChart" height="250"></canvas>
+                </div>
+
+                <!-- Process Quality Rate -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-star text-yellow-600 mr-2"></i>
+                        Process Quality Rate
+                    </h3>
+                    <canvas id="processQualityChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 3: Worker Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Worker Efficiency Distribution -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-users text-green-600 mr-2"></i>
+                        Worker Efficiency Distribution
+                    </h3>
+                    <canvas id="workerDistributionChart" height="250"></canvas>
+                </div>
+
+                <!-- Overlap Analysis -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-compress text-red-600 mr-2"></i>
+                        Top 10 Workers with Time Overlap
+                    </h3>
+                    <canvas id="overlapWorkersChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 4: Trend Analysis -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+                    Daily Productivity Trend
+                </h3>
+                <canvas id="dailyTrendChart" height="150"></canvas>
+            </div>
+
+            <!-- Insights Table -->
+            <div class="card">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+                    Key Insights & Recommendations
+                </h3>
+                <div id="insightsTable" class="space-y-3">
+                    <!-- Insights will be dynamically populated -->
                 </div>
             </div>
         </div>
