@@ -133,6 +133,13 @@
             background: white;
         }
         
+        /* thead 전체를 sticky로 고정 */
+        .pivot-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
         .pivot-table thead th {
             background: #3b82f6;
             color: white;
@@ -140,17 +147,6 @@
             text-align: center;
             font-size: 0.75rem;
             border: 1px solid #2563eb;
-            position: sticky;
-        }
-        
-        /* 첫 번째 행: Worker Name + 날짜 */
-        .pivot-table .header-row-1 th {
-            top: 0;
-        }
-        
-        /* 두 번째 행: 빈칸 + WO Count/Std Time/Work Rate */
-        .pivot-table .header-row-2 th {
-            top: 37px;
         }
         
         .pivot-table td {
