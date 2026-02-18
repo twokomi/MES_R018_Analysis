@@ -124,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Filters initialized');
         initMapping();
         console.log('✅ Mapping initialized');
-        initJsonImportExport();
-        console.log('✅ JSON import/export initialized');
+        initDatabaseButtons();
+        console.log('✅ Database buttons initialized');
         initViewToggle();
         console.log('✅ View toggle initialized');
         
@@ -337,16 +337,9 @@ function initFileUpload() {
 
 // Handle file upload
 function handleFileUpload(file) {
-    // Check if it's a JSON file
-    if (file.name.match(/\.json$/i)) {
-        // Handle JSON import
-        importFromJson(file);
-        return;
-    }
-    
     // Check if it's an Excel file
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
-        alert('Excel (.xlsx, .xls) or JSON (.json) files only.');
+        alert('Excel (.xlsx, .xls) files only.');
         return;
     }
     
@@ -2107,19 +2100,8 @@ function updateMappingSortIcons() {
     });
 }
 
-// JSON Import/Export
-function initJsonImportExport() {
-    document.getElementById('exportJsonBtn').addEventListener('click', exportToJson);
-    document.getElementById('importJsonBtn').addEventListener('click', () => {
-        document.getElementById('jsonFileInput').click();
-    });
-    
-    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            importFromJson(e.target.files[0]);
-        }
-    });
-    
+// Database button handlers
+function initDatabaseButtons() {
     // Load last upload button
     document.getElementById('loadLastUploadBtn')?.addEventListener('click', loadLastUpload);
     
@@ -2135,97 +2117,6 @@ function initJsonImportExport() {
     
     // Load uploads list on page load
     loadUploadsList();
-}
-
-// Export to JSON
-function exportToJson() {
-    const exportData = {
-        version: '1.1',
-        exportDate: new Date().toISOString(),
-        rawData: AppState.rawData,
-        processedData: AppState.processedData,
-        processMapping: AppState.processMapping,
-        shiftCalendar: AppState.shiftCalendar
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    
-    const filename = `MES_Report_${new Date().toISOString().split('T')[0]}.json`;
-    link.download = filename;
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    
-    console.log('✅ JSON file exported successfully:', filename);
-}
-
-// Import from JSON
-function importFromJson(file) {
-    showUploadStatus(true);
-    updateProgress(10);
-    
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        try {
-            updateProgress(30);
-            const importData = JSON.parse(e.target.result);
-            
-            updateProgress(50);
-            
-            // Validate structure
-            if (!importData.rawData || !importData.processedData || !importData.processMapping) {
-                throw new Error('Invalid JSON file format. Required: rawData, processedData, processMapping.');
-            }
-            
-            updateProgress(70);
-            
-            // Restore data
-            AppState.rawData = importData.rawData;
-            AppState.processedData = importData.processedData;
-            AppState.processMapping = importData.processMapping;
-            AppState.shiftCalendar = importData.shiftCalendar || [];
-            
-            updateProgress(90);
-            
-            // Update UI
-            updateMappingTable();
-            showUploadResult(AppState.processedData);
-            updateReport();
-            
-            document.getElementById('exportJsonBtn').disabled = false;
-            
-            updateProgress(100);
-            
-            console.log('✅ JSON file imported successfully');
-            
-            setTimeout(() => {
-                showUploadStatus(false);
-                // Switch to report tab
-                document.querySelector('[data-tab="report"]').click();
-            }, 500);
-            
-        } catch (error) {
-            console.error('JSON import error:', error);
-            alert('Error loading JSON file:\n' + error.message);
-            showUploadStatus(false);
-        }
-    };
-    
-    reader.onerror = function() {
-        alert('Error reading file.');
-        showUploadStatus(false);
-    };
-    
-    reader.readAsText(file);
 }
 
 
