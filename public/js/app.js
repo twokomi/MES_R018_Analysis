@@ -766,7 +766,7 @@ function processData(rawData) {
         sampleRecords.forEach((r, idx) => {
             const datetime = r.startDatetime || r.endDatetime;
             const timeStr = datetime ? datetime.toISOString() : 'N/A';
-            console.log(`  [${idx+1}] Worker: ${r.workerName}, Process: ${r.foDesc3}`);
+            console.log(`  [${idx+1}] Worker: ${r.workerName}, Process: ${r.foDesc3}, Category: ${r.foDesc2}`);
             console.log(`      DateTime: ${timeStr}`);
             console.log(`      Working Day: ${r.workingDay}, Shift: ${r.workingShift}, Actual: ${r.actualShift}`);
             console.log(`      Result Cnt: "${r.resultCnt}", Valid: ${r.validFlag}, Minutes: ${r.workerActMins}`);
@@ -1513,6 +1513,16 @@ function aggregateByWorker(data) {
     data.forEach(record => {
         totalRecords++;
         
+        // Debug: Check first record's foDesc2
+        if (totalRecords === 1) {
+            console.log('🔍 First record in aggregateByWorker:', {
+                workerName: record.workerName,
+                foDesc3: record.foDesc3,
+                foDesc2: record.foDesc2,
+                seq: record.seq
+            });
+        }
+        
         // Group by: worker + day + shift + actualShift + process for display purposes
         const key = `${record.workerName}|${record.workingDay}|${record.workingShift}|${record.actualShift}|${record.foDesc3}`;
         
@@ -1654,13 +1664,13 @@ function updatePerformanceBands(workerAgg) {
 }
 
 // Update charts
-function updateCharts(workerAgg, rawData) {
-    updateProcessChart(workerAgg);
-    updatePerformanceChart(workerAgg);
+function updateCharts(workerSummary, filteredData) {
+    updateProcessChart(filteredData); // Use filteredData instead of workerSummary
+    updatePerformanceChart(workerSummary);
 }
 
 // Update process chart
-function updateProcessChart(workerAgg) {
+function updateProcessChart(filteredData) {
     const processData = {};
     
     // Category (FO Desc 2) order mapping
@@ -1685,23 +1695,24 @@ function updateProcessChart(workerAgg) {
         }
     });
     
-    workerAgg.forEach(item => {
-        if (!processData[item.foDesc3]) {
+    // Aggregate by process (foDesc3) from filteredData
+    filteredData.forEach(record => {
+        if (!processData[record.foDesc3]) {
             // Get seq from mapping
-            const seq = processSeqMap[item.foDesc3];
+            const seq = processSeqMap[record.foDesc3];
             // Get category order (foDesc2)
-            const categorySeq = categoryOrder[item.foDesc2] || 999;
+            const categorySeq = categoryOrder[record.foDesc2] || 999;
             
-            processData[item.foDesc3] = {
+            processData[record.foDesc3] = {
                 totalMinutes: 0,
                 count: 0,
                 seq: seq !== null && seq !== undefined ? seq : 999,
                 categorySeq: categorySeq,
-                foDesc2: item.foDesc2
+                foDesc2: record.foDesc2
             };
         }
-        processData[item.foDesc3].totalMinutes += item.totalMinutes;
-        processData[item.foDesc3].count += 1;
+        processData[record.foDesc3].totalMinutes += record.workerActMins || 0;
+        processData[record.foDesc3].count += 1;
     });
     
     // Sort processes by category first, then by seq within category
