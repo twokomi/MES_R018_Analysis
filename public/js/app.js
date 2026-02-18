@@ -3025,6 +3025,23 @@ function showWorkerDetail(workerName) {
                 return `${hours}:${minutes}:${seconds}`;
             };
             
+            // Calculate original minutes from start/end time
+            const calculateOriginalMinutes = (start, end) => {
+                if (!start || !end) return 0;
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                const diffMs = endDate - startDate;
+                return Math.round(diffMs / 60000); // Convert ms to minutes
+            };
+            
+            const originalMinutes = calculateOriginalMinutes(r.startDatetime, r.endDatetime);
+            const adjustedMinutes = r.workerActMins || 0;
+            
+            // Highlight if overlap was removed (adjusted < original)
+            const minutesClass = adjustedMinutes < originalMinutes 
+                ? 'text-orange-600 font-semibold' 
+                : 'text-gray-900';
+            
             return `
                 <tr class="hover:bg-gray-50">
                     <td class="p-2">${r.workingDay || '-'}</td>
@@ -3033,7 +3050,8 @@ function showWorkerDetail(workerName) {
                     <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.endDatetime)}</td>
                     <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
                     <td class="p-2 text-gray-600">${r.fdDesc || '-'}</td>
-                    <td class="p-2 text-right font-semibold">${(r.workerActMins || 0).toFixed(0)}</td>
+                    <td class="p-2 text-right text-gray-600">${originalMinutes}</td>
+                    <td class="p-2 text-right ${minutesClass}" title="${adjustedMinutes < originalMinutes ? 'Overlap removed: -' + (originalMinutes - adjustedMinutes) + ' min' : 'No overlap'}">${adjustedMinutes.toFixed(0)}</td>
                     <td class="p-2 text-center ${resultClass}"><i class="fas fa-${resultIcon}"></i></td>
                 </tr>
             `;
