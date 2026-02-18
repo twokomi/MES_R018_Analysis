@@ -603,6 +603,112 @@ function parseExcelDate(dateValue) {
     return null;
 }
 
+// Merge overlapping time intervals for each worker
+function mergeOverlappingIntervals(records) {
+    if (!records || records.length === 0) return records;
+    
+    console.log(`⏱️  Checking for overlapping time intervals...`);
+    
+    // Group records by worker
+    const recordsByWorker = {};
+    records.forEach(record => {
+        const worker = record.workerName;
+        if (!worker) return;
+        
+        if (!recordsByWorker[worker]) {
+            recordsByWorker[worker] = [];
+        }
+        recordsByWorker[worker].push(record);
+    });
+    
+    let totalOverlaps = 0;
+    let totalOverlapMinutes = 0;
+    
+    // Process each worker's records
+    Object.keys(recordsByWorker).forEach(worker => {
+        const workerRecords = recordsByWorker[worker];
+        
+        // Extract time intervals with their record indices
+        const intervals = [];
+        workerRecords.forEach((record, idx) => {
+            if (record.startDatetime && record.endDatetime) {
+                const start = record.startDatetime instanceof Date ? record.startDatetime : new Date(record.startDatetime);
+                const end = record.endDatetime instanceof Date ? record.endDatetime : new Date(record.endDatetime);
+                
+                if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start < end) {
+                    intervals.push({
+                        start: start,
+                        end: end,
+                        recordIdx: idx,
+                        originalMinutes: (end - start) / 60000
+                    });
+                }
+            }
+        });
+        
+        if (intervals.length <= 1) return; // No overlaps possible
+        
+        // Sort intervals by start time
+        intervals.sort((a, b) => a.start - b.start);
+        
+        // Detect and merge overlapping intervals
+        const merged = [];
+        let current = intervals[0];
+        const overlappingGroups = [[current.recordIdx]]; // Track which records belong to each merged interval
+        
+        for (let i = 1; i < intervals.length; i++) {
+            const next = intervals[i];
+            
+            // Check if current and next overlap
+            if (current.end > next.start) {
+                // Overlap detected!
+                const overlapStart = next.start;
+                const overlapEnd = current.end < next.end ? current.end : next.end;
+                const overlapMinutes = (overlapEnd - overlapStart) / 60000;
+                
+                totalOverlaps++;
+                totalOverlapMinutes += overlapMinutes;
+                
+                // Merge: extend current interval
+                current.end = current.end > next.end ? current.end : next.end;
+                overlappingGroups[overlappingGroups.length - 1].push(next.recordIdx);
+            } else {
+                // No overlap, start new interval
+                merged.push(current);
+                current = next;
+                overlappingGroups.push([next.recordIdx]);
+            }
+        }
+        merged.push(current); // Add the last interval
+        
+        // Calculate adjusted workerActMins for each record
+        merged.forEach((interval, mergedIdx) => {
+            const recordIndices = overlappingGroups[mergedIdx];
+            const mergedMinutes = (interval.end - interval.start) / 60000;
+            
+            // Distribute merged time equally among overlapping records
+            const adjustedMinutes = mergedMinutes / recordIndices.length;
+            
+            recordIndices.forEach(recordIdx => {
+                const record = workerRecords[recordIdx];
+                const originalMinutes = record.workerActMins || 0;
+                record.workerActMins = adjustedMinutes;
+                record.originalWorkerActMins = originalMinutes; // Keep original for reference
+                record.overlapAdjusted = recordIndices.length > 1; // Flag if adjusted
+            });
+        });
+    });
+    
+    if (totalOverlaps > 0) {
+        console.log(`⚠️  Found ${totalOverlaps} overlapping intervals`);
+        console.log(`📉 Total overlap time removed: ${totalOverlapMinutes.toFixed(1)} minutes`);
+    } else {
+        console.log(`✅ No overlapping intervals found`);
+    }
+    
+    return records;
+}
+
 // Process data (calculate Working Day, Shift, apply mapping)
 function processData(rawData) {
     const processed = [];
@@ -708,6 +814,9 @@ function processData(rawData) {
         dateShiftCount[key] = (dateShiftCount[key] || 0) + 1;
     });
     console.log('📊 Date/Shift distribution:', dateShiftCount);
+    
+    // Merge overlapping time intervals for each worker
+    mergeOverlappingIntervals(processed);
     
     return processed;
 }
