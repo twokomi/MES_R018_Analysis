@@ -1342,14 +1342,60 @@ function updateReport() {
     
     const filteredData = getFilteredData();
     
-    // Aggregate by worker
+    // Aggregate by worker (detailed: worker+date+shift+process)
     const workerAgg = aggregateByWorker(filteredData);
     
+    // Aggregate by worker only (for Performance Bands)
+    const workerSummary = aggregateByWorkerOnly(workerAgg);
+    
     updateKPIs(workerAgg);
-    updatePerformanceBands(workerAgg);
+    updatePerformanceBands(workerSummary); // Use worker summary for bands
     updateCharts(workerAgg, filteredData);
     updateDataTable(workerAgg);
     updatePivotReport(workerAgg);
+}
+
+// Aggregate by worker only (consolidate all records per worker)
+function aggregateByWorkerOnly(workerAgg) {
+    const byWorker = {};
+    
+    workerAgg.forEach(item => {
+        const workerName = item.workerName;
+        
+        if (!byWorker[workerName]) {
+            byWorker[workerName] = {
+                workerName: workerName,
+                totalMinutes: 0,
+                validMinutes: 0,
+                validCount: 0,
+                foDesc3: item.foDesc3, // Keep first process for display
+                workingDay: item.workingDay, // Keep first day for display
+                recordCount: 0
+            };
+        }
+        
+        byWorker[workerName].totalMinutes += item.totalMinutes || 0;
+        byWorker[workerName].validMinutes += item.validMinutes || 0;
+        byWorker[workerName].validCount += item.validCount || 0;
+        byWorker[workerName].recordCount += 1;
+    });
+    
+    // Calculate work rate for each worker
+    const result = Object.values(byWorker).map(worker => {
+        const workRate = worker.totalMinutes > 0 
+            ? (worker.validMinutes / worker.totalMinutes * 100) 
+            : 0;
+        return {
+            ...worker,
+            workRate: workRate,
+            performanceBand: getPerformanceBand(workRate)
+        };
+    });
+    
+    // Sort by work rate descending
+    result.sort((a, b) => b.workRate - a.workRate);
+    
+    return result;
 }
 
 // Update pivot-style report (date-wise breakdown)
