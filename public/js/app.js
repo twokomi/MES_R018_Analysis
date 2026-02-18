@@ -1096,9 +1096,27 @@ function updateFilterOptions() {
     const selectedShift = getRadioValue('shift');
     updateWorkingDayOptions(selectedShift);
     
-    // Category (FO Desc 2) - Sort alphabetically
-    const uniqueCategories = [...new Set(data.map(d => d.foDesc2))].filter(c => c).sort();
-    console.log(`📂 Found ${uniqueCategories.length} unique categories:`, uniqueCategories);
+    // Category (FO Desc 2) - Sort by category order
+    const categoryOrder = {
+        'BT Process': 1,
+        'DS': 2,
+        'BT Complete': 3,
+        'BT QC': 4,
+        'WT': 5,
+        'WT QC': 6,
+        'IM': 7,
+        'IM QC': 8,
+        'Other': 999
+    };
+    
+    const uniqueCategories = [...new Set(data.map(d => d.foDesc2))]
+        .filter(c => c)
+        .sort((a, b) => {
+            const orderA = categoryOrder[a] || 999;
+            const orderB = categoryOrder[b] || 999;
+            return orderA - orderB;
+        });
+    console.log(`📂 Found ${uniqueCategories.length} unique categories (sorted by order):`, uniqueCategories);
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
