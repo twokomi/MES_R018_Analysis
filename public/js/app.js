@@ -1569,16 +1569,16 @@ function updatePivotReport(workerAgg) {
     let html = '<table class="pivot-table">';
     
     // Header row with sticky positioning and explicit background
-    html += '<thead class="sticky top-0 z-10"><tr>';
-    html += '<th rowspan="2" style="min-width: 200px; text-align: left; background: #f3f4f6; position: sticky; top: 0;">Worker Name</th>';
+    html += '<thead class="sticky top-0 z-10" style="background: #f3f4f6;"><tr>';
+    html += '<th rowspan="2" style="min-width: 200px; text-align: left; background: #f3f4f6;">Worker Name</th>';
     allDates.forEach(date => {
-        html += `<th colspan="3" style="background: #f3f4f6; position: sticky; top: 0;">${date}</th>`;
+        html += `<th colspan="3" style="background: #f3f4f6;">${date}</th>`;
     });
     html += '</tr><tr>';
     allDates.forEach(() => {
-        html += '<th style="font-size: 0.7rem; background: #f3f4f6; position: sticky; top: 0;">WO Count</th>';
-        html += '<th style="font-size: 0.7rem; background: #f3f4f6; position: sticky; top: 0;">Std Time(m)</th>';
-        html += '<th style="font-size: 0.7rem; background: #f3f4f6; position: sticky; top: 0;">Work Rate</th>';
+        html += '<th style="font-size: 0.7rem; background: #f3f4f6;">WO Count</th>';
+        html += '<th style="font-size: 0.7rem; background: #f3f4f6;">Std Time(m)</th>';
+        html += '<th style="font-size: 0.7rem; background: #f3f4f6;">Work Rate</th>';
     });
     html += '</tr></thead>';
     
