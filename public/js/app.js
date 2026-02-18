@@ -10,6 +10,7 @@ const AppState = {
     shiftCalendar: [],
     currentFileName: '',
     currentFileSize: 0,
+    overlapRemovedMinutes: 0,  // Store total overlap removed
     filters: {
         shift: '',
         workingDays: [],
@@ -688,6 +689,9 @@ function mergeOverlappingIntervals(records) {
             });
         });
     });
+    
+    // Store overlap removed in AppState for Analysis page
+    AppState.overlapRemovedMinutes = Math.round(totalOverlapMinutes);
     
     if (totalOverlaps > 0) {
         console.log(`⚠️  Found ${totalOverlaps} overlapping intervals`);
@@ -3026,14 +3030,8 @@ function updateAnalysis() {
 function updateAnalysisOverview() {
     const data = AppState.processedData;
     
-    // Calculate overlap removed time
-    const totalOriginal = data.reduce((sum, r) => {
-        const start = new Date(r.startDatetime);
-        const end = new Date(r.endDatetime);
-        return sum + (end - start) / 60000;
-    }, 0);
-    const totalAdjusted = data.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
-    const overlapRemoved = Math.round(totalOriginal - totalAdjusted);
+    // Use stored overlap removed value from AppState
+    const overlapRemoved = AppState.overlapRemovedMinutes || 0;
     
     // Calculate average efficiency (total minutes / 660 per record)
     const validData = data.filter(r => r.validFlag === 1);
@@ -3479,13 +3477,12 @@ function updateInsightsTable() {
     }
     
     // Insight 3: Time overlap
-    const totalOriginal = data.reduce((sum, r) => {
-        const start = new Date(r.startDatetime);
-        const end = new Date(r.endDatetime);
-        return sum + (end - start) / 60000;
-    }, 0);
+    const overlapMinutes = AppState.overlapRemovedMinutes || 0;
     const totalAdjusted = data.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
-    const overlapPercent = ((totalOriginal - totalAdjusted) / totalOriginal * 100).toFixed(1);
+    const totalWithOverlap = totalAdjusted + overlapMinutes;
+    const overlapPercent = totalWithOverlap > 0 
+        ? ((overlapMinutes / totalWithOverlap) * 100).toFixed(1)
+        : 0;
     
     if (overlapPercent > 20) {
         insights.push({
