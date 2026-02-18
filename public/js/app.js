@@ -10,6 +10,7 @@ const AppState = {
     shiftCalendar: [],
     currentFileName: '',
     currentFileSize: 0,
+    allWorkers: [], // For worker search functionality
     filters: {
         shift: '',
         workingDays: [],
@@ -1142,12 +1143,14 @@ function updateFilterOptions() {
         `).join('');
     }
     
-    // Worker
+    // Worker - Store workers globally for search
     const uniqueWorkers = [...new Set(data.map(d => d.workerName))].filter(w => w).sort();
-    const workerDropdown = document.getElementById('filterWorkerDropdown');
-    if (workerDropdown) {
-        workerDropdown.innerHTML = uniqueWorkers.map(worker => `
-            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
+    AppState.allWorkers = uniqueWorkers; // Store for search functionality
+    
+    const workerList = document.getElementById('filterWorkerList');
+    if (workerList) {
+        workerList.innerHTML = uniqueWorkers.map(worker => `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 worker-item">
                 <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')">
                 <span class="text-sm text-gray-700">${worker}</span>
             </label>
@@ -1160,6 +1163,16 @@ function toggleCheckboxDropdown(type) {
     const dropdown = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
     if (dropdown) {
         dropdown.classList.toggle('hidden');
+        
+        // Clear and focus search input when opening worker dropdown
+        if (type === 'worker' && !dropdown.classList.contains('hidden')) {
+            const searchInput = document.getElementById('workerSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterWorkerList(); // Reset filter
+                setTimeout(() => searchInput.focus(), 100);
+            }
+        }
     }
     
     // Close other dropdowns
@@ -1170,6 +1183,22 @@ function toggleCheckboxDropdown(type) {
             if (otherDropdown) {
                 otherDropdown.classList.add('hidden');
             }
+        }
+    });
+}
+
+// Filter worker list based on search input
+function filterWorkerList() {
+    const searchInput = document.getElementById('workerSearchInput');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const workerItems = document.querySelectorAll('.worker-item');
+    
+    workerItems.forEach(item => {
+        const workerName = item.textContent.toLowerCase();
+        if (workerName.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
         }
     });
 }
@@ -1715,11 +1744,21 @@ function updateProcessChart(filteredData) {
         processData[record.foDesc3].count += 1;
     });
     
+    // Debug: Show sample process data before calculation
+    const sampleProcesses = Object.entries(processData).slice(0, 3);
+    console.log('🔍 Sample process data:');
+    sampleProcesses.forEach(([name, data]) => {
+        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, count=${data.count}, avg=${(data.totalMinutes/data.count).toFixed(1)}min`);
+    });
+    
     // Sort processes by category first, then by seq within category
     const sortedProcesses = Object.entries(processData)
         .map(([name, data]) => ({
             name,
             avgWorkRate: ((data.totalMinutes / data.count / 660) * 100).toFixed(1),
+            totalMinutes: data.totalMinutes,
+            count: data.count,
+            avgMinutes: (data.totalMinutes / data.count).toFixed(1),
             seq: data.seq,
             categorySeq: data.categorySeq,
             foDesc2: data.foDesc2
@@ -1733,7 +1772,14 @@ function updateProcessChart(filteredData) {
             return a.seq - b.seq;
         });
     
-    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq})`).join(', '));
+    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq}, WorkRate: ${p.avgWorkRate}%)`).join(', '));
+    console.log('📊 Top 3 processes:', sortedProcesses.slice(0, 3).map(p => ({
+        name: p.name,
+        totalMinutes: p.totalMinutes.toFixed(1),
+        count: p.count,
+        avgMinutes: p.avgMinutes,
+        workRate: p.avgWorkRate + '%'
+    })));
     
     const processes = sortedProcesses.map(p => p.name);
     const avgWorkRates = sortedProcesses.map(p => p.avgWorkRate);
@@ -3026,4 +3072,5 @@ window.switchTab = switchTab;
 window.sortPerformanceBand = sortPerformanceBand;
 window.showWorkerDetail = showWorkerDetail;
 window.closeWorkerDetailModal = closeWorkerDetailModal;
+window.filterWorkerList = filterWorkerList;
 
