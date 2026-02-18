@@ -120,7 +120,8 @@
         }
         td {
             padding: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
+            border: 1px solid #ffffff;
+            background-color: #ffffff;
         }
         tr:hover {
             background: #f8fafc;
@@ -145,14 +146,15 @@
             padding: 0.5rem;
             text-align: center;
             font-size: 0.75rem;
-            border: 1px solid #2563eb;
+            border: 1px solid #ffffff;
         }
         
         .pivot-table td {
             text-align: center;
             padding: 0.5rem;
             font-size: 0.875rem;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #ffffff;
+            background-color: #ffffff;
         }
         
         .pivot-table .process-cell {
@@ -161,6 +163,7 @@
             background-color: #334155;
             color: white;
             text-align: left;
+            border: 1px solid #334155;
         }
         
         .pivot-table .worker-cell {
@@ -168,6 +171,7 @@
             padding-left: 2rem;
             background-color: #f8fafc;
             font-weight: 500;
+            border: 1px solid #ffffff;
         }
         .work-rate-high {
             background: #d1fae5;
@@ -186,6 +190,45 @@
             background: #fee2e2;
             color: #991b1b;
         }
+        
+        /* Detailed Data Table */
+        .detailed-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        .detailed-data-table thead {
+            background: #3b82f6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .detailed-data-table thead th {
+            background: #3b82f6;
+            color: white;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #ffffff;
+        }
+        
+        .detailed-data-table tbody td {
+            text-align: center;
+            padding: 0.75rem;
+            border: 1px solid #ffffff;
+            background-color: #ffffff;
+        }
+        
+        .detailed-data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .detailed-data-table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+        
         .filter-section {
             background: #f8fafc;
             border-radius: 8px;
@@ -794,8 +837,8 @@
                     </button>
                 </div>
                 <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                    <table id="dataTable">
-                        <thead class="sticky top-0 bg-gray-100 z-10">
+                    <table id="dataTable" class="detailed-data-table">
+                        <thead class="sticky top-0 z-10">
                             <tr>
                                 <th>Worker</th>
                                 <th>Process (FO Desc 3)</th>
