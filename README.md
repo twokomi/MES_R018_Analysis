@@ -98,7 +98,7 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
-- **최신 배포**: https://690b4e61.mes-r018-analysis.pages.dev
+- **최신 배포**: https://8f2e2136.mes-r018-analysis.pages.dev
 
 ### 테스트 서버 (샌드박스)
 - **개발 URL**: https://3000-i6mqjfqm4prwz2zcvnapn-583b4d74.sandbox.novita.ai
