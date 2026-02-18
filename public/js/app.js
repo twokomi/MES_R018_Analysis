@@ -1376,30 +1376,55 @@ function updateReport() {
 
 // Aggregate by worker only (consolidate all records per worker)
 function aggregateByWorkerOnly(workerAgg) {
+    // First, get all original records to calculate shifts based on startDatetime
     const byWorker = {};
     
-    workerAgg.forEach(item => {
-        const workerName = item.workerName;
+    // We need to re-aggregate from processedData to get startDatetime
+    AppState.processedData.forEach(record => {
+        if (record.validFlag !== 1) return; // Only valid records
+        
+        const workerName = record.workerName;
         
         if (!byWorker[workerName]) {
             byWorker[workerName] = {
                 workerName: workerName,
                 totalMinutes: 0,
                 validCount: 0,
-                foDesc3: item.foDesc3, // Keep first process for display
-                workingDay: item.workingDay, // Keep first day for display
+                foDesc3: '', // Will be set from workerAgg
+                workingDay: '', // Will be set from workerAgg
                 recordCount: 0,
-                shifts: new Set() // Track unique shifts
+                shifts: new Set() // Track unique shifts based on startDatetime
             };
         }
         
-        byWorker[workerName].totalMinutes += item.totalMinutes || 0;
-        byWorker[workerName].validCount += item.validCount || 0;
-        byWorker[workerName].recordCount += 1;
+        byWorker[workerName].totalMinutes += record.workerActMins || 0;
+        byWorker[workerName].validCount += 1;
         
-        // Track unique shifts (workingDay + workingShift)
-        const shiftKey = `${item.workingDay}_${item.workingShift}`;
-        byWorker[workerName].shifts.add(shiftKey);
+        // Calculate shift based on startDatetime
+        if (record.startDatetime) {
+            const date = new Date(record.startDatetime);
+            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            const hour = date.getHours();
+            
+            // Determine shift based on hour
+            // Day shift: 06:00 - 18:00 (6-17)
+            // Night shift: 18:00 - 06:00 (18-23, 0-5)
+            const shift = (hour >= 6 && hour < 18) ? 'Day' : 'Night';
+            
+            const shiftKey = `${dateStr}_${shift}`;
+            byWorker[workerName].shifts.add(shiftKey);
+        }
+    });
+    
+    // Update with display info from workerAgg
+    workerAgg.forEach(item => {
+        if (byWorker[item.workerName]) {
+            if (!byWorker[item.workerName].foDesc3) {
+                byWorker[item.workerName].foDesc3 = item.foDesc3;
+                byWorker[item.workerName].workingDay = item.workingDay;
+            }
+            byWorker[item.workerName].recordCount += 1;
+        }
     });
     
     // Calculate work rate for each worker
@@ -2917,11 +2942,22 @@ function showWorkerDetail(workerName) {
     const totalRecords = workerRecords.length;
     const validRecords = validRecordsList.length;
     
-    // Count unique shifts for this worker
+    // Count unique shifts based on startDatetime
     const uniqueShifts = new Set();
     workerRecords.forEach(r => {
-        const shiftKey = `${r.workingDay}_${r.workingShift}`;
-        uniqueShifts.add(shiftKey);
+        if (r.startDatetime) {
+            const date = new Date(r.startDatetime);
+            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            const hour = date.getHours();
+            
+            // Determine shift based on hour
+            // Day shift: 06:00 - 18:00 (6-17)
+            // Night shift: 18:00 - 06:00 (18-23, 0-5)
+            const shift = (hour >= 6 && hour < 18) ? 'Day' : 'Night';
+            
+            const shiftKey = `${dateStr}_${shift}`;
+            uniqueShifts.add(shiftKey);
+        }
     });
     const shiftCount = uniqueShifts.size;
     
