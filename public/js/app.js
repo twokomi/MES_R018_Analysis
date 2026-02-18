@@ -1073,10 +1073,16 @@ function updateWorkingDayOptions(selectedShift) {
         html += '<div class="mb-2 pb-2 border-b border-gray-200">';
         html += '<div class="text-xs font-semibold text-gray-500 mb-1 px-1">BY WEEK:</div>';
         html += '<div class="flex flex-wrap gap-2">';
-        sortedWeeks.forEach(weekStart => {
+        sortedWeeks.forEach((weekStart, index) => {
             const dates = datesByWeek[weekStart].sort();
             const weekEnd = dates[dates.length - 1];
-            const weekLabel = `${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
+            
+            // Calculate ISO week number
+            const d = new Date(weekStart);
+            const yearStart = new Date(d.getFullYear(), 0, 1);
+            const weekNum = Math.ceil((((d - yearStart) / 86400000) + yearStart.getDay() + 1) / 7);
+            
+            const weekLabel = `WK${weekNum}: ${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
             const weekDatesStr = dates.join(',');
             html += `
                 <button onclick="selectWeekDates('${weekDatesStr}')" class="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded font-medium transition">
