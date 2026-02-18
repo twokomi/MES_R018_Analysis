@@ -2807,10 +2807,24 @@ function showWorkerDetail(workerName) {
     // Calculate summary stats
     const totalMinutes = workerRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
     const totalRecords = workerRecords.length;
-    const avgWorkRate = totalMinutes / (totalRecords * 660) * 100;
+    const validRecords = workerRecords.filter(r => r.resultCnt === 'X').length;
+    const validMinutes = workerRecords.filter(r => r.resultCnt === 'X').reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+    
+    // Calculate work rate: valid work time / total work time * 100
+    const avgWorkRate = totalMinutes > 0 ? (validMinutes / totalMinutes * 100) : 0;
+    
     const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
                            avgWorkRate >= 50 ? 'Normal' :
                            avgWorkRate >= 30 ? 'Poor' : 'Critical';
+    
+    console.log(`📊 Worker Detail for ${workerName}:`, {
+        totalMinutes,
+        validMinutes,
+        totalRecords,
+        validRecords,
+        avgWorkRate: avgWorkRate.toFixed(1) + '%',
+        performanceBand
+    });
     
     // Update modal header and summary
     document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
@@ -2868,36 +2882,40 @@ function showWorkerDetail(workerName) {
         }
     });
     
-    // Group by process for process chart
-    const processData = {};
+    // Group by hour of day for hourly distribution
+    const hourlyData = {};
+    for (let i = 0; i < 24; i++) {
+        hourlyData[i] = 0;
+    }
+    
     workerRecords.forEach(r => {
-        const process = r.foDesc3 || 'Unknown';
-        if (!processData[process]) {
-            processData[process] = 0;
+        if (r.startDatetime) {
+            const date = new Date(r.startDatetime);
+            const hour = date.getHours();
+            hourlyData[hour] += r.workerActMins || 0;
         }
-        processData[process] += r.workerActMins || 0;
     });
     
-    const processes = Object.keys(processData);
-    const processMinutes = processes.map(p => processData[p]);
+    const hours = Object.keys(hourlyData).map(h => `${h.padStart(2, '0')}:00`);
+    const hourlyMinutes = Object.values(hourlyData);
     
     // Destroy existing process chart
     if (modalCharts.process) {
         modalCharts.process.destroy();
     }
     
-    // Create process chart
+    // Create hourly distribution chart
     const processCtx = document.getElementById('modalProcessChart');
     modalCharts.process = new Chart(processCtx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
-            labels: processes,
+            labels: hours,
             datasets: [{
-                data: processMinutes,
-                backgroundColor: [
-                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-                    '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-                ]
+                label: 'Work Time (min)',
+                data: hourlyMinutes,
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderColor: '#3b82f6',
+                borderWidth: 1
             }]
         },
         options: {
@@ -2905,11 +2923,30 @@ function showWorkerDetail(workerName) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right',
-                    labels: {
-                        boxWidth: 12,
+                    display: false
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
                         font: {
-                            size: 11
+                            size: 9
+                        },
+                        maxRotation: 90,
+                        minRotation: 90
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: {
+                            size: 10
                         }
                     }
                 }
