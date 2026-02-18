@@ -1554,7 +1554,7 @@ function updatePerformanceBands(workerAgg) {
     const excellentDiv = document.getElementById('excellentWorkers');
     if (excellent.length > 0) {
         excellentDiv.innerHTML = '<div class="space-y-2">' + excellent.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-green-900">${w.workerName}</span>
                     <span class="text-green-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
@@ -1573,7 +1573,7 @@ function updatePerformanceBands(workerAgg) {
     const poorDiv = document.getElementById('poorWorkers');
     if (poor.length > 0) {
         poorDiv.innerHTML = '<div class="space-y-2">' + poor.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-orange-900">${w.workerName}</span>
                     <span class="text-orange-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
@@ -1592,7 +1592,7 @@ function updatePerformanceBands(workerAgg) {
     const criticalDiv = document.getElementById('criticalWorkers');
     if (critical.length > 0) {
         criticalDiv.innerHTML = '<div class="space-y-2">' + critical.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-red-50 to-rose-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-red-50 to-rose-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-red-900">${w.workerName}</span>
                     <span class="text-red-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
@@ -2742,6 +2742,214 @@ async function loadLastUpload() {
     }
 }
 
+// Sort Performance Bands
+function sortPerformanceBand(bandType, order) {
+    const aggregatedData = aggregateData(AppState.processedData);
+    
+    let workers;
+    if (bandType === 'excellent') {
+        workers = aggregatedData.filter(w => w.performanceBand === 'Excellent');
+    } else if (bandType === 'poor') {
+        workers = aggregatedData.filter(w => w.performanceBand === 'Poor');
+    } else if (bandType === 'critical') {
+        workers = aggregatedData.filter(w => w.performanceBand === 'Critical');
+    }
+    
+    // Sort by workRate
+    workers.sort((a, b) => {
+        if (order === 'asc') {
+            return a.workRate - b.workRate;
+        } else {
+            return b.workRate - a.workRate;
+        }
+    });
+    
+    // Render sorted workers
+    const divId = bandType === 'excellent' ? 'excellentWorkers' : 
+                  bandType === 'poor' ? 'poorWorkers' : 'criticalWorkers';
+    const colorClass = bandType === 'excellent' ? 'green' :
+                       bandType === 'poor' ? 'orange' : 'red';
+    
+    const div = document.getElementById(divId);
+    if (workers.length > 0) {
+        div.innerHTML = '<div class="space-y-2">' + workers.map(w => 
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-${colorClass}-50 to-${colorClass === 'green' ? 'emerald' : colorClass === 'orange' ? 'amber' : 'rose'}-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-${colorClass}-900">${w.workerName}</span>
+                    <span class="text-${colorClass}-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-${colorClass}-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-${colorClass}-600">${w.workingDay || ''}</span>
+                </div>
+            </div>`
+        ).join('') + '</div>';
+    } else {
+        div.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
+    }
+}
+
+// Show Worker Detail Modal
+let modalCharts = {
+    daily: null,
+    process: null
+};
+
+function showWorkerDetail(workerName) {
+    // Filter records for this worker
+    const workerRecords = AppState.processedData.filter(r => r.workerName === workerName);
+    
+    if (workerRecords.length === 0) {
+        alert('No records found for this worker');
+        return;
+    }
+    
+    // Calculate summary stats
+    const totalMinutes = workerRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+    const totalRecords = workerRecords.length;
+    const avgWorkRate = totalMinutes / (totalRecords * 660) * 100;
+    const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
+                           avgWorkRate >= 50 ? 'Normal' :
+                           avgWorkRate >= 30 ? 'Poor' : 'Critical';
+    
+    // Update modal header and summary
+    document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
+    document.getElementById('modalTotalMinutes').textContent = totalMinutes.toFixed(0) + ' min';
+    document.getElementById('modalWorkRate').textContent = avgWorkRate.toFixed(1) + '%';
+    document.getElementById('modalRecordCount').textContent = totalRecords;
+    document.getElementById('modalPerformanceBand').textContent = performanceBand;
+    
+    // Group by date for daily chart
+    const dailyData = {};
+    workerRecords.forEach(r => {
+        const date = r.workingDay || 'Unknown';
+        if (!dailyData[date]) {
+            dailyData[date] = 0;
+        }
+        dailyData[date] += r.workerActMins || 0;
+    });
+    
+    const dates = Object.keys(dailyData).sort();
+    const dailyMinutes = dates.map(d => dailyData[d]);
+    
+    // Destroy existing daily chart
+    if (modalCharts.daily) {
+        modalCharts.daily.destroy();
+    }
+    
+    // Create daily chart
+    const dailyCtx = document.getElementById('modalDailyChart');
+    modalCharts.daily = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Work Time (min)',
+                data: dailyMinutes,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Group by process for process chart
+    const processData = {};
+    workerRecords.forEach(r => {
+        const process = r.foDesc3 || 'Unknown';
+        if (!processData[process]) {
+            processData[process] = 0;
+        }
+        processData[process] += r.workerActMins || 0;
+    });
+    
+    const processes = Object.keys(processData);
+    const processMinutes = processes.map(p => processData[p]);
+    
+    // Destroy existing process chart
+    if (modalCharts.process) {
+        modalCharts.process.destroy();
+    }
+    
+    // Create process chart
+    const processCtx = document.getElementById('modalProcessChart');
+    modalCharts.process = new Chart(processCtx, {
+        type: 'doughnut',
+        data: {
+            labels: processes,
+            datasets: [{
+                data: processMinutes,
+                backgroundColor: [
+                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                    '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Populate records table
+    const tableBody = document.getElementById('modalRecordsTable');
+    tableBody.innerHTML = workerRecords
+        .sort((a, b) => new Date(b.startDatetime) - new Date(a.startDatetime))
+        .map(r => {
+            const resultClass = r.resultCnt === 'X' ? 'text-green-600' : 'text-gray-400';
+            const resultIcon = r.resultCnt === 'X' ? 'check-circle' : 'minus-circle';
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-2">${r.workingDay || '-'}</td>
+                    <td class="p-2"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">${r.workingShift || '-'}</span></td>
+                    <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
+                    <td class="p-2 text-gray-600">${r.fdDesc || '-'}</td>
+                    <td class="p-2 text-right font-semibold">${(r.workerActMins || 0).toFixed(0)}</td>
+                    <td class="p-2 text-center ${resultClass}"><i class="fas fa-${resultIcon}"></i></td>
+                </tr>
+            `;
+        })
+        .join('');
+    
+    // Show modal
+    document.getElementById('workerDetailModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Close Worker Detail Modal
+function closeWorkerDetailModal(event) {
+    if (!event || event.target.id === 'workerDetailModal') {
+        document.getElementById('workerDetailModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+}
+
 // Make globally accessible functions
 window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
@@ -2752,3 +2960,6 @@ window.toggleMonthDates = toggleMonthDates;
 window.loadUploadById = loadUploadById;
 window.deleteUpload = deleteUpload;
 window.switchTab = switchTab;
+window.sortPerformanceBand = sortPerformanceBand;
+window.showWorkerDetail = showWorkerDetail;
+window.closeWorkerDetailModal = closeWorkerDetailModal;
