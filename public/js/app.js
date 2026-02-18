@@ -45,7 +45,7 @@ function normalizeHeader(header) {
     return header.toString()
         .trim()
         .toUpperCase()
-        .replace(/[\s_-]/g, '')
+        .replace(/[\s_\-*]/g, '')  // Add * to the regex to remove asterisks
         .replace(/[()]/g, '');
 }
 
