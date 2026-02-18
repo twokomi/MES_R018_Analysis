@@ -1096,6 +1096,11 @@ function updateFilterOptions() {
     const selectedShift = getRadioValue('shift');
     updateWorkingDayOptions(selectedShift);
     
+    // Save currently checked items BEFORE updating
+    const checkedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+    const checkedProcesses = Array.from(document.querySelectorAll('.process-checkbox:checked')).map(cb => cb.value);
+    const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
+    
     // Category (FO Desc 2) - Sort by category order
     const categoryOrder = {
         'BT Process': 1,
@@ -1122,7 +1127,7 @@ function updateFilterOptions() {
     if (categoryDropdown) {
         categoryDropdown.innerHTML = uniqueCategories.map(category => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
-                <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')">
+                <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')" ${checkedCategories.includes(category) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${category}</span>
             </label>
         `).join('');
@@ -1148,7 +1153,7 @@ function updateFilterOptions() {
     if (processDropdown) {
         processDropdown.innerHTML = processes.map(process => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
-                <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')">
+                <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')" ${checkedProcesses.includes(process) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${process}</span>
             </label>
         `).join('');
@@ -1162,11 +1167,16 @@ function updateFilterOptions() {
     if (workerList) {
         workerList.innerHTML = uniqueWorkers.map(worker => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 worker-item">
-                <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')">
+                <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')" ${checkedWorkers.includes(worker) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${worker}</span>
             </label>
         `).join('');
     }
+    
+    // Restore checkbox displays
+    updateCheckboxDisplay('category');
+    updateCheckboxDisplay('process');
+    updateCheckboxDisplay('worker');
 }
 
 // Toggle checkbox dropdown
