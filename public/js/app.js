@@ -2438,8 +2438,16 @@ async function loadUploadById(uploadId) {
             nightShift: s.night_shift
         }));
         
-        // Use rawData as processedData (it's already processed)
-        AppState.processedData = AppState.rawData;
+        // Convert datetime strings back to Date objects for rawData
+        AppState.rawData = AppState.rawData.map(d => ({
+            ...d,
+            startDatetime: d.startDatetime ? new Date(d.startDatetime) : null,
+            endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
+        }));
+        
+        // Re-process the data with current mappings
+        console.log('🔄 Re-processing data with mappings...');
+        AppState.processedData = processData(AppState.rawData);
         
         updateProgress(100);
         
@@ -2538,8 +2546,16 @@ async function loadLastUpload() {
             nightShift: s.night_shift
         }));
         
-        // Use rawData as processedData (it's already processed)
-        AppState.processedData = AppState.rawData;
+        // Convert datetime strings back to Date objects for rawData
+        AppState.rawData = AppState.rawData.map(d => ({
+            ...d,
+            startDatetime: d.startDatetime ? new Date(d.startDatetime) : null,
+            endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
+        }));
+        
+        // Re-process the data with current mappings
+        console.log('🔄 Re-processing data with mappings...');
+        AppState.processedData = processData(AppState.rawData);
         
         updateProgress(100);
         
