@@ -509,9 +509,6 @@ function handleFileUpload(file) {
             // Update report
             updateReport();
             
-            // Enable export button
-            document.getElementById('exportJsonBtn').disabled = false;
-            
             // Store filename and size for later database save
             AppState.currentFileName = file.name;
             AppState.currentFileSize = file.size;
@@ -2559,9 +2556,6 @@ async function loadUploadById(uploadId) {
         showUploadResult(AppState.processedData);
         updateReport();
         
-        // Enable export button
-        document.getElementById('exportJsonBtn').disabled = false;
-        
         // Switch to Report tab
         switchTab('report');
         
@@ -2667,9 +2661,6 @@ async function loadLastUpload() {
         updateMappingTable();
         showUploadResult(AppState.processedData);
         updateReport();
-        
-        // Enable export button
-        document.getElementById('exportJsonBtn').disabled = false;
         
         console.log('✅ Data loaded successfully!');
         console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
