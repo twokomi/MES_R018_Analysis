@@ -1666,18 +1666,25 @@ function updateProcessChart(workerAgg) {
         if (!processData[item.foDesc3]) {
             processData[item.foDesc3] = {
                 totalMinutes: 0,
-                count: 0
+                count: 0,
+                seq: item.seq || 999  // Store seq for sorting
             };
         }
         processData[item.foDesc3].totalMinutes += item.totalMinutes;
         processData[item.foDesc3].count += 1;
     });
     
-    const processes = Object.keys(processData);
-    const avgWorkRates = processes.map(p => {
-        const avg = (processData[p].totalMinutes / processData[p].count / 660) * 100;
-        return avg.toFixed(1);
-    });
+    // Sort processes by seq
+    const sortedProcesses = Object.entries(processData)
+        .map(([name, data]) => ({
+            name,
+            avgWorkRate: ((data.totalMinutes / data.count / 660) * 100).toFixed(1),
+            seq: data.seq
+        }))
+        .sort((a, b) => a.seq - b.seq);
+    
+    const processes = sortedProcesses.map(p => p.name);
+    const avgWorkRates = sortedProcesses.map(p => p.avgWorkRate);
     
     const ctx = document.getElementById('processChart');
     
