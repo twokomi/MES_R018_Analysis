@@ -1,10 +1,10 @@
 # MES R018 Analysis - Individual Performance Report 📊
 
-실시간 개인별 생산성 분석 및 리포트 웹 애플리케이션 with Cloudflare D1 Database
+개인별 생산성 분석 및 리포트 웹 애플리케이션 with Cloudflare D1 Database
 
 ## 🎯 프로젝트 개요
 
-MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자별 생산 데이터를 분석하고, 직관적인 대시보드로 실시간 성과를 시각화하는 웹 애플리케이션입니다.
+MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자별 생산 데이터를 분석하고, 직관적인 대시보드로 성과를 시각화하는 웹 애플리케이션입니다.
 
 **✨ 새로운 기능 (v2.4.0)**: 
 - 📁 **업로드 파일 리스트 관리**: 저장된 파일 목록을 한눈에 확인
