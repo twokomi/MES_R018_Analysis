@@ -1473,6 +1473,7 @@ function aggregateByWorker(data) {
     data.forEach(record => {
         totalRecords++;
         
+        // Group by: worker + day + shift + actualShift + process for display purposes
         const key = `${record.workerName}|${record.workingDay}|${record.workingShift}|${record.actualShift}|${record.foDesc3}`;
         
         if (!aggregated[key]) {
@@ -1483,14 +1484,18 @@ function aggregateByWorker(data) {
                 workingShift: record.workingShift,
                 actualShift: record.actualShift,
                 totalMinutes: 0,
+                validMinutes: 0,
                 validCount: 0,
                 seq: record.seq
             };
         }
         
-        // CRITICAL: Only count minutes for VALID work orders (Result Cnt = "X")
+        // Accumulate ALL work time (both valid and invalid)
+        aggregated[key].totalMinutes += record.workerActMins || 0;
+        
+        // Count VALID work orders and their time
         if (record.validFlag === 1) {
-            aggregated[key].totalMinutes += record.workerActMins;
+            aggregated[key].validMinutes += record.workerActMins || 0;
             aggregated[key].validCount += 1;
             validRecords++;
         } else {
@@ -1502,7 +1507,8 @@ function aggregateByWorker(data) {
     
     // Convert to array and calculate work rate
     const result = Object.values(aggregated).map(item => {
-        const workRate = (item.totalMinutes / 660) * 100;
+        // Calculate work rate as: valid work time / total work time * 100
+        const workRate = item.totalMinutes > 0 ? (item.validMinutes / item.totalMinutes * 100) : 0;
         return {
             ...item,
             workRate: workRate,
@@ -1533,7 +1539,7 @@ function getPerformanceBand(workRate) {
 function updateKPIs(workerAgg) {
     const totalWorkers = new Set(workerAgg.map(w => w.workerName)).size;
     const totalValidWO = workerAgg.reduce((sum, w) => sum + w.validCount, 0);
-    const totalMinutes = workerAgg.reduce((sum, w) => sum + w.totalMinutes, 0);
+    const totalMinutes = workerAgg.reduce((sum, w) => sum + w.validMinutes, 0); // Use validMinutes for total
     const avgWorkRate = workerAgg.length > 0 
         ? workerAgg.reduce((sum, w) => sum + w.workRate, 0) / workerAgg.length 
         : 0;
