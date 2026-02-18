@@ -1345,12 +1345,12 @@ function updateReport() {
     // Aggregate by worker (detailed: worker+date+shift+process)
     const workerAgg = aggregateByWorker(filteredData);
     
-    // Aggregate by worker only (for Performance Bands)
+    // Aggregate by worker only (for Performance Bands and Charts)
     const workerSummary = aggregateByWorkerOnly(workerAgg);
     
     updateKPIs(workerAgg);
     updatePerformanceBands(workerSummary); // Use worker summary for bands
-    updateCharts(workerAgg, filteredData);
+    updateCharts(workerSummary, filteredData); // Use worker summary for charts
     updateDataTable(workerAgg);
     updatePivotReport(workerAgg);
 }
@@ -3014,10 +3014,23 @@ function showWorkerDetail(workerName) {
         .map(r => {
             const resultClass = r.resultCnt === 'X' ? 'text-green-600' : 'text-gray-400';
             const resultIcon = r.resultCnt === 'X' ? 'check-circle' : 'minus-circle';
+            
+            // Format datetime to HH:MM:SS
+            const formatTime = (datetime) => {
+                if (!datetime) return '-';
+                const date = new Date(datetime);
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            };
+            
             return `
                 <tr class="hover:bg-gray-50">
                     <td class="p-2">${r.workingDay || '-'}</td>
                     <td class="p-2"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">${r.workingShift || '-'}</span></td>
+                    <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.startDatetime)}</td>
+                    <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.endDatetime)}</td>
                     <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
                     <td class="p-2 text-gray-600">${r.fdDesc || '-'}</td>
                     <td class="p-2 text-right font-semibold">${(r.workerActMins || 0).toFixed(0)}</td>
