@@ -1568,19 +1568,25 @@ function updatePivotReport(workerAgg) {
     // Build HTML table
     let html = '<table class="pivot-table">';
     
-    // Header row - 명시적 클래스 추가
-    html += '<thead><tr class="header-row-1">';
-    html += '<th class="worker-name-header" rowspan="2" style="min-width: 200px; text-align: left;">Worker Name</th>';
+    // 첫 번째 헤더 행: Worker Name + 날짜들
+    html += '<thead>';
+    html += '<tr class="header-row-1">';
+    html += '<th class="worker-name-header" style="min-width: 200px; text-align: left;">Worker Name</th>';
     allDates.forEach(date => {
         html += `<th class="date-header" colspan="3">${date}</th>`;
     });
-    html += '</tr><tr class="header-row-2">';
+    html += '</tr>';
+    
+    // 두 번째 헤더 행: 빈 칸 + 서브헤더들
+    html += '<tr class="header-row-2">';
+    html += '<th class="worker-name-sub" style="min-width: 200px; text-align: left;"></th>';
     allDates.forEach(() => {
         html += '<th class="sub-header" style="font-size: 0.7rem;">WO Count</th>';
         html += '<th class="sub-header" style="font-size: 0.7rem;">Std Time(m)</th>';
         html += '<th class="sub-header" style="font-size: 0.7rem;">Work Rate</th>';
     });
-    html += '</tr></thead>';
+    html += '</tr>';
+    html += '</thead>';
     
     // Body rows - grouped by process, sorted by Seq THEN by process name
     html += '<tbody>';
