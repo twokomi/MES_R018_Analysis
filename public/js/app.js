@@ -1929,6 +1929,7 @@ function updateProcessChart(filteredData) {
                 totalMinutes: 0,
                 count: 0,
                 workers: new Set(), // Track unique workers
+                workerShifts: {}, // Track shifts per worker
                 seq: seq !== null && seq !== undefined ? seq : 999,
                 categorySeq: categorySeq,
                 foDesc2: record.foDesc2
@@ -1936,7 +1937,14 @@ function updateProcessChart(filteredData) {
         }
         processData[record.foDesc3].totalMinutes += record.workerActMins || 0;
         processData[record.foDesc3].count += 1;
-        processData[record.foDesc3].workers.add(record.workerName); // Add worker to set
+        processData[record.foDesc3].workers.add(record.workerName);
+        
+        // Track unique shifts per worker
+        if (!processData[record.foDesc3].workerShifts[record.workerName]) {
+            processData[record.foDesc3].workerShifts[record.workerName] = new Set();
+        }
+        const shiftKey = `${record.workingDay}_${record.workingShift}`;
+        processData[record.foDesc3].workerShifts[record.workerName].add(shiftKey);
     });
     
     // Debug: Show sample process data before calculation
@@ -1944,16 +1952,20 @@ function updateProcessChart(filteredData) {
     console.log('🔍 Sample process data:');
     sampleProcesses.forEach(([name, data]) => {
         const workerCount = data.workers.size;
-        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, records=${data.count}, workers=${workerCount}, avgPerWorker=${(data.totalMinutes/workerCount).toFixed(1)}min`);
+        const totalShifts = Object.values(data.workerShifts).reduce((sum, shifts) => sum + shifts.size, 0);
+        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, records=${data.count}, workers=${workerCount}, totalShifts=${totalShifts}, avgPerWorker=${(data.totalMinutes/workerCount).toFixed(1)}min`);
     });
     
     // Sort processes by category first, then by seq within category
     const sortedProcesses = Object.entries(processData)
         .map(([name, data]) => {
             const workerCount = data.workers.size;
-            // Correct formula: (total minutes / number of workers / 660) * 100
-            const avgWorkRate = workerCount > 0 
-                ? ((data.totalMinutes / workerCount / 660) * 100).toFixed(1)
+            // Calculate total shifts across all workers
+            const totalShifts = Object.values(data.workerShifts).reduce((sum, shifts) => sum + shifts.size, 0);
+            
+            // Correct formula: (total minutes / total shifts / 660) * 100
+            const avgWorkRate = totalShifts > 0 
+                ? ((data.totalMinutes / totalShifts / 660) * 100).toFixed(1)
                 : '0.0';
             
             return {
@@ -1962,6 +1974,7 @@ function updateProcessChart(filteredData) {
                 totalMinutes: data.totalMinutes,
                 count: data.count,
                 workerCount: workerCount,
+                totalShifts: totalShifts,
                 avgMinutesPerWorker: workerCount > 0 ? (data.totalMinutes / workerCount).toFixed(1) : '0',
                 seq: data.seq,
                 categorySeq: data.categorySeq,
