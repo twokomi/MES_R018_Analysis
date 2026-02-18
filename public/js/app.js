@@ -1520,6 +1520,7 @@ function aggregateByWorker(data) {
             aggregated[key] = {
                 workerName: record.workerName,
                 foDesc3: record.foDesc3,
+                foDesc2: record.foDesc2,  // Add foDesc2 for category ordering
                 workingDay: record.workingDay,
                 workingShift: record.workingShift,
                 actualShift: record.actualShift,
@@ -1662,7 +1663,20 @@ function updateCharts(workerAgg, rawData) {
 function updateProcessChart(workerAgg) {
     const processData = {};
     
-    // First, create a map of process -> seq from processMapping
+    // Category (FO Desc 2) order mapping
+    const categoryOrder = {
+        'BT Process': 1,
+        'DS': 2,
+        'BT Complete': 3,
+        'BT QC': 4,
+        'WT': 5,
+        'WT QC': 6,
+        'IM': 7,
+        'IM QC': 8,
+        'Other': 9
+    };
+    
+    // Create a map of process -> seq from processMapping
     const processSeqMap = {};
     AppState.processMapping.forEach(mapping => {
         const processName = mapping.foDesc3 || mapping.foDesc2;
@@ -1673,33 +1687,42 @@ function updateProcessChart(workerAgg) {
     
     workerAgg.forEach(item => {
         if (!processData[item.foDesc3]) {
-            // Get seq from mapping, fallback to 999 if not found
+            // Get seq from mapping
             const seq = processSeqMap[item.foDesc3];
+            // Get category order (foDesc2)
+            const categorySeq = categoryOrder[item.foDesc2] || 999;
+            
             processData[item.foDesc3] = {
                 totalMinutes: 0,
                 count: 0,
-                seq: seq !== null && seq !== undefined ? seq : 999
+                seq: seq !== null && seq !== undefined ? seq : 0,  // null becomes 0 (Pre-Blasting first)
+                categorySeq: categorySeq,
+                foDesc2: item.foDesc2
             };
         }
         processData[item.foDesc3].totalMinutes += item.totalMinutes;
         processData[item.foDesc3].count += 1;
     });
     
-    // Sort processes by seq
+    // Sort processes by category first, then by seq within category
     const sortedProcesses = Object.entries(processData)
         .map(([name, data]) => ({
             name,
             avgWorkRate: ((data.totalMinutes / data.count / 660) * 100).toFixed(1),
-            seq: data.seq
+            seq: data.seq,
+            categorySeq: data.categorySeq,
+            foDesc2: data.foDesc2
         }))
         .sort((a, b) => {
-            // Handle null/undefined - put at end
-            const seqA = a.seq !== null && a.seq !== undefined ? a.seq : 999;
-            const seqB = b.seq !== null && b.seq !== undefined ? b.seq : 999;
-            return seqA - seqB;
+            // Primary sort: by category
+            if (a.categorySeq !== b.categorySeq) {
+                return a.categorySeq - b.categorySeq;
+            }
+            // Secondary sort: by process seq within category
+            return a.seq - b.seq;
         });
     
-    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} (Seq: ${p.seq})`).join(', '));
+    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq})`).join(', '));
     
     const processes = sortedProcesses.map(p => p.name);
     const avgWorkRates = sortedProcesses.map(p => p.avgWorkRate);
