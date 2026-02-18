@@ -2418,6 +2418,7 @@ async function loadUploadById(uploadId) {
             startDatetime: d.start_datetime,
             endDatetime: d.end_datetime,
             workerAct: d.worker_act,
+            workerActMins: d.worker_act,  // Add this field for consistency
             resultCnt: d.result_cnt,
             workingDay: d.working_day,
             workingShift: d.working_shift,
@@ -2526,6 +2527,7 @@ async function loadLastUpload() {
             startDatetime: d.start_datetime,
             endDatetime: d.end_datetime,
             workerAct: d.worker_act,
+            workerActMins: d.worker_act,  // Add this field for consistency
             resultCnt: d.result_cnt,
             workingDay: d.working_day,
             workingShift: d.working_shift,
