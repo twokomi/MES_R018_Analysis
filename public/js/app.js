@@ -1568,22 +1568,20 @@ function updatePivotReport(workerAgg) {
     // Build HTML table
     let html = '<table class="pivot-table">';
     
-    // 첫 번째 헤더 행: Worker Name + 날짜들
+    // Header with rowspan for Worker Name
     html += '<thead>';
-    html += '<tr class="header-row-1">';
-    html += '<th class="worker-name-header" style="min-width: 200px; text-align: left;">Worker Name</th>';
+    html += '<tr>';
+    html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle;">Worker Name</th>';
     allDates.forEach(date => {
-        html += `<th class="date-header" colspan="3">${date}</th>`;
+        html += `<th colspan="3">${date}</th>`;
     });
     html += '</tr>';
     
-    // 두 번째 헤더 행: 빈 칸 + 서브헤더들
-    html += '<tr class="header-row-2">';
-    html += '<th class="worker-name-sub" style="min-width: 200px; text-align: left;"></th>';
+    html += '<tr>';
     allDates.forEach(() => {
-        html += '<th class="sub-header" style="font-size: 0.7rem;">WO Count</th>';
-        html += '<th class="sub-header" style="font-size: 0.7rem;">Std Time(m)</th>';
-        html += '<th class="sub-header" style="font-size: 0.7rem;">Work Rate</th>';
+        html += '<th style="font-size: 0.7rem;">WO Count</th>';
+        html += '<th style="font-size: 0.7rem;">Std Time(m)</th>';
+        html += '<th style="font-size: 0.7rem;">Work Rate</th>';
     });
     html += '</tr>';
     html += '</thead>';
