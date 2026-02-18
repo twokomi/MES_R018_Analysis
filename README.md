@@ -106,7 +106,7 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
-- **최신 배포**: https://63fe803d.mes-r018-analysis.pages.dev
+- **최신 배포**: https://4c15e7d8.mes-r018-analysis.pages.dev
 
 ### 테스트 서버 (샌드박스)
 - **개발 URL**: https://3000-i6mqjfqm4prwz2zcvnapn-583b4d74.sandbox.novita.ai
@@ -283,6 +283,26 @@ npm run deploy
 
 ## 🎉 업데이트 내역
 
+### v2.6.0 (2026-02-18)
+- ✅ **Week 필터 추가**: 날짜 필터에 주(Week) 단위 선택 기능 추가
+  - Week 번호 표시 (예: WK7: 02-10 ~ 02-16)
+  - Month 및 Week 버튼으로 빠른 날짜 선택
+  - ISO Week 계산 (월요일 기준)
+- ✅ **필터 UX 개선**:
+  - Week/Month 버튼 호버 시 진한 색상 + 흰색 텍스트
+  - 클릭 시 active 효과 (scale-95, 더 진한 색상)
+  - 선택 후 드롭다운 자동 닫기
+  - Apply Filter 시 모든 드롭다운 닫기
+- ✅ **필터 상태 유지**: Apply Filter 재클릭 시 선택 상태 유지
+- ✅ **Average Work Rate 계산 수정**:
+  - 워커 수 기반 → 총 시프트 수 기반으로 변경
+  - 공정별 정확한 평균 작업률 계산
+  - 457% → 정상 범위(65% 등)로 수정
+- ✅ **Pivot 테이블 헤더 개선**:
+  - rowspan을 사용한 Worker Name 셀 병합
+  - sticky header로 스크롤 시 고정
+  - 깔끔한 2줄 헤더 구조
+
 ### v2.5.0 (2026-02-18)
 - ✅ **성과 밴드 정렬 기능 추가**: Excellent/Poor/Critical 각 밴드별 오름차순/내림차순 정렬
 - ✅ **작업자 상세 모달 구현**: 작업자 클릭 시 상세 정보 팝업
@@ -329,4 +349,4 @@ npm run deploy
 ---
 
 **제작자**: twokomi  
-**마지막 업데이트**: 2026-02-17
+**마지막 업데이트**: 2026-02-18
