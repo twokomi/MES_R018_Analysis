@@ -1400,20 +1400,10 @@ function aggregateByWorkerOnly(workerAgg) {
         byWorker[workerName].totalMinutes += record.workerActMins || 0;
         byWorker[workerName].validCount += 1;
         
-        // Calculate shift based on startDatetime
-        if (record.startDatetime) {
-            const date = new Date(record.startDatetime);
-            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-            const hour = date.getHours();
-            
-            // Determine shift based on hour
-            // Day shift: 06:00 - 18:00 (6-17)
-            // Night shift: 18:00 - 06:00 (18-23, 0-5)
-            const shift = (hour >= 6 && hour < 18) ? 'Day' : 'Night';
-            
-            const shiftKey = `${dateStr}_${shift}`;
-            byWorker[workerName].shifts.add(shiftKey);
-        }
+        // Track shift based on workingDay + workingShift (from shift calendar)
+        // This properly handles overnight shifts and O/T
+        const shiftKey = `${record.workingDay}_${record.workingShift}`;
+        byWorker[workerName].shifts.add(shiftKey);
     });
     
     // Update with display info from workerAgg
@@ -2942,22 +2932,13 @@ function showWorkerDetail(workerName) {
     const totalRecords = workerRecords.length;
     const validRecords = validRecordsList.length;
     
-    // Count unique shifts based on startDatetime (ONLY for valid records)
+    // Count unique shifts based on workingDay + workingShift (ONLY for valid records)
     const uniqueShifts = new Set();
     validRecordsList.forEach(r => {  // validRecordsList만 사용!
-        if (r.startDatetime) {
-            const date = new Date(r.startDatetime);
-            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-            const hour = date.getHours();
-            
-            // Determine shift based on hour
-            // Day shift: 06:00 - 18:00 (6-17)
-            // Night shift: 18:00 - 06:00 (18-23, 0-5)
-            const shift = (hour >= 6 && hour < 18) ? 'Day' : 'Night';
-            
-            const shiftKey = `${dateStr}_${shift}`;
-            uniqueShifts.add(shiftKey);
-        }
+        // Use workingDay and workingShift from shift calendar
+        // This properly handles overnight shifts and O/T
+        const shiftKey = `${r.workingDay}_${r.workingShift}`;
+        uniqueShifts.add(shiftKey);
     });
     const shiftCount = uniqueShifts.size;
     
