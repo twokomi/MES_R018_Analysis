@@ -1662,17 +1662,17 @@ function updatePivotReport(workerAgg) {
     // Header with rowspan for Worker Name
     html += '<thead>';
     html += '<tr>';
-    html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle;">Worker Name</th>';
+    html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle; background: #1f2937; color: white; border: 2px solid #ffffff;">Worker Name</th>';
     allDates.forEach(date => {
-        html += `<th colspan="3">${date}</th>`;
+        html += `<th colspan="3" style="background: #1f2937; color: white; border: 2px solid #ffffff;">${date}</th>`;
     });
     html += '</tr>';
     
     html += '<tr>';
     allDates.forEach(() => {
-        html += '<th style="font-size: 0.7rem;">WO Count</th>';
-        html += '<th style="font-size: 0.7rem;">Std Time(m)</th>';
-        html += '<th style="font-size: 0.7rem;">Work Rate</th>';
+        html += '<th style="font-size: 0.7rem; background: #1f2937; color: white; border: 2px solid #ffffff;">WO Count</th>';
+        html += '<th style="font-size: 0.7rem; background: #1f2937; color: white; border: 2px solid #ffffff;">Std Time(m)</th>';
+        html += '<th style="font-size: 0.7rem; background: #1f2937; color: white; border: 2px solid #ffffff;">Work Rate</th>';
     });
     html += '</tr>';
     html += '</thead>';
@@ -1693,13 +1693,13 @@ function updatePivotReport(workerAgg) {
     
     sortedProcesses.forEach(([processName, processData]) => {
         // Process header row - LEFT ALIGNED
-        html += `<tr><td colspan="${1 + allDates.length * 3}" class="process-cell" style="text-align: left; padding-left: 1rem; font-weight: 700; font-size: 0.95rem;">${processName}</td></tr>`;
+        html += `<tr><td colspan="${1 + allDates.length * 3}" class="process-cell" style="text-align: left; padding-left: 1rem; font-weight: 700; font-size: 0.95rem; background: #334155; color: white; border: 2px solid #ffffff;">${processName}</td></tr>`;
         
         // Worker rows
         const sortedWorkers = Object.keys(processData.workers).sort();
         sortedWorkers.forEach(workerName => {
             html += '<tr>';
-            html += `<td class="worker-cell" style="text-align: left; padding-left: 2rem;">${workerName}</td>`;
+            html += `<td class="worker-cell" style="text-align: left; padding-left: 2rem; background: #f8fafc; border: 2px solid #ffffff;">${workerName}</td>`;
             
             allDates.forEach(date => {
                 const dateData = processData.workers[workerName][date];
@@ -1709,11 +1709,11 @@ function updatePivotReport(workerAgg) {
                                     dateData.workRate >= 50 ? 'work-rate-normal' :
                                     dateData.workRate >= 30 ? 'work-rate-low' : 'work-rate-critical';
                     
-                    html += `<td>${dateData.validCount}</td>`;
-                    html += `<td>${Math.round(dateData.totalMinutes)}</td>`;
-                    html += `<td class="${rateClass}">${dateData.workRate.toFixed(0)}%</td>`;
+                    html += `<td style="background: #ffffff; border: 2px solid #ffffff;">${dateData.validCount}</td>`;
+                    html += `<td style="background: #ffffff; border: 2px solid #ffffff;">${Math.round(dateData.totalMinutes)}</td>`;
+                    html += `<td class="${rateClass}" style="border: 2px solid #ffffff;">${dateData.workRate.toFixed(0)}%</td>`;
                 } else {
-                    html += '<td>-</td><td>-</td><td>-</td>';
+                    html += '<td style="background: #ffffff; border: 2px solid #ffffff;">-</td><td style="background: #ffffff; border: 2px solid #ffffff;">-</td><td style="background: #ffffff; border: 2px solid #ffffff;">-</td>';
                 }
             });
             
