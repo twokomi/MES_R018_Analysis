@@ -2,6 +2,19 @@
 // Main application logic
 // Version: 2.0.1 - Category Filter Debug Added
 
+// Category order for sorting
+const CATEGORY_ORDER = {
+    'BT Process': 1,
+    'DS': 2,
+    'BT Complete': 3,
+    'BT QC': 4,
+    'WT': 5,
+    'WT QC': 6,
+    'IM': 7,
+    'IM QC': 8,
+    'Other': 999
+};
+
 // Global state
 const AppState = {
     rawData: [],
@@ -1143,23 +1156,11 @@ function updateFilterOptions() {
     const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
     
     // Category (FO Desc 2) - Sort by category order
-    const categoryOrder = {
-        'BT Process': 1,
-        'DS': 2,
-        'BT Complete': 3,
-        'BT QC': 4,
-        'WT': 5,
-        'WT QC': 6,
-        'IM': 7,
-        'IM QC': 8,
-        'Other': 999
-    };
-    
     const uniqueCategories = [...new Set(data.map(d => d.foDesc2))]
         .filter(c => c)
         .sort((a, b) => {
-            const orderA = categoryOrder[a] || 999;
-            const orderB = categoryOrder[b] || 999;
+            const orderA = CATEGORY_ORDER[a] || 999;
+            const orderB = CATEGORY_ORDER[b] || 999;
             return orderA - orderB;
         });
     console.log(`📂 Found ${uniqueCategories.length} unique categories (sorted by order):`, uniqueCategories);
@@ -1176,22 +1177,10 @@ function updateFilterOptions() {
     console.log(`✅ Category dropdown updated with ${uniqueCategories.length} options`);
     
     // Process (FO Desc 3) - Show all processes sorted by FO Desc 2 category order, then by Seq
-    const categoryOrder = {
-        'BT Process': 1,
-        'DS': 2,
-        'BT Complete': 3,
-        'BT QC': 4,
-        'WT': 5,
-        'WT QC': 6,
-        'IM': 7,
-        'IM QC': 8,
-        'Other': 999
-    };
-    
     const processMap = new Map();
     data.forEach(d => {
         if (d.foDesc3 && !processMap.has(d.foDesc3)) {
-            const categorySeq = categoryOrder[d.foDesc2] || 999;
+            const categorySeq = CATEGORY_ORDER[d.foDesc2] || 999;
             const processSeq = d.seq !== undefined ? d.seq : 999;
             processMap.set(d.foDesc3, {
                 category: d.foDesc2,
@@ -1921,19 +1910,6 @@ function updateCharts(workerSummary, filteredData) {
 function updateProcessChart(filteredData) {
     const processData = {};
     
-    // Category (FO Desc 2) order mapping
-    const categoryOrder = {
-        'BT Process': 1,
-        'DS': 2,
-        'BT Complete': 3,
-        'BT QC': 4,
-        'WT': 5,
-        'WT QC': 6,
-        'IM': 7,
-        'IM QC': 8,
-        'Other': 999
-    };
-    
     // Create a map of process -> seq from processMapping
     const processSeqMap = {};
     AppState.processMapping.forEach(mapping => {
@@ -1949,7 +1925,7 @@ function updateProcessChart(filteredData) {
             // Get seq from mapping
             const seq = processSeqMap[record.foDesc3];
             // Get category order (foDesc2)
-            const categorySeq = categoryOrder[record.foDesc2] || 999;
+            const categorySeq = CATEGORY_ORDER[record.foDesc2] || 999;
             
             processData[record.foDesc3] = {
                 totalMinutes: 0,
