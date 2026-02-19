@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MES Individual Performance Report</title>
+    <title>Individual Performance Report</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -30,32 +31,37 @@
             transform: translateY(-2px);
         }
         .kpi-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
+            color: #1f2937;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
         }
         .kpi-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
         }
-        .kpi-card.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .kpi-card.success .text-3xl {
+            color: #111827;
         }
-        .kpi-card.warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        .kpi-card.warning .text-3xl {
+            color: #111827;
         }
-        .kpi-card.danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        .kpi-card.danger .text-3xl {
+            color: #111827;
+        }
+        .kpi-card .text-3xl {
+            color: #111827;
+        }
+        .kpi-card .text-sm {
+            color: #6b7280;
         }
         .kpi-card .kpi-value {
             font-size: 2rem;
             font-weight: 700;
             margin: 0.5rem 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .kpi-card .kpi-label {
             font-size: 0.875rem;
@@ -114,44 +120,59 @@
         }
         td {
             padding: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
         }
         tr:hover {
             background: #f8fafc;
         }
-        .pivot-table th {
-            font-size: 0.75rem;
-            padding: 0.5rem;
-            text-align: center;
-            background: #3b82f6;
-            color: white;
-        }
-        .pivot-table td {
-            text-align: center;
-            padding: 0.5rem;
+        /* Pivot Table */
+        .pivot-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.875rem;
         }
-        .pivot-table .process-cell {
-            font-weight: 700;
-            font-size: 0.95rem;
-            background: #334155;
-            color: white;
-            text-align: left !important;
-            padding-left: 1rem !important;
-        }
-        .pivot-table .worker-cell {
-            text-align: left !important;
-            padding-left: 2rem !important;
-            background: #f8fafc;
-            font-weight: 500;
-        }
+        
         .pivot-table thead {
             position: sticky;
             top: 0;
             z-index: 10;
+            background: #1f2937;
         }
-        .pivot-table thead th:first-child {
-            text-align: left !important;
+        
+        .pivot-table thead th {
+            background: #1f2937 !important;
+            color: white !important;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            border: 1px solid #e5e7eb !important;
+        }
+        
+        .pivot-table td {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            border: 1px solid #e5e7eb !important;
+            background-color: #ffffff !important;
+        }
+        
+        .pivot-table .process-cell {
+            font-weight: 700;
+            font-size: 0.95rem;
+            background-color: #334155 !important;
+            color: white !important;
+            text-align: left;
+            border: 1px solid #e5e7eb !important;
+        }
+        
+        .pivot-table .worker-cell {
+            text-align: left;
+            padding-left: 2rem;
+            background-color: #f8fafc !important;
+            font-weight: 500;
+            border: 1px solid #e5e7eb !important;
         }
         .work-rate-high {
             background: #d1fae5;
@@ -170,6 +191,46 @@
             background: #fee2e2;
             color: #991b1b;
         }
+        
+        /* Detailed Data Table */
+        .detailed-data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.875rem;
+        }
+        
+        .detailed-data-table thead {
+            background: #1f2937;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .detailed-data-table thead th {
+            background: #1f2937 !important;
+            color: white !important;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #e5e7eb !important;
+        }
+        
+        .detailed-data-table tbody td {
+            text-align: center;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb !important;
+            background-color: #ffffff !important;
+        }
+        
+        .detailed-data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .detailed-data-table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+        
         .filter-section {
             background: #f8fafc;
             border-radius: 8px;
@@ -281,6 +342,14 @@
             cursor: pointer;
             font-size: 0.875rem;
             color: #374151;
+        }
+        /* Radio button styles for Shift and Working Shift filters */
+        input[type="radio"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+            flex-shrink: 0;
         }
         .hidden {
             display: none !important;
@@ -394,28 +463,20 @@
 </head>
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Logo -->
+        <div class="mb-4">
+            <img src="/waiv-logo.png" alt="WAIV Logo" class="h-12">
+        </div>
+        
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">
-                    <i class="fas fa-chart-line text-blue-600 mr-3"></i>
-                    MES Individual Performance Report
+                    Individual Performance Report
                 </h1>
                 <p class="text-gray-600 mt-2">
-                    Real-time Individual Productivity Analysis & Reports
+                    Individual Worker Productivity Reports & Performance Tracking
                 </p>
-            </div>
-                <div class="flex gap-3">
-                    <button id="exportJsonBtn" class="btn btn-success" disabled>
-                        <i class="fas fa-download"></i>
-                        Export JSON
-                    </button>
-                    <button id="importJsonBtn" class="btn btn-secondary">
-                        <i class="fas fa-upload"></i>
-                        Import JSON
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -434,15 +495,40 @@
                 <button class="tab-btn px-6 py-3 font-medium" data-tab="manual">
                     <i class="fas fa-book mr-2"></i>User Guide
                 </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="changelog">
+                    <i class="fas fa-history mr-2"></i>Update Log
+                </button>
             </div>
         </div>
 
         <!-- Tab Contents -->
         <div id="uploadTab" class="tab-content">
+            <!-- Upload File List Section -->
+            <div class="card mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">
+                        <i class="fas fa-database text-blue-600 mr-2"></i>
+                        Saved Uploads
+                    </h2>
+                    <button id="refreshUploadsBtn" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="uploadsList" class="space-y-2">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No saved uploads yet. Upload a file to get started.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upload New File Section -->
             <div class="card">
                 <h2 class="text-xl font-bold mb-4">
                     <i class="fas fa-file-upload text-blue-600 mr-2"></i>
-                    Data File Upload
+                    Upload New File
                 </h2>
                 <div id="uploadZone" class="upload-zone">
                     <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
@@ -458,7 +544,6 @@
                         Select File
                     </button>
                 </div>
-                <input type="file" id="jsonFileInput" accept=".json" class="hidden">
                 
                 <div id="uploadStatus" class="mt-4 hidden">
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
@@ -483,6 +568,16 @@
                             <p><strong>Date Range:</strong> <span id="dateRange">-</span></p>
                             <p><strong>Worker Count:</strong> <span id="workerCount">0</span></p>
                         </div>
+                        <div class="mt-4 flex gap-3">
+                            <button id="saveToDatabaseBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
+                                <i class="fas fa-database mr-2"></i>
+                                Save to Database
+                            </button>
+                            <span id="saveStatus" class="text-sm text-gray-600 flex items-center hidden">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                Saved to database
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -498,27 +593,69 @@
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Shift</label>
-                        <select id="filterShift" class="form-select">
-                            <option value="">All</option>
-                            <option value="A">A Shift</option>
-                            <option value="B">B Shift</option>
-                            <option value="C">C Shift</option>
-                        </select>
+                        <div class="relative">
+                            <button id="filterShiftDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('shift')">
+                                <span class="text-gray-500">All</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="p-2">
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="" class="mr-3" checked onchange="updateSingleSelect('shift', '')">
+                                        <span class="text-sm text-gray-700">All</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="A" class="mr-3" onchange="updateSingleSelect('shift', 'A')">
+                                        <span class="text-sm text-gray-700">A Shift</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="shift" value="B" class="mr-3" onchange="updateSingleSelect('shift', 'B')">
+                                        <span class="text-sm text-gray-700">B Shift</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
+                                        <input type="radio" name="shift" value="C" class="mr-3" onchange="updateSingleSelect('shift', 'C')">
+                                        <span class="text-sm text-gray-700">C Shift</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Working Date (Multi)</label>
-                        <select id="filterWorkingDay" multiple size="1" class="form-select">
-                            <option value="">All</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Ctrl/Cmd + Click</p>
+                        <div class="relative">
+                            <button id="filterWorkingDayDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('workingDay')">
+                                <span class="text-gray-500">Select dates...</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterWorkingDayDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-y-auto">
+                                <!-- Month group buttons will be added here by JavaScript -->
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Working Shift</label>
-                        <select id="filterWorkingShift">
-                            <option value="">All</option>
-                            <option value="Day">Day</option>
-                            <option value="Night">Night</option>
-                        </select>
+                        <div class="relative">
+                            <button id="filterWorkingShiftDisplay" class="w-full text-left px-3 py-2 bg-white border border-gray-300 rounded-md hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="toggleCheckboxDropdown('workingShift')">
+                                <span class="text-gray-500">All</span>
+                                <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
+                            </button>
+                            <div id="filterWorkingShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                                <div class="p-2">
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="workingShift" value="" class="mr-3" checked onchange="updateSingleSelect('workingShift', '')">
+                                        <span class="text-sm text-gray-700">All</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
+                                        <input type="radio" name="workingShift" value="Day" class="mr-3" onchange="updateSingleSelect('workingShift', 'Day')">
+                                        <span class="text-sm text-gray-700">Day</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
+                                        <input type="radio" name="workingShift" value="Night" class="mr-3" onchange="updateSingleSelect('workingShift', 'Night')">
+                                        <span class="text-sm text-gray-700">Night</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Category (FO Desc 2)</label>
@@ -549,7 +686,18 @@
                                 <span class="text-gray-500">Select...</span>
                                 <i class="fas fa-chevron-down float-right mt-1 text-gray-400"></i>
                             </button>
-                            <div id="filterWorkerDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            <div id="filterWorkerDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-80 overflow-hidden">
+                                <!-- Search Input -->
+                                <div class="sticky top-0 bg-white p-2 border-b border-gray-200">
+                                    <input type="text" id="workerSearchInput" 
+                                           placeholder="Search workers..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           oninput="filterWorkerList()"
+                                           onclick="event.stopPropagation()">
+                                </div>
+                                <!-- Worker List -->
+                                <div id="filterWorkerList" class="max-h-60 overflow-y-auto">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -569,19 +717,19 @@
             <!-- KPI Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="kpi-card">
-                    <div class="text-sm opacity-90 mb-1">Total Workers</div>
+                    <div class="text-sm mb-1">Total Workers</div>
                     <div class="text-3xl font-bold" id="kpiWorkers">0</div>
                 </div>
                 <div class="kpi-card success">
-                    <div class="text-sm opacity-90 mb-1">Valid Work Orders</div>
+                    <div class="text-sm mb-1">Valid Work Orders</div>
                     <div class="text-3xl font-bold" id="kpiValidWO">0</div>
                 </div>
                 <div class="kpi-card warning">
-                    <div class="text-sm opacity-90 mb-1">Total Work Time (min)</div>
+                    <div class="text-sm mb-1">Total Work Time (min)</div>
                     <div class="text-3xl font-bold" id="kpiTotalMinutes">0</div>
                 </div>
                 <div class="kpi-card danger">
-                    <div class="text-sm opacity-90 mb-1">Average Work Rate</div>
+                    <div class="text-sm mb-1">Average Work Rate</div>
                     <div class="text-3xl font-bold" id="kpiAvgWorkRate">0%</div>
                 </div>
             </div>
@@ -589,37 +737,77 @@
             <!-- Performance Bands -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="card">
-                    <h4 class="font-bold text-green-700 mb-3">
-                        <i class="fas fa-trophy mr-2"></i>
-                        Excellent Workers (≥80%)
-                    </h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-green-700">
+                            <i class="fas fa-trophy mr-2"></i>
+                            Excellent Workers (≥80%)
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="sortPerformanceBand('excellent', 'asc')" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition" title="오름차순 정렬">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button onclick="sortPerformanceBand('excellent', 'desc')" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition" title="내림차순 정렬">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="excellentWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
                         <p class="text-gray-500 text-sm">No data available</p>
                     </div>
                 </div>
                 <div class="card">
-                    <h4 class="font-bold text-blue-700 mb-3">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        Normal Workers (50-80%)
-                    </h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-blue-700">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Normal Workers (50-80%)
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="sortPerformanceBand('normal', 'asc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="오름차순 정렬">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button onclick="sortPerformanceBand('normal', 'desc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="내림차순 정렬">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="normalWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
                         <p class="text-gray-500 text-sm">No data available</p>
                     </div>
                 </div>
                 <div class="card">
-                    <h4 class="font-bold text-orange-700 mb-3">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Low Performers (30-50%)
-                    </h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-orange-700">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Low Performers (30-50%)
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="sortPerformanceBand('poor', 'asc')" class="text-xs px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded transition" title="오름차순 정렬">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button onclick="sortPerformanceBand('poor', 'desc')" class="text-xs px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded transition" title="내림차순 정렬">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="poorWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
                         <p class="text-gray-500 text-sm">No data available</p>
                     </div>
                 </div>
                 <div class="card">
-                    <h4 class="font-bold text-red-700 mb-3">
-                        <i class="fas fa-times-circle mr-2"></i>
-                        At-Risk Workers (&lt;30%)
-                    </h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-red-700">
+                            <i class="fas fa-times-circle mr-2"></i>
+                            At-Risk Workers (&lt;30%)
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="sortPerformanceBand('critical', 'asc')" class="text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded transition" title="오름차순 정렬">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button onclick="sortPerformanceBand('critical', 'desc')" class="text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded transition" title="내림차순 정렬">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div id="criticalWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
                         <p class="text-gray-500 text-sm">No data available</p>
                     </div>
@@ -654,10 +842,8 @@
                         Switch to Detail View
                     </button>
                 </div>
-                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                    <div id="pivotReportView">
-                        <p class="text-gray-500 text-center py-8">데이터를 업로드하고 Filters를 적용해주세요</p>
-                    </div>
+                <div id="pivotReportView" class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <p class="text-gray-500 text-center py-8">데이터를 업로드하고 Filters를 적용해주세요</p>
                 </div>
             </div>
 
@@ -674,8 +860,8 @@
                     </button>
                 </div>
                 <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                    <table id="dataTable">
-                        <thead class="sticky top-0 bg-gray-100 z-10">
+                    <table id="dataTable" class="detailed-data-table">
+                        <thead class="sticky top-0 z-10">
                             <tr>
                                 <th>Worker</th>
                                 <th>Process (FO Desc 3)</th>
@@ -697,6 +883,7 @@
                 </div>
             </div>
         </div>
+
 
         <div id="mappingTab" class="tab-content hidden">
             <div class="card">
@@ -762,29 +949,53 @@
                     <!-- Left Column: Instructions -->
                     <div class="space-y-6">
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload & Save</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
-                                <li><strong>JSON file</strong> (.json) - Previously exported data</li>
+                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
                                 <li>Drag & drop file or click 'Select File' button</li>
+                                <li>Review the processed data and reports</li>
+                                <li><strong>Click "Save to Database"</strong> to store data in Cloudflare D1</li>
                                 <li><strong>Tip:</strong> Include ShiftCalendar sheet in Excel for Shift (A/B/C) filtering</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. Required Headers (Raw Sheet)</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. Load Saved Data</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li>View <strong>Saved Uploads</strong> list in Upload tab</li>
+                                <li><strong>Click any card</strong> to load saved data</li>
+                                <li>Automatically switches to Report tab after loading</li>
+                                <li>Delete uploads using the <strong>Delete button</strong> on each card</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Apply Filters</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
+                                <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
+                                <li><strong>Working Shift</strong>: Day / Night</li>
+                                <li><strong>Category</strong>: BT Process, DS, BT Complete, WT, IM, etc.</li>
+                                <li><strong>Process</strong>: Specific processes (FO Desc 3)</li>
+                                <li><strong>Worker</strong>: Individual workers (searchable)</li>
+                                <li><strong>Click "Apply Filter"</strong> to update reports</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Required Headers (Raw Sheet)</h3>
                             <p class="text-gray-700 mb-2">Raw sheet must include these headers:</p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Worker Name</strong>: Worker name</li>
                                 <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description</li>
-                                <li><strong>Start Datetime</strong> or <strong>End Datetime</strong>: Work start/end time</li>
-                                <li><strong>Worker Act</strong> or <strong>Worker Act (mins)</strong>: Work time (minutes)</li>
+                                <li><strong>Start Datetime</strong>: Work start time</li>
+                                <li><strong>Worker Act</strong>: Work time (minutes)</li>
                                 <li><strong>Result Cnt</strong>: Work result count (X = completed)</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Performance Grades</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Performance Grades</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><span class="worker-badge badge-excellent">Excellent</span>: Work rate ≥ 80%</li>
                                 <li><span class="worker-badge badge-normal">Normal</span>: Work rate 50-80%</li>
@@ -792,8 +1003,20 @@
                                 <li><span class="worker-badge badge-critical">At-Risk</span>: Work rate &lt; 30%</li>
                             </ul>
                             <p class="text-sm text-gray-600 mt-2">
-                                <strong>Work Rate Formula:</strong> (Valid Work Minutes / 660) × 100%
+                                <strong>Work Rate Formula:</strong> (Total Valid Minutes / Total Shifts / 660) × 100%
+                                <br><span class="text-xs">• 660 minutes = 11 hours per shift</span>
+                                <br><span class="text-xs">• Total Shifts = Number of unique (workingDay + workingShift) combinations</span>
                             </p>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Worker Detail Modal</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Click any worker card</strong> to view detailed information</li>
+                                <li>View daily work time trends (line chart)</li>
+                                <li>See hourly work distribution (donut chart)</li>
+                                <li>Check detailed work records (date, shift, process, time)</li>
+                            </ul>
                         </section>
                     </div>
 
@@ -870,6 +1093,179 @@
             </div>
         </div>
 
+        <!-- Update Log Tab -->
+        <div id="changelogTab" class="tab-content hidden">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-history text-purple-600 mr-2"></i>
+                    Update Log
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- Version 2.6.0 -->
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 2.6.0</h3>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Latest</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-calendar-week mr-2"></i>Week Filter
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Week Selection</strong>: Added week-based date filtering with week number display
+                                        <br><span class="text-sm text-gray-600 ml-4">• Format: WK7: 02-10 ~ 02-16</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• ISO Week calculation (Monday-based)</span>
+                                    </li>
+                                    <li><strong>Quick Selection</strong>: Month and Week buttons for fast date selection</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-mouse-pointer mr-2"></i>Filter UX Improvements
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Visual Feedback</strong>: Enhanced hover effects (dark color + white text)</li>
+                                    <li><strong>Active State</strong>: Click animation (scale-95, darker color)</li>
+                                    <li><strong>Auto-close Dropdowns</strong>: Automatically close after selection</li>
+                                    <li><strong>Filter State Persistence</strong>: Maintain selections when re-applying filters</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-orange-700 mb-2">
+                                    <i class="fas fa-calculator mr-2"></i>Average Work Rate Fix
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Calculation Update</strong>: Changed from worker count to total shift count
+                                        <br><span class="text-sm text-gray-600 ml-4">• Before: totalMinutes / workerCount / 660 × 100 ❌</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• After: totalMinutes / totalShifts / 660 × 100 ✅</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• Fixed: 457% → ~65% (correct range)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-table mr-2"></i>Pivot Table Enhancement
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Cell Merge</strong>: Worker Name header with rowspan for cleaner layout</li>
+                                    <li><strong>Sticky Header</strong>: Fixed header during scroll</li>
+                                    <li><strong>Clean Design</strong>: Simplified 2-row header structure</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Version 2.1.0 -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 2.1.0</h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">2026-02-18</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>Major Fixes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Work Rate Calculation Fix</strong>: Changed from record count to worker count
+                                        <br><span class="text-sm text-gray-600 ml-4">• Before: totalMinutes / recordCount / 660 × 100 ❌</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• After: totalMinutes / workerCount / 660 × 100 ✅</span>
+                                    </li>
+                                    <li><strong>Valid Records Only</strong>: Only sum workerActMins for Result Cnt = 'X'
+                                        <br><span class="text-sm text-gray-600 ml-4">• Both main report and detail modal now consistent</span>
+                                    </li>
+                                    <li><strong>Shift Counting Logic</strong>: Use workingDay + workingShift for proper O/T handling
+                                        <br><span class="text-sm text-gray-600 ml-4">• Fixed: Overnight shifts and overtime now counted as single shift</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• Formula: Work Rate = validMinutes / (660 × shiftCount) × 100</span>
+                                    </li>
+                                    <li><strong>Process Sequence Mapping</strong>: Pre-Blasting moved to front (Seq: 0)
+                                        <br><span class="text-sm text-gray-600 ml-4">• Fixed: DB mappings merged with default mappings</span>
+                                        <br><span class="text-sm text-gray-600 ml-4">• Chart order: FO Desc 2 category → Seq within category</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-plus-circle mr-2"></i>Improvements
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Analysis Page Removed</strong>: Simplified UI by removing redundant analysis page</li>
+                                    <li><strong>Export/Import JSON Removed</strong>: Now fully database-based with Cloudflare D1</li>
+                                    <li><strong>Chart Compatibility</strong>: Fixed Chart.js v3+ compatibility (horizontalBar → bar with indexAxis: 'y')</li>
+                                    <li><strong>Debug Logging</strong>: Added detailed console logs for shift calculation and work rate</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Version 2.0.0 -->
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 2.0.0</h3>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">2026-02-17</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-star mr-2"></i>Major Features
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Database Integration</strong>: Cloudflare D1 for persistent storage</li>
+                                    <li><strong>Time Overlap Detection</strong>: Automatic removal of overlapping work intervals</li>
+                                    <li><strong>Performance Bands</strong>: Excellent (≥80%), Normal (50-80%), Poor (30-50%), Critical (<30%)</li>
+                                    <li><strong>Worker Detail Modal</strong>: Daily trends, hourly distribution, and detailed records</li>
+                                    <li><strong>Process Mapping</strong>: Flexible FD Desc → FO Desc 2/3 mapping with sequence ordering</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Version 1.0.0 -->
+                    <div class="border-l-4 border-gray-400 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 1.0.0</h3>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">2026-02-01</span>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-rocket mr-2"></i>Initial Release
+                            </h4>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Excel Upload</strong>: Support for .xlsx/.xls files</li>
+                                <li><strong>Basic Reports</strong>: Worker performance and process analysis</li>
+                                <li><strong>Charts & Visualizations</strong>: Performance bands, process distribution</li>
+                                <li><strong>Shift Calendar</strong>: A/B/C shift management</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Technical Notes -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-code mr-2"></i>Technical Notes
+                    </h3>
+                    <ul class="list-disc list-inside text-gray-600 text-sm space-y-1 ml-4">
+                        <li><strong>Framework</strong>: Hono (Cloudflare Workers) + Vanilla JavaScript</li>
+                        <li><strong>Database</strong>: Cloudflare D1 (SQLite)</li>
+                        <li><strong>Charts</strong>: Chart.js v3+</li>
+                        <li><strong>Deployment</strong>: Cloudflare Pages</li>
+                        <li><strong>Version Control</strong>: Git + GitHub</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <div id="mappingTab" class="tab-content hidden">
                     </section>
 
@@ -894,6 +1290,105 @@
                             </ul>
                         </div>
                     </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Detail Modal -->
+    <div id="workerDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" onclick="closeWorkerDetailModal(event)">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-2xl font-bold" id="modalWorkerName">
+                    <i class="fas fa-user-circle mr-2"></i>
+                    Worker Details
+                </h3>
+                <button onclick="closeWorkerDetailModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <!-- Summary Section -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-gray-600 text-sm font-semibold mb-1">Total Work Time</div>
+                        <div class="text-2xl font-bold text-gray-900" id="modalTotalMinutes">0</div>
+                        <div class="text-xs text-gray-500 mt-1">minutes</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-gray-600 text-sm font-semibold mb-1">Work Rate</div>
+                        <div class="text-2xl font-bold text-gray-900" id="modalWorkRate">0%</div>
+                        <div class="text-xs text-gray-500 mt-1">performance</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-gray-600 text-sm font-semibold mb-1">Total Records</div>
+                        <div class="text-2xl font-bold text-gray-900" id="modalRecordCount">0</div>
+                        <div class="text-xs text-gray-500 mt-1">activities</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-gray-600 text-sm font-semibold mb-1">Performance Band</div>
+                        <div class="text-xl font-bold text-gray-900" id="modalPerformanceBand">-</div>
+                        <div class="text-xs text-gray-500 mt-1">rating</div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-calendar-day mr-2"></i>
+                            Daily Work Time
+                        </h4>
+                        <div style="height: 200px;">
+                            <canvas id="modalDailyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 class="font-bold text-gray-800 mb-3">
+                            <i class="fas fa-clock mr-2"></i>
+                            Hourly Work Distribution
+                        </h4>
+                        <div style="height: 200px;">
+                            <canvas id="modalProcessChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Records Table -->
+                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                    <h4 class="font-bold text-gray-800 mb-3">
+                        <i class="fas fa-list mr-2"></i>
+                        Detailed Work Records
+                    </h4>
+                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0">
+                                <tr>
+                                    <th class="text-left p-2 font-semibold text-gray-700">Date</th>
+                                    <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
+                                    <th class="text-left p-2 font-semibold text-gray-700">Start Time</th>
+                                    <th class="text-left p-2 font-semibold text-gray-700">End Time</th>
+                                    <th class="text-left p-2 font-semibold text-gray-700">Process</th>
+                                    <th class="text-left p-2 font-semibold text-gray-700">Work Station</th>
+                                    <th class="text-right p-2 font-semibold text-gray-700" title="Calculated from End - Start">
+                                        Original<br>
+                                        <span class="text-xs font-normal text-gray-500">(min)</span>
+                                    </th>
+                                    <th class="text-right p-2 font-semibold text-gray-700" title="After overlap removal">
+                                        Adjusted<br>
+                                        <span class="text-xs font-normal text-gray-500">(min)</span>
+                                    </th>
+                                    <th class="text-center p-2 font-semibold text-gray-700">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalRecordsTable" class="divide-y divide-gray-200">
+                                <!-- Records will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
