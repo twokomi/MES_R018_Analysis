@@ -1830,9 +1830,10 @@ function updateKPIs(workerAgg) {
         ? workerAgg.reduce((sum, w) => sum + w.workRate, 0) / workerAgg.length 
         : 0;
     
-    document.getElementById('kpiWorkers').textContent = totalWorkers;
-    document.getElementById('kpiValidWO').textContent = totalValidWO;
-    document.getElementById('kpiTotalMinutes').textContent = Math.round(totalMinutes);
+    // Format numbers with thousand separators
+    document.getElementById('kpiWorkers').textContent = totalWorkers.toLocaleString();
+    document.getElementById('kpiValidWO').textContent = totalValidWO.toLocaleString();
+    document.getElementById('kpiTotalMinutes').textContent = Math.round(totalMinutes).toLocaleString();
     document.getElementById('kpiAvgWorkRate').textContent = avgWorkRate.toFixed(1) + '%';
 }
 
