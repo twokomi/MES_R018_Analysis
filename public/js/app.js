@@ -1175,17 +1175,43 @@ function updateFilterOptions() {
     }
     console.log(`✅ Category dropdown updated with ${uniqueCategories.length} options`);
     
-    // Process (FO Desc 3) - Show all processes sorted by Seq
+    // Process (FO Desc 3) - Show all processes sorted by FO Desc 2 category order, then by Seq
+    const categoryOrder = {
+        'BT Process': 1,
+        'DS': 2,
+        'BT Complete': 3,
+        'BT QC': 4,
+        'WT': 5,
+        'WT QC': 6,
+        'IM': 7,
+        'IM QC': 8,
+        'Other': 999
+    };
+    
     const processMap = new Map();
     data.forEach(d => {
         if (d.foDesc3 && !processMap.has(d.foDesc3)) {
-            processMap.set(d.foDesc3, d.seq !== undefined ? d.seq : 999);
+            const categorySeq = categoryOrder[d.foDesc2] || 999;
+            const processSeq = d.seq !== undefined ? d.seq : 999;
+            processMap.set(d.foDesc3, {
+                category: d.foDesc2,
+                categorySeq: categorySeq,
+                processSeq: processSeq
+            });
         }
     });
     
     const processes = Array.from(processMap.entries())
         .sort((a, b) => {
-            if (a[1] !== b[1]) return a[1] - b[1];
+            // First sort by category order
+            if (a[1].categorySeq !== b[1].categorySeq) {
+                return a[1].categorySeq - b[1].categorySeq;
+            }
+            // Then sort by process seq
+            if (a[1].processSeq !== b[1].processSeq) {
+                return a[1].processSeq - b[1].processSeq;
+            }
+            // Finally sort alphabetically
             return a[0].localeCompare(b[0]);
         })
         .map(entry => entry[0]);
