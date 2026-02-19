@@ -3105,14 +3105,14 @@ function sortPerformanceBand(bandType, order) {
     const div = document.getElementById(divId);
     if (workers.length > 0) {
         div.innerHTML = '<div class="space-y-2">' + workers.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-${colorClass}-50 to-${colorClass === 'green' ? 'emerald' : colorClass === 'orange' ? 'amber' : 'rose'}-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-${colorClass}-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-${colorClass}-900">${w.workerName}</span>
+                    <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-${colorClass}-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-1 text-xs">
-                    <span class="text-${colorClass}-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-${colorClass}-600">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-gray-500">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
