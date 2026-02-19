@@ -2,28 +2,12 @@
 // Main application logic
 // Version: 2.0.1 - Category Filter Debug Added
 
-// Category order for sorting
-const CATEGORY_ORDER = {
-    'BT Process': 1,
-    'DS': 2,
-    'BT Complete': 3,
-    'BT QC': 4,
-    'WT': 5,
-    'WT QC': 6,
-    'IM': 7,
-    'IM QC': 8,
-    'Other': 999
-};
-
 // Global state
 const AppState = {
     rawData: [],
     processedData: [],
     processMapping: [],
     shiftCalendar: [],
-    currentFileName: '',
-    currentFileSize: 0,
-    allWorkers: [], // For worker search functionality
     filters: {
         shift: '',
         workingDays: [],
@@ -59,7 +43,7 @@ function normalizeHeader(header) {
     return header.toString()
         .trim()
         .toUpperCase()
-        .replace(/[\s_\-*]/g, '')  // Add * to the regex to remove asterisks
+        .replace(/[\s_-]/g, '')
         .replace(/[()]/g, '');
 }
 
@@ -138,8 +122,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Filters initialized');
         initMapping();
         console.log('✅ Mapping initialized');
-        initDatabaseButtons();
-        console.log('✅ Database buttons initialized');
+        initJsonImportExport();
+        console.log('✅ JSON import/export initialized');
         initViewToggle();
         console.log('✅ View toggle initialized');
         
@@ -283,30 +267,18 @@ function initTabs() {
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.dataset.tab;
-            switchTab(targetTab);
+            
+            // Update active tab button
+            tabButtons.forEach(btn => btn.classList.remove('tab-active'));
+            button.classList.add('tab-active');
+            
+            // Show target tab content
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(targetTab + 'Tab').classList.remove('hidden');
         });
     });
-}
-
-// Switch to a specific tab
-function switchTab(tabName) {
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    // Update active tab button
-    tabButtons.forEach(btn => {
-        if (btn.dataset.tab === tabName) {
-            btn.classList.add('tab-active');
-        } else {
-            btn.classList.remove('tab-active');
-        }
-    });
-    
-    // Show target tab content
-    tabContents.forEach(content => {
-        content.classList.add('hidden');
-    });
-    document.getElementById(tabName + 'Tab')?.classList.remove('hidden');
 }
 
 // File upload initialization
@@ -351,9 +323,16 @@ function initFileUpload() {
 
 // Handle file upload
 function handleFileUpload(file) {
+    // Check if it's a JSON file
+    if (file.name.match(/\.json$/i)) {
+        // Handle JSON import
+        importFromJson(file);
+        return;
+    }
+    
     // Check if it's an Excel file
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
-        alert('Excel (.xlsx, .xls) files only.');
+        alert('Excel (.xlsx, .xls) or JSON (.json) files only.');
         return;
     }
     
@@ -523,9 +502,11 @@ function handleFileUpload(file) {
             // Update report
             updateReport();
             
-            // Store filename and size for later database save
-            AppState.currentFileName = file.name;
-            AppState.currentFileSize = file.size;
+            // Enable export button
+            document.getElementById('exportJsonBtn').disabled = false;
+            
+            // Save to database
+            saveToDatabase(file.name, file.size);
             
             setTimeout(() => {
                 showUploadStatus(false);
@@ -607,112 +588,6 @@ function parseExcelDate(dateValue) {
     return null;
 }
 
-// Merge overlapping time intervals for each worker
-function mergeOverlappingIntervals(records) {
-    if (!records || records.length === 0) return records;
-    
-    console.log(`⏱️  Checking for overlapping time intervals...`);
-    
-    // Group records by worker
-    const recordsByWorker = {};
-    records.forEach(record => {
-        const worker = record.workerName;
-        if (!worker) return;
-        
-        if (!recordsByWorker[worker]) {
-            recordsByWorker[worker] = [];
-        }
-        recordsByWorker[worker].push(record);
-    });
-    
-    let totalOverlaps = 0;
-    let totalOverlapMinutes = 0;
-    
-    // Process each worker's records
-    Object.keys(recordsByWorker).forEach(worker => {
-        const workerRecords = recordsByWorker[worker];
-        
-        // Extract time intervals with their record indices
-        const intervals = [];
-        workerRecords.forEach((record, idx) => {
-            if (record.startDatetime && record.endDatetime) {
-                const start = record.startDatetime instanceof Date ? record.startDatetime : new Date(record.startDatetime);
-                const end = record.endDatetime instanceof Date ? record.endDatetime : new Date(record.endDatetime);
-                
-                if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start < end) {
-                    intervals.push({
-                        start: start,
-                        end: end,
-                        recordIdx: idx,
-                        originalMinutes: (end - start) / 60000
-                    });
-                }
-            }
-        });
-        
-        if (intervals.length <= 1) return; // No overlaps possible
-        
-        // Sort intervals by start time
-        intervals.sort((a, b) => a.start - b.start);
-        
-        // Detect and merge overlapping intervals
-        const merged = [];
-        let current = intervals[0];
-        const overlappingGroups = [[current.recordIdx]]; // Track which records belong to each merged interval
-        
-        for (let i = 1; i < intervals.length; i++) {
-            const next = intervals[i];
-            
-            // Check if current and next overlap
-            if (current.end > next.start) {
-                // Overlap detected!
-                const overlapStart = next.start;
-                const overlapEnd = current.end < next.end ? current.end : next.end;
-                const overlapMinutes = (overlapEnd - overlapStart) / 60000;
-                
-                totalOverlaps++;
-                totalOverlapMinutes += overlapMinutes;
-                
-                // Merge: extend current interval
-                current.end = current.end > next.end ? current.end : next.end;
-                overlappingGroups[overlappingGroups.length - 1].push(next.recordIdx);
-            } else {
-                // No overlap, start new interval
-                merged.push(current);
-                current = next;
-                overlappingGroups.push([next.recordIdx]);
-            }
-        }
-        merged.push(current); // Add the last interval
-        
-        // Calculate adjusted workerActMins for each record
-        merged.forEach((interval, mergedIdx) => {
-            const recordIndices = overlappingGroups[mergedIdx];
-            const mergedMinutes = (interval.end - interval.start) / 60000;
-            
-            // Distribute merged time equally among overlapping records
-            const adjustedMinutes = mergedMinutes / recordIndices.length;
-            
-            recordIndices.forEach(recordIdx => {
-                const record = workerRecords[recordIdx];
-                const originalMinutes = record.workerActMins || 0;
-                record.workerActMins = adjustedMinutes;
-                record.originalWorkerActMins = originalMinutes; // Keep original for reference
-                record.overlapAdjusted = recordIndices.length > 1; // Flag if adjusted
-            });
-        });
-    });
-    
-    if (totalOverlaps > 0) {
-        console.log(`⚠️  Found ${totalOverlaps} overlapping intervals`);
-        console.log(`📉 Total overlap time removed: ${totalOverlapMinutes.toFixed(1)} minutes`);
-    } else {
-        console.log(`✅ No overlapping intervals found`);
-    }
-    
-    return records;
-}
-
 // Process data (calculate Working Day, Shift, apply mapping)
 function processData(rawData) {
     const processed = [];
@@ -780,7 +655,7 @@ function processData(rawData) {
         sampleRecords.forEach((r, idx) => {
             const datetime = r.startDatetime || r.endDatetime;
             const timeStr = datetime ? datetime.toISOString() : 'N/A';
-            console.log(`  [${idx+1}] Worker: ${r.workerName}, Process: ${r.foDesc3}, Category: ${r.foDesc2}`);
+            console.log(`  [${idx+1}] Worker: ${r.workerName}, Process: ${r.foDesc3}`);
             console.log(`      DateTime: ${timeStr}`);
             console.log(`      Working Day: ${r.workingDay}, Shift: ${r.workingShift}, Actual: ${r.actualShift}`);
             console.log(`      Result Cnt: "${r.resultCnt}", Valid: ${r.validFlag}, Minutes: ${r.workerActMins}`);
@@ -818,9 +693,6 @@ function processData(rawData) {
         dateShiftCount[key] = (dateShiftCount[key] || 0) + 1;
     });
     console.log('📊 Date/Shift distribution:', dateShiftCount);
-    
-    // Merge overlapping time intervals for each worker
-    mergeOverlappingIntervals(processed);
     
     return processed;
 }
@@ -990,26 +862,36 @@ function initFilters() {
     document.getElementById('applyFilterBtn').addEventListener('click', applyFilters);
     document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
     
-    // Note: Shift filter is now handled by radio buttons with updateSingleSelect
+    // Shift filter change handler
+    document.getElementById('filterShift').addEventListener('change', onShiftFilterChange);
 }
 
 // Handle shift filter change
 function onShiftFilterChange() {
-    const selectedShift = getRadioValue('shift');
+    const selectedShift = document.getElementById('filterShift').value;
+    updateWorkingDayOptions(selectedShift);
+}
+
+// Handle shift filter change
+function onShiftFilterChange() {
+    const selectedShift = document.getElementById('filterShift').value;
     updateWorkingDayOptions(selectedShift);
 }
 
 // Update working day options based on selected shift
 function updateWorkingDayOptions(selectedShift) {
-    const dropdown = document.getElementById('filterWorkingDayDropdown');
-    
-    if (!dropdown) return;
-    
-    let availableDates = [];
+    const daySelect = document.getElementById('filterWorkingDay');
     
     if (!selectedShift) {
         // Show all dates
-        availableDates = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
+        const uniqueDays = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
+        daySelect.innerHTML = '';
+        uniqueDays.forEach(day => {
+            const option = document.createElement('option');
+            option.value = day;
+            option.textContent = day;
+            daySelect.appendChild(option);
+        });
     } else {
         // Show only dates where selected shift is working
         const relevantDates = new Set();
@@ -1029,115 +911,24 @@ function updateWorkingDayOptions(selectedShift) {
             });
         }
         
-        availableDates = [...relevantDates].sort();
-    }
-    
-    if (availableDates.length === 0) {
-        dropdown.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">No working days available</div>';
-        return;
-    }
-    
-    // Group dates by week and month
-    const datesByMonth = {};
-    const datesByWeek = {};
-    
-    availableDates.forEach(date => {
-        const month = date.substring(0, 7); // YYYY-MM
-        if (!datesByMonth[month]) {
-            datesByMonth[month] = [];
+        const sortedDates = [...relevantDates].sort();
+        daySelect.innerHTML = '';
+        
+        if (sortedDates.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No working days for this shift';
+            option.disabled = true;
+            daySelect.appendChild(option);
+        } else {
+            sortedDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = date;
+                daySelect.appendChild(option);
+            });
         }
-        datesByMonth[month].push(date);
-        
-        // Calculate week number (ISO week)
-        const d = new Date(date);
-        const dayOfWeek = d.getDay() || 7; // Sunday = 7
-        const weekStart = new Date(d);
-        weekStart.setDate(d.getDate() - dayOfWeek + 1); // Monday of the week
-        const weekKey = weekStart.toISOString().substring(0, 10);
-        
-        if (!datesByWeek[weekKey]) {
-            datesByWeek[weekKey] = [];
-        }
-        datesByWeek[weekKey].push(date);
-    });
-    
-    // Generate HTML with month and week groups
-    let html = '<div class="p-2">';
-    
-    // Month group buttons
-    html += '<div class="mb-2 pb-2 border-b border-gray-200">';
-    html += '<div class="text-xs font-semibold text-gray-500 mb-1 px-1">BY MONTH:</div>';
-    html += '<div class="flex flex-wrap gap-2">';
-    Object.keys(datesByMonth).forEach(month => {
-        const [year, monthNum] = month.split('-');
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
-        html += `
-            <button onclick="selectAllMonthDates('${month}', true)" class="px-3 py-1.5 text-xs bg-blue-100 hover:bg-blue-600 hover:text-white text-blue-700 rounded font-medium transition-all active:bg-blue-700 active:scale-95 shadow-sm hover:shadow-md">
-                ${monthName}
-            </button>
-        `;
-    });
-    html += '</div></div>';
-    
-    // Week group buttons
-    const sortedWeeks = Object.keys(datesByWeek).sort();
-    if (sortedWeeks.length > 0) {
-        html += '<div class="mb-2 pb-2 border-b border-gray-200">';
-        html += '<div class="text-xs font-semibold text-gray-500 mb-1 px-1">BY WEEK:</div>';
-        html += '<div class="flex flex-wrap gap-2">';
-        sortedWeeks.forEach((weekStart, index) => {
-            const dates = datesByWeek[weekStart].sort();
-            const weekEnd = dates[dates.length - 1];
-            
-            // Calculate ISO week number
-            const d = new Date(weekStart);
-            const yearStart = new Date(d.getFullYear(), 0, 1);
-            const weekNum = Math.ceil((((d - yearStart) / 86400000) + yearStart.getDay() + 1) / 7);
-            
-            const weekLabel = `WK${weekNum}: ${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
-            const weekDatesStr = dates.join(',');
-            html += `
-                <button onclick="selectWeekDates('${weekDatesStr}')" class="px-3 py-1.5 text-xs bg-green-100 hover:bg-green-600 hover:text-white text-green-700 rounded font-medium transition-all active:bg-green-700 active:scale-95 shadow-sm hover:shadow-md">
-                    ${weekLabel}
-                </button>
-            `;
-        });
-        html += '</div></div>';
     }
-    
-    // Date checkboxes grouped by month
-    Object.keys(datesByMonth).sort().forEach(month => {
-        const [year, monthNum] = month.split('-');
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthName = `${monthNames[parseInt(monthNum) - 1]} ${year}`;
-        html += `
-            <div class="mb-3">
-                <div class="flex items-center justify-between px-1 py-1 mb-1">
-                    <span class="text-xs font-semibold text-gray-700">${monthName}</span>
-                    <div class="flex gap-1">
-                        <button onclick="selectAllMonthDates('${month}', true)" class="text-xs text-blue-600 hover:text-blue-800 font-medium">All</button>
-                        <span class="text-xs text-gray-400">|</span>
-                        <button onclick="selectAllMonthDates('${month}', false)" class="text-xs text-gray-600 hover:text-gray-800">Clear</button>
-                    </div>
-                </div>
-                <div class="month-dates space-y-0.5" data-month="${month}">
-        `;
-        
-        datesByMonth[month].forEach(date => {
-            html += `
-                <label class="flex items-center px-2 py-1.5 hover:bg-blue-50 cursor-pointer rounded">
-                    <input type="checkbox" value="${date}" class="mr-2 h-4 w-4 text-blue-600 workingDay-checkbox" data-month="${month}" onchange="updateCheckboxDisplay('workingDay')">
-                    <span class="text-sm text-gray-700">${date}</span>
-                </label>
-            `;
-        });
-        
-        html += '</div></div>';
-    });
-    
-    html += '</div>';
-    dropdown.innerHTML = html;
 }
 
 // Update filter options
@@ -1147,60 +938,35 @@ function updateFilterOptions() {
     console.log(`🔧 Updating filter options with ${data.length} records`);
     
     // Update working day options based on current shift filter
-    const selectedShift = getRadioValue('shift');
+    const selectedShift = document.getElementById('filterShift').value;
     updateWorkingDayOptions(selectedShift);
     
-    // Save currently checked items BEFORE updating
-    const checkedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
-    const checkedProcesses = Array.from(document.querySelectorAll('.process-checkbox:checked')).map(cb => cb.value);
-    const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
-    
-    // Category (FO Desc 2) - Sort by category order
-    const uniqueCategories = [...new Set(data.map(d => d.foDesc2))]
-        .filter(c => c)
-        .sort((a, b) => {
-            const orderA = CATEGORY_ORDER[a] || 999;
-            const orderB = CATEGORY_ORDER[b] || 999;
-            return orderA - orderB;
-        });
-    console.log(`📂 Found ${uniqueCategories.length} unique categories (sorted by order):`, uniqueCategories);
+    // Category (FO Desc 2) - Sort alphabetically
+    const uniqueCategories = [...new Set(data.map(d => d.foDesc2))].filter(c => c).sort();
+    console.log(`📂 Found ${uniqueCategories.length} unique categories:`, uniqueCategories);
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
         categoryDropdown.innerHTML = uniqueCategories.map(category => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
-                <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')" ${checkedCategories.includes(category) ? 'checked' : ''}>
+                <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')">
                 <span class="text-sm text-gray-700">${category}</span>
             </label>
         `).join('');
     }
     console.log(`✅ Category dropdown updated with ${uniqueCategories.length} options`);
     
-    // Process (FO Desc 3) - Show all processes sorted by FO Desc 2 category order, then by Seq
+    // Process (FO Desc 3) - Show all processes sorted by Seq
     const processMap = new Map();
     data.forEach(d => {
         if (d.foDesc3 && !processMap.has(d.foDesc3)) {
-            const categorySeq = CATEGORY_ORDER[d.foDesc2] || 999;
-            const processSeq = d.seq !== undefined ? d.seq : 999;
-            processMap.set(d.foDesc3, {
-                category: d.foDesc2,
-                categorySeq: categorySeq,
-                processSeq: processSeq
-            });
+            processMap.set(d.foDesc3, d.seq !== undefined ? d.seq : 999);
         }
     });
     
     const processes = Array.from(processMap.entries())
         .sort((a, b) => {
-            // First sort by category order
-            if (a[1].categorySeq !== b[1].categorySeq) {
-                return a[1].categorySeq - b[1].categorySeq;
-            }
-            // Then sort by process seq
-            if (a[1].processSeq !== b[1].processSeq) {
-                return a[1].processSeq - b[1].processSeq;
-            }
-            // Finally sort alphabetically
+            if (a[1] !== b[1]) return a[1] - b[1];
             return a[0].localeCompare(b[0]);
         })
         .map(entry => entry[0]);
@@ -1209,30 +975,23 @@ function updateFilterOptions() {
     if (processDropdown) {
         processDropdown.innerHTML = processes.map(process => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
-                <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')" ${checkedProcesses.includes(process) ? 'checked' : ''}>
+                <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')">
                 <span class="text-sm text-gray-700">${process}</span>
             </label>
         `).join('');
     }
     
-    // Worker - Store workers globally for search
+    // Worker
     const uniqueWorkers = [...new Set(data.map(d => d.workerName))].filter(w => w).sort();
-    AppState.allWorkers = uniqueWorkers; // Store for search functionality
-    
-    const workerList = document.getElementById('filterWorkerList');
-    if (workerList) {
-        workerList.innerHTML = uniqueWorkers.map(worker => `
-            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 worker-item">
-                <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')" ${checkedWorkers.includes(worker) ? 'checked' : ''}>
+    const workerDropdown = document.getElementById('filterWorkerDropdown');
+    if (workerDropdown) {
+        workerDropdown.innerHTML = uniqueWorkers.map(worker => `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
+                <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')">
                 <span class="text-sm text-gray-700">${worker}</span>
             </label>
         `).join('');
     }
-    
-    // Restore checkbox displays
-    updateCheckboxDisplay('category');
-    updateCheckboxDisplay('process');
-    updateCheckboxDisplay('worker');
 }
 
 // Toggle checkbox dropdown
@@ -1240,20 +999,10 @@ function toggleCheckboxDropdown(type) {
     const dropdown = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
     if (dropdown) {
         dropdown.classList.toggle('hidden');
-        
-        // Clear and focus search input when opening worker dropdown
-        if (type === 'worker' && !dropdown.classList.contains('hidden')) {
-            const searchInput = document.getElementById('workerSearchInput');
-            if (searchInput) {
-                searchInput.value = '';
-                filterWorkerList(); // Reset filter
-                setTimeout(() => searchInput.focus(), 100);
-            }
-        }
     }
     
     // Close other dropdowns
-    const types = ['shift', 'workingDay', 'workingShift', 'category', 'process', 'worker'];
+    const types = ['category', 'process', 'worker'];
     types.forEach(t => {
         if (t !== type) {
             const otherDropdown = document.getElementById(`filter${t.charAt(0).toUpperCase() + t.slice(1)}Dropdown`);
@@ -1262,105 +1011,6 @@ function toggleCheckboxDropdown(type) {
             }
         }
     });
-}
-
-// Update single select filter (for Shift and Working Shift)
-function updateSingleSelect(type, value) {
-    const displayButton = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Display`);
-    const dropdown = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
-    
-    if (displayButton) {
-        const span = displayButton.querySelector('span');
-        if (span) {
-            if (value === '') {
-                span.textContent = 'All';
-                span.className = 'text-gray-500';
-            } else {
-                if (type === 'shift') {
-                    span.textContent = `${value} Shift`;
-                } else if (type === 'workingShift') {
-                    span.textContent = value;
-                }
-                span.className = 'text-gray-900';
-            }
-        }
-    }
-    
-    // Close dropdown
-    if (dropdown) {
-        dropdown.classList.add('hidden');
-    }
-}
-
-// Get radio button value
-function getRadioValue(name) {
-    const radio = document.querySelector(`input[name="${name}"]:checked`);
-    return radio ? radio.value : '';
-}
-
-// Filter worker list based on search input
-function filterWorkerList() {
-    const searchInput = document.getElementById('workerSearchInput');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const workerItems = document.querySelectorAll('.worker-item');
-    
-    workerItems.forEach(item => {
-        const workerName = item.textContent.toLowerCase();
-        if (workerName.includes(searchTerm)) {
-            item.style.display = '';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-// Select/deselect all dates in a month
-function selectAllMonthDates(month, select) {
-    const checkboxes = document.querySelectorAll(`.workingDay-checkbox[data-month="${month}"]`);
-    checkboxes.forEach(cb => {
-        cb.checked = select;
-    });
-    updateCheckboxDisplay('workingDay');
-    
-    // Close dropdown after selection (only if selecting, not clearing)
-    if (select) {
-        const dropdown = document.getElementById('filterWorkingDayDropdown');
-        if (dropdown) {
-            dropdown.classList.add('hidden');
-        }
-    }
-}
-
-// Select week dates
-function selectWeekDates(weekDatesStr) {
-    const weekDates = weekDatesStr.split(',');
-    const allCheckboxes = document.querySelectorAll('.workingDay-checkbox');
-    
-    // First, uncheck all
-    allCheckboxes.forEach(cb => cb.checked = false);
-    
-    // Then check only the week dates
-    allCheckboxes.forEach(cb => {
-        if (weekDates.includes(cb.value)) {
-            cb.checked = true;
-        }
-    });
-    
-    updateCheckboxDisplay('workingDay');
-    
-    // Close dropdown after selection
-    const dropdown = document.getElementById('filterWorkingDayDropdown');
-    if (dropdown) {
-        dropdown.classList.add('hidden');
-    }
-}
-
-// Toggle month visibility (collapse/expand)
-function toggleMonthDates(month) {
-    const monthDiv = document.querySelector(`.month-dates[data-month="${month}"]`);
-    if (monthDiv) {
-        monthDiv.classList.toggle('hidden');
-    }
 }
 
 // Update checkbox display
@@ -1386,9 +1036,8 @@ function updateCheckboxDisplay(type) {
 
 // Apply filters
 function applyFilters() {
-    // Get checked working days
-    const dayCheckboxes = document.querySelectorAll('.workingDay-checkbox:checked');
-    const selectedDays = Array.from(dayCheckboxes).map(cb => cb.value).filter(v => v);
+    const daySelect = document.getElementById('filterWorkingDay');
+    const selectedDays = Array.from(daySelect.selectedOptions).map(opt => opt.value);
     
     // Get checked categories
     const categoryCheckboxes = document.querySelectorAll('.category-checkbox:checked');
@@ -1403,45 +1052,30 @@ function applyFilters() {
     const selectedWorkers = Array.from(workerCheckboxes).map(cb => cb.value).filter(v => v);
     
     AppState.filters = {
-        shift: getRadioValue('shift'),
+        shift: document.getElementById('filterShift').value,
         workingDays: selectedDays,
-        workingShift: getRadioValue('workingShift'),
+        workingShift: document.getElementById('filterWorkingShift').value,
         categories: selectedCategories,
         processes: selectedProcesses,
         workers: selectedWorkers
     };
     
     console.log('🎯 Applied filters:', AppState.filters);
-    
-    // Close all dropdowns after applying filters
-    document.getElementById('filterWorkingDayDropdown')?.classList.add('hidden');
-    document.getElementById('filterCategoryDropdown')?.classList.add('hidden');
-    document.getElementById('filterProcessDropdown')?.classList.add('hidden');
-    document.getElementById('filterWorkerDropdown')?.classList.add('hidden');
-    document.getElementById('filterWorkingShiftDropdown')?.classList.add('hidden');
-    
     updateReport();
 }
 
 // Reset filters
 function resetFilters() {
-    // Reset radio buttons
-    const shiftRadio = document.querySelector('input[name="shift"][value=""]');
-    if (shiftRadio) shiftRadio.checked = true;
-    updateSingleSelect('shift', '');
-    
-    const workingShiftRadio = document.querySelector('input[name="workingShift"][value=""]');
-    if (workingShiftRadio) workingShiftRadio.checked = true;
-    updateSingleSelect('workingShift', '');
+    document.getElementById('filterShift').value = '';
+    document.getElementById('filterWorkingDay').innerHTML = '';
+    document.getElementById('filterWorkingShift').value = '';
     
     // Uncheck all checkboxes
-    document.querySelectorAll('.workingDay-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.process-checkbox').forEach(cb => cb.checked = false);
     document.querySelectorAll('.worker-checkbox').forEach(cb => cb.checked = false);
     
     // Reset displays
-    updateCheckboxDisplay('workingDay');
     updateCheckboxDisplay('category');
     updateCheckboxDisplay('process');
     updateCheckboxDisplay('worker');
@@ -1518,113 +1152,14 @@ function updateReport() {
     
     const filteredData = getFilteredData();
     
-    // Store filtered data in AppState for use in Worker Detail modal
-    AppState.filteredData = filteredData;
-    
-    // Aggregate by worker (detailed: worker+date+shift+process)
+    // Aggregate by worker
     const workerAgg = aggregateByWorker(filteredData);
     
-    // Aggregate by worker only (for Performance Bands and Charts)
-    const workerSummary = aggregateByWorkerOnly(workerAgg);
-    
     updateKPIs(workerAgg);
-    updatePerformanceBands(workerSummary); // Use worker summary for bands
-    updateCharts(workerSummary, filteredData); // Use worker summary for charts
+    updatePerformanceBands(workerAgg);
+    updateCharts(workerAgg, filteredData);
     updateDataTable(workerAgg);
     updatePivotReport(workerAgg);
-}
-
-// Aggregate by worker only (consolidate all records per worker)
-function aggregateByWorkerOnly(workerAgg) {
-    // First, get all original records to calculate shifts based on startDatetime
-    const byWorker = {};
-    
-    // Use filteredData instead of processedData to respect current filters
-    const dataToAggregate = AppState.filteredData || AppState.processedData;
-    dataToAggregate.forEach(record => {
-        if (record.validFlag !== 1) return; // Only valid records
-        
-        const workerName = record.workerName;
-        
-        if (!byWorker[workerName]) {
-            byWorker[workerName] = {
-                workerName: workerName,
-                totalMinutes: 0,
-                validCount: 0,
-                foDesc3: '', // Will be set from workerAgg
-                workingDay: '', // Will be set from workerAgg
-                recordCount: 0,
-                shifts: new Set(), // Track unique shifts based on startDatetime
-                processTimes: {} // Track time spent on each process
-            };
-        }
-        
-        byWorker[workerName].totalMinutes += record.workerActMins || 0;
-        byWorker[workerName].validCount += 1;
-        
-        // Track shift based on workingDay + workingShift (from shift calendar)
-        // This properly handles overnight shifts and O/T
-        const shiftKey = `${record.workingDay}_${record.workingShift}`;
-        byWorker[workerName].shifts.add(shiftKey);
-        
-        // Track time per process to find the primary process
-        if (record.foDesc3) {
-            if (!byWorker[workerName].processTimes[record.foDesc3]) {
-                byWorker[workerName].processTimes[record.foDesc3] = 0;
-            }
-            byWorker[workerName].processTimes[record.foDesc3] += record.workerActMins || 0;
-        }
-        
-        // Keep the latest working day
-        if (record.workingDay) {
-            byWorker[workerName].workingDay = record.workingDay;
-        }
-    });
-    
-    // Set primary process (process with most time spent)
-    Object.values(byWorker).forEach(worker => {
-        if (Object.keys(worker.processTimes).length > 0) {
-            // Find process with maximum time
-            const primaryProcess = Object.entries(worker.processTimes)
-                .sort((a, b) => b[1] - a[1])[0][0];
-            worker.foDesc3 = primaryProcess;
-        }
-    });
-    
-    // Update record count from workerAgg
-    workerAgg.forEach(item => {
-        if (byWorker[item.workerName]) {
-            byWorker[item.workerName].recordCount += 1;
-        }
-    });
-    
-    // Calculate work rate for each worker
-    const result = Object.values(byWorker).map(worker => {
-        const shiftCount = worker.shifts.size;
-        // Calculate work rate as: total valid work time / (660 min * shift count) * 100
-        const workRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
-        return {
-            ...worker,
-            shiftCount: shiftCount,
-            workRate: workRate,
-            performanceBand: getPerformanceBand(workRate)
-        };
-    });
-    
-    // Sort by work rate descending
-    result.sort((a, b) => b.workRate - a.workRate);
-    
-    console.log('📊 Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
-        name: w.workerName,
-        totalMinutes: w.totalMinutes.toFixed(0),
-        shifts: w.shiftCount,
-        workRate: w.workRate.toFixed(1) + '%',
-        band: w.performanceBand,
-        process: w.foDesc3,
-        calculation: `${w.totalMinutes.toFixed(0)} / (660 * ${w.shiftCount}) * 100`
-    })));
-    
-    return result;
 }
 
 // Update pivot-style report (date-wise breakdown)
@@ -1674,23 +1209,19 @@ function updatePivotReport(workerAgg) {
     // Build HTML table
     let html = '<table class="pivot-table">';
     
-    // Header with rowspan for Worker Name
-    html += '<thead>';
-    html += '<tr>';
-    html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle;">Worker Name</th>';
+    // Header row
+    html += '<thead><tr>';
+    html += '<th rowspan="2" style="min-width: 200px; text-align: left;">Worker Name</th>';
     allDates.forEach(date => {
         html += `<th colspan="3">${date}</th>`;
     });
-    html += '</tr>';
-    
-    html += '<tr>';
+    html += '</tr><tr>';
     allDates.forEach(() => {
         html += '<th style="font-size: 0.7rem;">WO Count</th>';
         html += '<th style="font-size: 0.7rem;">Std Time(m)</th>';
         html += '<th style="font-size: 0.7rem;">Work Rate</th>';
     });
-    html += '</tr>';
-    html += '</thead>';
+    html += '</tr></thead>';
     
     // Body rows - grouped by process, sorted by Seq THEN by process name
     html += '<tbody>';
@@ -1752,24 +1283,12 @@ function aggregateByWorker(data) {
     data.forEach(record => {
         totalRecords++;
         
-        // Debug: Check first record's foDesc2
-        if (totalRecords === 1) {
-            console.log('🔍 First record in aggregateByWorker:', {
-                workerName: record.workerName,
-                foDesc3: record.foDesc3,
-                foDesc2: record.foDesc2,
-                seq: record.seq
-            });
-        }
-        
-        // Group by: worker + day + shift + actualShift + process for display purposes
         const key = `${record.workerName}|${record.workingDay}|${record.workingShift}|${record.actualShift}|${record.foDesc3}`;
         
         if (!aggregated[key]) {
             aggregated[key] = {
                 workerName: record.workerName,
                 foDesc3: record.foDesc3,
-                foDesc2: record.foDesc2,  // Add foDesc2 for category ordering
                 workingDay: record.workingDay,
                 workingShift: record.workingShift,
                 actualShift: record.actualShift,
@@ -1779,9 +1298,9 @@ function aggregateByWorker(data) {
             };
         }
         
-        // Accumulate VALID work time only (validFlag === 1)
+        // CRITICAL: Only count minutes for VALID work orders (Result Cnt = "X")
         if (record.validFlag === 1) {
-            aggregated[key].totalMinutes += record.workerActMins || 0;
+            aggregated[key].totalMinutes += record.workerActMins;
             aggregated[key].validCount += 1;
             validRecords++;
         } else {
@@ -1793,7 +1312,6 @@ function aggregateByWorker(data) {
     
     // Convert to array and calculate work rate
     const result = Object.values(aggregated).map(item => {
-        // Calculate work rate as: total work time / standard day (660 min) * 100
         const workRate = (item.totalMinutes / 660) * 100;
         return {
             ...item,
@@ -1839,6 +1357,7 @@ function updateKPIs(workerAgg) {
 // Update performance bands
 function updatePerformanceBands(workerAgg) {
     const excellent = workerAgg.filter(w => w.performanceBand === 'Excellent');
+    const normal = workerAgg.filter(w => w.performanceBand === 'Normal');
     const poor = workerAgg.filter(w => w.performanceBand === 'Poor');
     const critical = workerAgg.filter(w => w.performanceBand === 'Critical');
     
@@ -1846,14 +1365,14 @@ function updatePerformanceBands(workerAgg) {
     const excellentDiv = document.getElementById('excellentWorkers');
     if (excellent.length > 0) {
         excellentDiv.innerHTML = '<div class="space-y-2">' + excellent.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-800">${w.workerName}</span>
+                    <span class="font-semibold text-green-900">${w.workerName}</span>
                     <span class="text-green-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-2 text-xs">
-                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-gray-500">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-green-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-green-600">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
@@ -1861,18 +1380,37 @@ function updatePerformanceBands(workerAgg) {
         excellentDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
     }
     
+    // Normal workers
+    const normalDiv = document.getElementById('normalWorkers');
+    if (normal.length > 0) {
+        normalDiv.innerHTML = '<div class="space-y-2">' + normal.map(w => 
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-blue-900">${w.workerName}</span>
+                    <span class="text-blue-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-blue-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-blue-600">${w.workingDay || ''}</span>
+                </div>
+            </div>`
+        ).join('') + '</div>';
+    } else {
+        normalDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
+    }
+    
     // Poor workers
     const poorDiv = document.getElementById('poorWorkers');
     if (poor.length > 0) {
         poorDiv.innerHTML = '<div class="space-y-2">' + poor.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-orange-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-orange-50 to-amber-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-800">${w.workerName}</span>
+                    <span class="font-semibold text-orange-900">${w.workerName}</span>
                     <span class="text-orange-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-2 text-xs">
-                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-gray-500">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-orange-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-orange-600">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
@@ -1884,14 +1422,14 @@ function updatePerformanceBands(workerAgg) {
     const criticalDiv = document.getElementById('criticalWorkers');
     if (critical.length > 0) {
         criticalDiv.innerHTML = '<div class="space-y-2">' + critical.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-red-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-red-50 to-rose-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-800">${w.workerName}</span>
+                    <span class="font-semibold text-red-900">${w.workerName}</span>
                     <span class="text-red-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
                 </div>
-                <div class="flex justify-between items-center mt-2 text-xs">
-                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-gray-500">${w.workingDay || ''}</span>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-red-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-red-600">${w.workingDay || ''}</span>
                 </div>
             </div>`
         ).join('') + '</div>';
@@ -1901,109 +1439,31 @@ function updatePerformanceBands(workerAgg) {
 }
 
 // Update charts
-function updateCharts(workerSummary, filteredData) {
-    updateProcessChart(filteredData); // Use filteredData instead of workerSummary
-    updatePerformanceChart(workerSummary);
+function updateCharts(workerAgg, rawData) {
+    updateProcessChart(workerAgg);
+    updatePerformanceChart(workerAgg);
 }
 
 // Update process chart
-function updateProcessChart(filteredData) {
+function updateProcessChart(workerAgg) {
     const processData = {};
     
-    // Create a map of process -> seq from processMapping
-    const processSeqMap = {};
-    AppState.processMapping.forEach(mapping => {
-        const processName = mapping.foDesc3 || mapping.foDesc2;
-        if (processName && !processSeqMap[processName]) {
-            processSeqMap[processName] = mapping.seq;
-        }
-    });
-    
-    // Aggregate by process (foDesc3) from filteredData
-    filteredData.forEach(record => {
-        if (!processData[record.foDesc3]) {
-            // Get seq from mapping
-            const seq = processSeqMap[record.foDesc3];
-            // Get category order (foDesc2)
-            const categorySeq = CATEGORY_ORDER[record.foDesc2] || 999;
-            
-            processData[record.foDesc3] = {
+    workerAgg.forEach(item => {
+        if (!processData[item.foDesc3]) {
+            processData[item.foDesc3] = {
                 totalMinutes: 0,
-                count: 0,
-                workers: new Set(), // Track unique workers
-                workerShifts: {}, // Track shifts per worker
-                seq: seq !== null && seq !== undefined ? seq : 999,
-                categorySeq: categorySeq,
-                foDesc2: record.foDesc2
+                count: 0
             };
         }
-        processData[record.foDesc3].totalMinutes += record.workerActMins || 0;
-        processData[record.foDesc3].count += 1;
-        processData[record.foDesc3].workers.add(record.workerName);
-        
-        // Track unique shifts per worker
-        if (!processData[record.foDesc3].workerShifts[record.workerName]) {
-            processData[record.foDesc3].workerShifts[record.workerName] = new Set();
-        }
-        const shiftKey = `${record.workingDay}_${record.workingShift}`;
-        processData[record.foDesc3].workerShifts[record.workerName].add(shiftKey);
+        processData[item.foDesc3].totalMinutes += item.totalMinutes;
+        processData[item.foDesc3].count += 1;
     });
     
-    // Debug: Show sample process data before calculation
-    const sampleProcesses = Object.entries(processData).slice(0, 3);
-    console.log('🔍 Sample process data:');
-    sampleProcesses.forEach(([name, data]) => {
-        const workerCount = data.workers.size;
-        const totalShifts = Object.values(data.workerShifts).reduce((sum, shifts) => sum + shifts.size, 0);
-        console.log(`  ${name}: totalMinutes=${data.totalMinutes.toFixed(1)}, records=${data.count}, workers=${workerCount}, totalShifts=${totalShifts}, avgPerWorker=${(data.totalMinutes/workerCount).toFixed(1)}min`);
+    const processes = Object.keys(processData);
+    const avgWorkRates = processes.map(p => {
+        const avg = (processData[p].totalMinutes / processData[p].count / 660) * 100;
+        return avg.toFixed(1);
     });
-    
-    // Sort processes by category first, then by seq within category
-    const sortedProcesses = Object.entries(processData)
-        .map(([name, data]) => {
-            const workerCount = data.workers.size;
-            // Calculate total shifts across all workers
-            const totalShifts = Object.values(data.workerShifts).reduce((sum, shifts) => sum + shifts.size, 0);
-            
-            // Correct formula: (total minutes / total shifts / 660) * 100
-            const avgWorkRate = totalShifts > 0 
-                ? ((data.totalMinutes / totalShifts / 660) * 100).toFixed(1)
-                : '0.0';
-            
-            return {
-                name,
-                avgWorkRate: avgWorkRate,
-                totalMinutes: data.totalMinutes,
-                count: data.count,
-                workerCount: workerCount,
-                totalShifts: totalShifts,
-                avgMinutesPerWorker: workerCount > 0 ? (data.totalMinutes / workerCount).toFixed(1) : '0',
-                seq: data.seq,
-                categorySeq: data.categorySeq,
-                foDesc2: data.foDesc2
-            };
-        })
-        .sort((a, b) => {
-            // Primary sort: by category
-            if (a.categorySeq !== b.categorySeq) {
-                return a.categorySeq - b.categorySeq;
-            }
-            // Secondary sort: by process seq within category
-            return a.seq - b.seq;
-        });
-    
-    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq}, WorkRate: ${p.avgWorkRate}%)`).join(', '));
-    console.log('📊 Top 3 processes:', sortedProcesses.slice(0, 3).map(p => ({
-        name: p.name,
-        totalMinutes: p.totalMinutes.toFixed(1),
-        records: p.count,
-        workers: p.workerCount,
-        avgMinutesPerWorker: p.avgMinutesPerWorker,
-        workRate: p.avgWorkRate + '%'
-    })));
-    
-    const processes = sortedProcesses.map(p => p.name);
-    const avgWorkRates = sortedProcesses.map(p => p.avgWorkRate);
     
     const ctx = document.getElementById('processChart');
     
@@ -2233,7 +1693,6 @@ function loadDefaultProcessMapping() {
         { fdDesc: 'Electrical', foDesc2: 'IM', foDesc3: 'Electrical', seq: 3 },
         { fdDesc: 'Duct Assembly', foDesc2: 'IM', foDesc3: 'Duct Assembly', seq: 3 },
         { fdDesc: 'Final Touch Up', foDesc2: 'IM', foDesc3: 'Final Touch Up', seq: 4 },
-        { fdDesc: 'Mechanical', foDesc2: 'IM', foDesc3: 'Mechanical', seq: 5 },
         
         // WT QC Category
         { fdDesc: 'Blasting', foDesc2: 'WT QC', foDesc3: 'Blasting Inspection', seq: 2 },
@@ -2424,23 +1883,109 @@ function updateMappingSortIcons() {
     });
 }
 
-// Database button handlers
-function initDatabaseButtons() {
-    // Load last upload button
-    document.getElementById('loadLastUploadBtn')?.addEventListener('click', loadLastUpload);
-    
-    // Save to database button
-    document.getElementById('saveToDatabaseBtn')?.addEventListener('click', () => {
-        saveToDatabase();
+// JSON Import/Export
+function initJsonImportExport() {
+    document.getElementById('exportJsonBtn').addEventListener('click', exportToJson);
+    document.getElementById('importJsonBtn').addEventListener('click', () => {
+        document.getElementById('jsonFileInput').click();
     });
     
-    // Refresh uploads list button
-    document.getElementById('refreshUploadsBtn')?.addEventListener('click', () => {
-        loadUploadsList();
+    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            importFromJson(e.target.files[0]);
+        }
     });
+}
+
+// Export to JSON
+function exportToJson() {
+    const exportData = {
+        version: '1.1',
+        exportDate: new Date().toISOString(),
+        rawData: AppState.rawData,
+        processedData: AppState.processedData,
+        processMapping: AppState.processMapping,
+        shiftCalendar: AppState.shiftCalendar
+    };
     
-    // Load uploads list on page load
-    loadUploadsList();
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const filename = `MES_Report_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ JSON file exported successfully:', filename);
+}
+
+// Import from JSON
+function importFromJson(file) {
+    showUploadStatus(true);
+    updateProgress(10);
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            updateProgress(30);
+            const importData = JSON.parse(e.target.result);
+            
+            updateProgress(50);
+            
+            // Validate structure
+            if (!importData.rawData || !importData.processedData || !importData.processMapping) {
+                throw new Error('Invalid JSON file format. Required: rawData, processedData, processMapping.');
+            }
+            
+            updateProgress(70);
+            
+            // Restore data
+            AppState.rawData = importData.rawData;
+            AppState.processedData = importData.processedData;
+            AppState.processMapping = importData.processMapping;
+            AppState.shiftCalendar = importData.shiftCalendar || [];
+            
+            updateProgress(90);
+            
+            // Update UI
+            updateMappingTable();
+            showUploadResult(AppState.processedData);
+            updateReport();
+            
+            document.getElementById('exportJsonBtn').disabled = false;
+            
+            updateProgress(100);
+            
+            console.log('✅ JSON file imported successfully');
+            
+            setTimeout(() => {
+                showUploadStatus(false);
+                // Switch to report tab
+                document.querySelector('[data-tab="report"]').click();
+            }, 500);
+            
+        } catch (error) {
+            console.error('JSON import error:', error);
+            alert('Error loading JSON file:\n' + error.message);
+            showUploadStatus(false);
+        }
+    };
+    
+    reader.onerror = function() {
+        alert('Error reading file.');
+        showUploadStatus(false);
+    };
+    
+    reader.readAsText(file);
 }
 
 
@@ -2603,33 +2148,13 @@ function initCalendarNavigation() {
 }
 
 // Save data to database
-async function saveToDatabase() {
-    const saveBtn = document.getElementById('saveToDatabaseBtn');
-    const saveStatus = document.getElementById('saveStatus');
-    
-    if (!AppState.processedData || AppState.processedData.length === 0) {
-        alert('No data to save. Please upload an Excel file first.');
-        return;
-    }
-    
+async function saveToDatabase(filename, fileSize) {
     try {
-        // Disable button and show loading
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-        saveStatus.classList.add('hidden');
-        
         console.log('💾 Saving data to database...');
-        console.log('📊 Data to save:', {
-            filename: AppState.currentFileName,
-            fileSize: AppState.currentFileSize,
-            processedDataCount: AppState.processedData.length,
-            processMappingCount: AppState.processMapping.length,
-            shiftCalendarCount: AppState.shiftCalendar.length
-        });
         
         const payload = {
-            filename: AppState.currentFileName || 'Unknown',
-            fileSize: AppState.currentFileSize || 0,
+            filename: filename,
+            fileSize: fileSize,
             rawData: AppState.rawData,
             processedData: AppState.processedData,
             processMapping: AppState.processMapping,
@@ -2645,8 +2170,7 @@ async function saveToDatabase() {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
+            throw new Error(`Server error: ${response.status}`);
         }
         
         const result = await response.json();
@@ -2655,689 +2179,13 @@ async function saveToDatabase() {
             console.log('✅ Data saved successfully!', result);
             console.log(`📊 Upload ID: ${result.uploadId}`);
             console.log(`📈 Stats:`, result.stats);
-            
-            // Show success status
-            saveStatus.classList.remove('hidden');
-            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved';
-            saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            saveBtn.classList.add('bg-green-600');
-            
-            // Refresh uploads list
-            loadUploadsList();
-            
-            setTimeout(() => {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
-                saveBtn.classList.remove('bg-green-600');
-                saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            }, 3000);
         } else {
-            throw new Error(result.error || 'Save failed');
+            console.error('❌ Save failed:', result.error);
         }
     } catch (error) {
         console.error('❌ Failed to save to database:', error);
-        alert('Failed to save to database:\n' + error.message);
-        
-        // Reset button
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
-    }
-}
-
-// Load uploads list
-async function loadUploadsList() {
-    const uploadsListDiv = document.getElementById('uploadsList');
-    
-    try {
-        // Show loading
-        uploadsListDiv.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
-                <p>Loading uploads...</p>
-            </div>
-        `;
-        
-        const response = await fetch('/api/uploads');
-        if (!response.ok) {
-            throw new Error(`Failed to fetch uploads: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (!result.success || !result.uploads || result.uploads.length === 0) {
-            uploadsListDiv.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-inbox text-4xl mb-2"></i>
-                    <p>No saved uploads yet. Upload a file to get started.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Display uploads as cards
-        uploadsListDiv.innerHTML = result.uploads.map(upload => {
-            const date = new Date(upload.upload_date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            return `
-                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1 cursor-pointer" onclick="loadUploadById(${upload.id})">
-                            <div class="flex items-center mb-2">
-                                <i class="fas fa-file-excel text-green-600 mr-2"></i>
-                                <h3 class="font-semibold text-gray-800">${upload.filename}</h3>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                                <div><i class="fas fa-calendar mr-1"></i> ${date}</div>
-                                <div><i class="fas fa-database mr-1"></i> ${(upload.file_size / 1024).toFixed(0)} KB</div>
-                                <div><i class="fas fa-list mr-1"></i> ${upload.total_records.toLocaleString()} records</div>
-                                <div><i class="fas fa-users mr-1"></i> ${upload.unique_workers} workers</div>
-                            </div>
-                            ${upload.date_range_start ? `
-                                <div class="text-xs text-gray-500 mt-2">
-                                    <i class="fas fa-clock mr-1"></i> ${upload.date_range_start} ~ ${upload.date_range_end || 'N/A'}
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="flex flex-col gap-2 ml-4">
-                            <button onclick="loadUploadById(${upload.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition">
-                                <i class="fas fa-download mr-1"></i> Load
-                            </button>
-                            <button onclick="deleteUpload(${upload.id}, event)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition">
-                                <i class="fas fa-trash mr-1"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        console.log(`✅ Loaded ${result.uploads.length} uploads`);
-        
-    } catch (error) {
-        console.error('❌ Failed to load uploads list:', error);
-        uploadsListDiv.innerHTML = `
-            <div class="text-center text-red-500 py-8">
-                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
-                <p>Failed to load uploads</p>
-                <p class="text-sm">${error.message}</p>
-            </div>
-        `;
-    }
-}
-
-// Delete upload by ID
-async function deleteUpload(uploadId, event) {
-    // Prevent card click event
-    if (event) {
-        event.stopPropagation();
-    }
-    
-    // Confirm deletion
-    if (!confirm(`Are you sure you want to delete this upload?\n\nThis will permanently delete:\n- Upload record\n- ${AppState.processedData?.length || 'All'} raw data records\n- Process mappings\n- Shift calendar data\n\nThis action cannot be undone.`)) {
-        return;
-    }
-    
-    try {
-        console.log(`🗑️  Deleting upload #${uploadId}...`);
-        
-        const response = await fetch(`/api/uploads/${uploadId}`, {
-            method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log(`✅ Upload #${uploadId} deleted successfully`);
-            
-            // Refresh uploads list
-            loadUploadsList();
-            
-            // Show success message
-            alert(`Upload deleted successfully!\n\n${result.message}`);
-        } else {
-            throw new Error(result.error || 'Delete failed');
-        }
-    } catch (error) {
-        console.error(`❌ Failed to delete upload #${uploadId}:`, error);
-        alert('Failed to delete upload:\n' + error.message);
-    }
-}
-
-// Load specific upload by ID
-async function loadUploadById(uploadId) {
-    try {
-        console.log(`📥 Loading upload #${uploadId}...`);
-        showUploadStatus(true);
-        updateProgress(20);
-        
-        // Fetch full data for this upload
-        const dataResponse = await fetch(`/api/uploads/${uploadId}`);
-        if (!dataResponse.ok) {
-            throw new Error(`Failed to fetch upload data: ${dataResponse.status}`);
-        }
-        
-        updateProgress(60);
-        const dataResult = await dataResponse.json();
-        
-        if (!dataResult.success) {
-            throw new Error('Failed to load upload data');
-        }
-        
-        updateProgress(80);
-        
-        // Restore data to AppState - convert DB format to app format
-        AppState.rawData = (dataResult.rawData || []).map(d => ({
-            workerName: d.worker_name,
-            foDesc: d.fo_desc,
-            fdDesc: d.fd_desc,
-            startDatetime: d.start_datetime,
-            endDatetime: d.end_datetime,
-            workerAct: d.worker_act,
-            workerActMins: d.worker_act,  // Add this field for consistency
-            resultCnt: d.result_cnt,
-            workingDay: d.working_day,
-            workingShift: d.working_shift,
-            actualShift: d.actual_shift,
-            workRate: d.work_rate
-        }));
-        
-        AppState.processMapping = (dataResult.processMapping || []).map(m => ({
-            fdDesc: m.fd_desc,
-            foDesc2: m.fo_desc_2,
-            foDesc3: m.fo_desc_3,
-            seq: m.seq
-        }));
-        
-        // Merge with default mappings to fill in missing seq values
-        loadDefaultProcessMapping();
-        const defaultMappings = AppState.processMapping;
-        AppState.processMapping = (dataResult.processMapping || []).map(m => {
-            const dbMapping = {
-                fdDesc: m.fd_desc,
-                foDesc2: m.fo_desc_2,
-                foDesc3: m.fo_desc_3,
-                seq: m.seq
-            };
-            // If seq is null/undefined, try to find it from default mappings
-            if (dbMapping.seq === null || dbMapping.seq === undefined) {
-                const defaultMatch = defaultMappings.find(dm => 
-                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
-                );
-                if (defaultMatch) {
-                    dbMapping.seq = defaultMatch.seq;
-                }
-            }
-            return dbMapping;
-        });
-        
-        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
-            date: s.date,
-            dayShift: s.day_shift,
-            nightShift: s.night_shift
-        }));
-        
-        // Convert datetime strings back to Date objects for rawData
-        AppState.rawData = AppState.rawData.map(d => ({
-            ...d,
-            startDatetime: d.startDatetime ? new Date(d.startDatetime) : null,
-            endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
-        }));
-        
-        // Re-process the data with current mappings
-        console.log('🔄 Re-processing data with mappings...');
-        AppState.processedData = processData(AppState.rawData);
-        
-        updateProgress(100);
-        
-        // Update UI
-        updateMappingTable();
-        showUploadResult(AppState.processedData);
-        updateReport();
-        
-        // Switch to Report tab
-        switchTab('report');
-        
-        console.log('✅ Data loaded successfully!');
-        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${uploadId}`);
-        console.log(`📅 Upload: ${dataResult.upload.filename}`);
-        
-        setTimeout(() => {
-            showUploadStatus(false);
-        }, 500);
-        
-    } catch (error) {
-        console.error('❌ Failed to load upload:', error);
-        alert('Failed to load upload:\n' + error.message);
-        showUploadStatus(false);
-    }
-}
-
-// Load last upload from database
-async function loadLastUpload() {
-    try {
-        console.log('📥 Loading last upload from database...');
-        showUploadStatus(true);
-        updateProgress(20);
-        
-        // Get list of uploads
-        const listResponse = await fetch('/api/uploads');
-        if (!listResponse.ok) {
-            throw new Error(`Failed to fetch uploads: ${listResponse.status}`);
-        }
-        
-        updateProgress(40);
-        const listResult = await listResponse.json();
-        
-        if (!listResult.success || !listResult.uploads || listResult.uploads.length === 0) {
-            alert('No uploads found in database.');
-            showUploadStatus(false);
-            return;
-        }
-        
-        // Get the most recent upload
-        const lastUpload = listResult.uploads[0];
-        console.log('📄 Last upload:', lastUpload);
-        
-        updateProgress(60);
-        
-        // Fetch full data for this upload
-        const dataResponse = await fetch(`/api/uploads/${lastUpload.id}`);
-        if (!dataResponse.ok) {
-            throw new Error(`Failed to fetch upload data: ${dataResponse.status}`);
-        }
-        
-        updateProgress(80);
-        const dataResult = await dataResponse.json();
-        
-        if (!dataResult.success) {
-            throw new Error('Failed to load upload data');
-        }
-        
-        // Restore data to AppState - convert DB format to app format
-        AppState.rawData = (dataResult.rawData || []).map(d => ({
-            workerName: d.worker_name,
-            foDesc: d.fo_desc,
-            fdDesc: d.fd_desc,
-            startDatetime: d.start_datetime,
-            endDatetime: d.end_datetime,
-            workerAct: d.worker_act,
-            workerActMins: d.worker_act,  // Add this field for consistency
-            resultCnt: d.result_cnt,
-            workingDay: d.working_day,
-            workingShift: d.working_shift,
-            actualShift: d.actual_shift,
-            workRate: d.work_rate
-        }));
-        
-        AppState.processMapping = (dataResult.processMapping || []).map(m => ({
-            fdDesc: m.fd_desc,
-            foDesc2: m.fo_desc_2,
-            foDesc3: m.fo_desc_3,
-            seq: m.seq
-        }));
-        
-        // Merge with default mappings to fill in missing seq values
-        loadDefaultProcessMapping();
-        const defaultMappings = AppState.processMapping;
-        AppState.processMapping = (dataResult.processMapping || []).map(m => {
-            const dbMapping = {
-                fdDesc: m.fd_desc,
-                foDesc2: m.fo_desc_2,
-                foDesc3: m.fo_desc_3,
-                seq: m.seq
-            };
-            // If seq is null/undefined, try to find it from default mappings
-            if (dbMapping.seq === null || dbMapping.seq === undefined) {
-                const defaultMatch = defaultMappings.find(dm => 
-                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
-                );
-                if (defaultMatch) {
-                    dbMapping.seq = defaultMatch.seq;
-                }
-            }
-            return dbMapping;
-        });
-        
-        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
-            date: s.date,
-            dayShift: s.day_shift,
-            nightShift: s.night_shift
-        }));
-        
-        // Convert datetime strings back to Date objects for rawData
-        AppState.rawData = AppState.rawData.map(d => ({
-            ...d,
-            startDatetime: d.startDatetime ? new Date(d.startDatetime) : null,
-            endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
-        }));
-        
-        // Re-process the data with current mappings
-        console.log('🔄 Re-processing data with mappings...');
-        AppState.processedData = processData(AppState.rawData);
-        
-        updateProgress(100);
-        
-        // Update UI
-        updateMappingTable();
-        showUploadResult(AppState.processedData);
-        updateReport();
-        
-        console.log('✅ Data loaded successfully!');
-        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
-        console.log(`📅 Upload date: ${lastUpload.upload_date}`);
-        console.log(`📁 Filename: ${lastUpload.filename}`);
-        
-        setTimeout(() => {
-            showUploadStatus(false);
-        }, 1000);
-        
-    } catch (error) {
-        console.error('❌ Failed to load from database:', error);
-        alert('Failed to load last upload:\n' + error.message);
-        showUploadStatus(false);
-    }
-}
-
-// Sort Performance Bands
-function sortPerformanceBand(bandType, order) {
-    const workerAgg = aggregateByWorker(AppState.processedData);
-    const aggregatedData = aggregateByWorkerOnly(workerAgg);
-    
-    let workers;
-    if (bandType === 'excellent') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Excellent');
-    } else if (bandType === 'poor') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Poor');
-    } else if (bandType === 'critical') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Critical');
-    }
-    
-    // Sort by workRate
-    workers.sort((a, b) => {
-        if (order === 'asc') {
-            return a.workRate - b.workRate;
-        } else {
-            return b.workRate - a.workRate;
-        }
-    });
-    
-    // Render sorted workers
-    const divId = bandType === 'excellent' ? 'excellentWorkers' : 
-                  bandType === 'poor' ? 'poorWorkers' : 'criticalWorkers';
-    const colorClass = bandType === 'excellent' ? 'green' :
-                       bandType === 'poor' ? 'orange' : 'red';
-    
-    const div = document.getElementById(divId);
-    if (workers.length > 0) {
-        div.innerHTML = '<div class="space-y-2">' + workers.map(w => 
-            `<div class="flex flex-col p-3 bg-gradient-to-br from-${colorClass}-50 to-${colorClass === 'green' ? 'emerald' : colorClass === 'orange' ? 'amber' : 'rose'}-100 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
-                <div class="flex justify-between items-center">
-                    <span class="font-semibold text-${colorClass}-900">${w.workerName}</span>
-                    <span class="text-${colorClass}-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
-                </div>
-                <div class="flex justify-between items-center mt-1 text-xs">
-                    <span class="text-${colorClass}-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
-                    <span class="text-${colorClass}-600">${w.workingDay || ''}</span>
-                </div>
-            </div>`
-        ).join('') + '</div>';
-    } else {
-        div.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
-    }
-}
-
-// Show Worker Detail Modal
-let modalCharts = {
-    daily: null,
-    process: null
-};
-
-function showWorkerDetail(workerName) {
-    // Use filtered data if available, otherwise use all processed data
-    const dataSource = AppState.filteredData || AppState.processedData;
-    
-    // Filter records for this worker from the current filtered dataset
-    const workerRecords = dataSource.filter(r => r.workerName === workerName);
-    
-    if (workerRecords.length === 0) {
-        alert('No records found for this worker in the current filter');
-        return;
-    }
-    
-    // Calculate summary stats
-    // Only sum workerActMins for valid records (Result Cnt = 'X')
-    const validRecordsList = workerRecords.filter(r => r.validFlag === 1);
-    const totalMinutes = validRecordsList.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
-    const totalRecords = workerRecords.length;
-    const validRecords = validRecordsList.length;
-    
-    // Count unique shifts based on workingDay + workingShift (ONLY for valid records)
-    const uniqueShifts = new Set();
-    validRecordsList.forEach(r => {  // validRecordsList만 사용!
-        // Use workingDay and workingShift from shift calendar
-        // This properly handles overnight shifts and O/T
-        const shiftKey = `${r.workingDay}_${r.workingShift}`;
-        uniqueShifts.add(shiftKey);
-    });
-    const shiftCount = uniqueShifts.size;
-    
-    // Calculate work rate: total valid work time / (660 min * shift count) * 100
-    const avgWorkRate = shiftCount > 0 ? (totalMinutes / (660 * shiftCount)) * 100 : 0;
-    
-    const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
-                           avgWorkRate >= 50 ? 'Normal' :
-                           avgWorkRate >= 30 ? 'Poor' : 'Critical';
-    
-    console.log(`📊 Worker Detail for ${workerName}:`, {
-        totalMinutes: totalMinutes.toFixed(1),
-        totalRecords,
-        validRecords,
-        shiftCount,
-        avgWorkRate: avgWorkRate.toFixed(1) + '%',
-        performanceBand,
-        calculation: `${totalMinutes.toFixed(1)} / (660 * ${shiftCount}) * 100 = ${avgWorkRate.toFixed(1)}%`
-    });
-    
-    // Update modal header and summary
-    document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
-    document.getElementById('modalTotalMinutes').textContent = totalMinutes.toFixed(0) + ' min';
-    document.getElementById('modalWorkRate').textContent = avgWorkRate.toFixed(1) + '%';
-    document.getElementById('modalRecordCount').textContent = totalRecords;
-    document.getElementById('modalPerformanceBand').textContent = performanceBand;
-    
-    // Group by date for daily chart
-    const dailyData = {};
-    workerRecords.forEach(r => {
-        const date = r.workingDay || 'Unknown';
-        if (!dailyData[date]) {
-            dailyData[date] = 0;
-        }
-        dailyData[date] += r.workerActMins || 0;
-    });
-    
-    const dates = Object.keys(dailyData).sort();
-    const dailyMinutes = dates.map(d => dailyData[d]);
-    
-    // Destroy existing daily chart
-    if (modalCharts.daily) {
-        modalCharts.daily.destroy();
-    }
-    
-    // Create daily chart
-    const dailyCtx = document.getElementById('modalDailyChart');
-    modalCharts.daily = new Chart(dailyCtx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Work Time (min)',
-                data: dailyMinutes,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // Group by hour of day for hourly distribution
-    const hourlyData = {};
-    for (let i = 0; i < 24; i++) {
-        hourlyData[i] = 0;
-    }
-    
-    workerRecords.forEach(r => {
-        if (r.startDatetime) {
-            const date = new Date(r.startDatetime);
-            const hour = date.getHours();
-            hourlyData[hour] += r.workerActMins || 0;
-        }
-    });
-    
-    const hours = Object.keys(hourlyData).map(h => `${h.padStart(2, '0')}:00`);
-    const hourlyMinutes = Object.values(hourlyData);
-    
-    // Destroy existing process chart
-    if (modalCharts.process) {
-        modalCharts.process.destroy();
-    }
-    
-    // Create hourly distribution chart
-    const processCtx = document.getElementById('modalProcessChart');
-    modalCharts.process = new Chart(processCtx, {
-        type: 'bar',
-        data: {
-            labels: hours,
-            datasets: [{
-                label: 'Work Time (min)',
-                data: hourlyMinutes,
-                backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                borderColor: '#3b82f6',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 9
-                        },
-                        maxRotation: 90,
-                        minRotation: 90
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        font: {
-                            size: 10
-                        }
-                    }
-                }
-            }
-        }
-    });
-    
-    // Populate records table
-    const tableBody = document.getElementById('modalRecordsTable');
-    tableBody.innerHTML = workerRecords
-        .sort((a, b) => new Date(b.startDatetime) - new Date(a.startDatetime))
-        .map(r => {
-            const resultClass = r.resultCnt === 'X' ? 'text-green-600' : 'text-gray-400';
-            const resultIcon = r.resultCnt === 'X' ? 'check-circle' : 'minus-circle';
-            
-            // Format datetime to HH:MM:SS
-            const formatTime = (datetime) => {
-                if (!datetime) return '-';
-                const date = new Date(datetime);
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-                return `${hours}:${minutes}:${seconds}`;
-            };
-            
-            // Calculate original minutes from start/end time
-            const calculateOriginalMinutes = (start, end) => {
-                if (!start || !end) return 0;
-                const startDate = new Date(start);
-                const endDate = new Date(end);
-                const diffMs = endDate - startDate;
-                return Math.round(diffMs / 60000); // Convert ms to minutes
-            };
-            
-            const originalMinutes = calculateOriginalMinutes(r.startDatetime, r.endDatetime);
-            const adjustedMinutes = r.workerActMins || 0;
-            
-            // Highlight if overlap was removed (adjusted < original)
-            const minutesClass = adjustedMinutes < originalMinutes 
-                ? 'text-orange-600 font-semibold' 
-                : 'text-gray-900';
-            
-            return `
-                <tr class="hover:bg-gray-50">
-                    <td class="p-2">${r.workingDay || '-'}</td>
-                    <td class="p-2"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">${r.workingShift || '-'}</span></td>
-                    <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.startDatetime)}</td>
-                    <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.endDatetime)}</td>
-                    <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
-                    <td class="p-2 text-gray-600">${r.fdDesc || '-'}</td>
-                    <td class="p-2 text-right text-gray-600">${originalMinutes}</td>
-                    <td class="p-2 text-right ${minutesClass}" title="${adjustedMinutes < originalMinutes ? 'Overlap removed: -' + (originalMinutes - adjustedMinutes) + ' min' : 'No overlap'}">${adjustedMinutes.toFixed(0)}</td>
-                    <td class="p-2 text-center ${resultClass}"><i class="fas fa-${resultIcon}"></i></td>
-                </tr>
-            `;
-        })
-        .join('');
-    
-    // Show modal
-    document.getElementById('workerDetailModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-// Close Worker Detail Modal
-function closeWorkerDetailModal(event) {
-    if (!event || event.target.id === 'workerDetailModal') {
-        document.getElementById('workerDetailModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
+        // Don't show alert - just log the error
+        // User can still use the app even if DB save fails
     }
 }
 
@@ -3346,15 +2194,3 @@ window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
 window.toggleCheckboxDropdown = toggleCheckboxDropdown;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
-window.updateSingleSelect = updateSingleSelect;
-window.selectAllMonthDates = selectAllMonthDates;
-window.selectWeekDates = selectWeekDates;
-window.toggleMonthDates = toggleMonthDates;
-window.loadUploadById = loadUploadById;
-window.deleteUpload = deleteUpload;
-window.switchTab = switchTab;
-window.sortPerformanceBand = sortPerformanceBand;
-window.showWorkerDetail = showWorkerDetail;
-window.closeWorkerDetailModal = closeWorkerDetailModal;
-window.filterWorkerList = filterWorkerList;
-

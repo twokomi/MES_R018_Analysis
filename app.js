@@ -1357,6 +1357,7 @@ function updateKPIs(workerAgg) {
 // Update performance bands
 function updatePerformanceBands(workerAgg) {
     const excellent = workerAgg.filter(w => w.performanceBand === 'Excellent');
+    const normal = workerAgg.filter(w => w.performanceBand === 'Normal');
     const poor = workerAgg.filter(w => w.performanceBand === 'Poor');
     const critical = workerAgg.filter(w => w.performanceBand === 'Critical');
     
@@ -1377,6 +1378,25 @@ function updatePerformanceBands(workerAgg) {
         ).join('') + '</div>';
     } else {
         excellentDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
+    }
+    
+    // Normal workers
+    const normalDiv = document.getElementById('normalWorkers');
+    if (normal.length > 0) {
+        normalDiv.innerHTML = '<div class="space-y-2">' + normal.map(w => 
+            `<div class="flex flex-col p-3 bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-blue-900">${w.workerName}</span>
+                    <span class="text-blue-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between items-center mt-1 text-xs">
+                    <span class="text-blue-700"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-blue-600">${w.workingDay || ''}</span>
+                </div>
+            </div>`
+        ).join('') + '</div>';
+    } else {
+        normalDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
     }
     
     // Poor workers
