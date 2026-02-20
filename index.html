@@ -470,13 +470,26 @@
         
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">
-                    Individual Performance Report
-                </h1>
-                <p class="text-gray-600 mt-2">
-                    Individual Worker Productivity Reports & Performance Tracking
-                </p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        Individual Performance Report
+                    </h1>
+                    <p class="text-gray-600 mt-2">
+                        Individual Worker Productivity Reports & Performance Tracking
+                    </p>
+                </div>
+                <!-- Metric Toggle Button -->
+                <div class="flex items-center gap-4">
+                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md">
+                        <i id="metricIcon" class="fas fa-clock text-blue-500 text-xl"></i>
+                        <div class="text-left">
+                            <div id="metricLabel" class="text-sm font-semibold text-gray-800">Time Utilization</div>
+                            <div id="metricDescription" class="text-xs text-gray-500">작업 시간 가동률</div>
+                        </div>
+                        <i class="fas fa-exchange-alt text-gray-400 ml-2"></i>
+                    </button>
+                </div>
             </div>
         </div>
 

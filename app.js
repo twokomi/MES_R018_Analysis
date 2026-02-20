@@ -1915,10 +1915,33 @@ function updateKPIs(workerAgg) {
 
 // Update performance bands
 function updatePerformanceBands(workerAgg) {
-    const excellent = workerAgg.filter(w => w.performanceBand === 'Excellent');
-    const normal = workerAgg.filter(w => w.performanceBand === 'Normal');
-    const poor = workerAgg.filter(w => w.performanceBand === 'Poor');
-    const critical = workerAgg.filter(w => w.performanceBand === 'Critical');
+    // Determine which metric to use
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    
+    // Filter workers by performance band based on current metric
+    const excellent = workerAgg.filter(w => {
+        const band = isEfficiency ? w.efficiencyBand : w.utilizationBand;
+        return band.label === 'Excellent';
+    });
+    const good = workerAgg.filter(w => {
+        const band = isEfficiency ? w.efficiencyBand : w.utilizationBand;
+        return band.label === 'Good';
+    });
+    const normal = workerAgg.filter(w => {
+        const band = isEfficiency ? w.efficiencyBand : w.utilizationBand;
+        return band.label === 'Normal';
+    });
+    const poor = workerAgg.filter(w => {
+        const band = isEfficiency ? w.efficiencyBand : w.utilizationBand;
+        return band.label === 'Poor';
+    });
+    const critical = workerAgg.filter(w => {
+        const band = isEfficiency ? w.efficiencyBand : w.utilizationBand;
+        return band.label === 'Critical';
+    });
+    
+    // Get rate value based on current metric
+    const getRate = (w) => isEfficiency ? w.efficiencyRate : w.utilizationRate;
     
     // Excellent workers
     const excellentDiv = document.getElementById('excellentWorkers');
@@ -1927,7 +1950,7 @@ function updatePerformanceBands(workerAgg) {
             `<div class="flex flex-col p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
-                    <span class="text-green-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                    <span class="text-green-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
                 </div>
                 <div class="flex justify-between items-center mt-2 text-xs">
                     <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
@@ -1939,14 +1962,33 @@ function updatePerformanceBands(workerAgg) {
         excellentDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
     }
     
+    // Good workers
+    const goodDiv = document.getElementById('goodWorkers');
+    if (good.length > 0) {
+        goodDiv.innerHTML = '<div class="space-y-2">' + good.map(w => 
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-800">${w.workerName}</span>
+                    <span class="text-blue-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                    <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
+                    <span class="text-gray-500">${w.workingDay || ''}</span>
+                </div>
+            </div>`
+        ).join('') + '</div>';
+    } else {
+        goodDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">데이터가 없습니다</p>';
+    }
+    
     // Normal workers
     const normalDiv = document.getElementById('normalWorkers');
     if (normal.length > 0) {
         normalDiv.innerHTML = '<div class="space-y-2">' + normal.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white border-l-4 border-gray-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
-                    <span class="text-blue-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                    <span class="text-gray-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
                 </div>
                 <div class="flex justify-between items-center mt-2 text-xs">
                     <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
@@ -1965,7 +2007,7 @@ function updatePerformanceBands(workerAgg) {
             `<div class="flex flex-col p-4 bg-white border-l-4 border-orange-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
-                    <span class="text-orange-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                    <span class="text-orange-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
                 </div>
                 <div class="flex justify-between items-center mt-2 text-xs">
                     <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
@@ -1984,7 +2026,7 @@ function updatePerformanceBands(workerAgg) {
             `<div class="flex flex-col p-4 bg-white border-l-4 border-red-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
-                    <span class="text-red-600 font-bold text-lg">${w.workRate.toFixed(1)}%</span>
+                    <span class="text-red-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
                 </div>
                 <div class="flex justify-between items-center mt-2 text-xs">
                     <span class="text-gray-600"><i class="fas fa-cog mr-1"></i>${w.foDesc3 || 'N/A'}</span>
@@ -3442,6 +3484,38 @@ function closeWorkerDetailModal(event) {
     }
 }
 
+// Toggle between Time Utilization and Work Efficiency metrics
+function toggleMetric() {
+    // Toggle metric type
+    AppState.currentMetricType = AppState.currentMetricType === 'utilization' ? 'efficiency' : 'utilization';
+    
+    const metricIcon = document.getElementById('metricIcon');
+    const metricLabel = document.getElementById('metricLabel');
+    const metricDescription = document.getElementById('metricDescription');
+    const metricToggle = document.getElementById('metricToggle');
+    
+    if (AppState.currentMetricType === 'efficiency') {
+        // Switch to Work Efficiency
+        metricIcon.className = 'fas fa-bolt text-purple-500 text-xl';
+        metricLabel.textContent = 'Work Efficiency';
+        metricDescription.textContent = '작업 효율';
+        metricToggle.classList.remove('border-blue-500', 'hover:bg-blue-50');
+        metricToggle.classList.add('border-purple-500', 'hover:bg-purple-50');
+    } else {
+        // Switch to Time Utilization
+        metricIcon.className = 'fas fa-clock text-blue-500 text-xl';
+        metricLabel.textContent = 'Time Utilization';
+        metricDescription.textContent = '작업 시간 가동률';
+        metricToggle.classList.remove('border-purple-500', 'hover:bg-purple-50');
+        metricToggle.classList.add('border-blue-500', 'hover:bg-blue-50');
+    }
+    
+    // Re-render the report with new metric
+    updateReport();
+    
+    console.log(`🔄 Metric switched to: ${AppState.currentMetricType}`);
+}
+
 // Make globally accessible functions
 window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
@@ -3458,4 +3532,5 @@ window.sortPerformanceBand = sortPerformanceBand;
 window.showWorkerDetail = showWorkerDetail;
 window.closeWorkerDetailModal = closeWorkerDetailModal;
 window.filterWorkerList = filterWorkerList;
+window.toggleMetric = toggleMetric;
 
