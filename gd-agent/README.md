@@ -14,6 +14,32 @@
 - **총 행 수**: 60개 (Gate G01 ~ G60)
 - **총 컬럼 수**: 58개
 
+### CS Wind AM 공장 - 풍력타워 제조 공정 컨텍스트
+
+#### Section 구조
+- **Tower → Section → Skirt(Can)**
+- 1개 Section = 5~11개 Skirt로 구성
+- Section ID 예시: VB004-T (VB=프로젝트, 004=타워번호, T=Top/M=Mid/B=Bottom)
+- Skirt ID 예시: VB004-T1 (Section 내 Skirt 순번)
+
+#### Skirt와 Joint의 관계
+```
+[Skirt1]--[Joint1]--[Skirt2]--[Joint2]--[Skirt3]...--[Joint10]--[Skirt11]
+```
+- **11개 Skirt → 10개 Joint** (Skirt 사이의 용접 연결부)
+- **Joint** = 두 Skirt를 연결하는 **원주 용접(CW, Circumferential Weld)**
+- Joint는 Skirt보다 1개 적음
+
+#### Joint 번호 규칙
+- Joint No. = Section 기준 연속 번호 (01~N)
+- 예: 10개 Can Section → Joint 9개 → 01~09
+- **FU-03** = 해당 Section의 3번째 Joint (Fit-up)
+
+#### MES 트래킹 단위
+- **Pre-Growing (LSeam까지)**: Can(Skirt) 단위 트래킹
+- **Growing Line (Fit-up 이후)**: Section/Joint 단위 트래킹
+- Joint 진행 입력 시 Skirt ID 매핑: **FU-xx ↔ Txx** (동일 번호)
+
 ### 컬럼 구조 (A열부터)
 
 #### A~Q: 기본 정보 (17개)
@@ -21,7 +47,7 @@
 |-------|--------|------|------|
 | A | `mcn_no` | Gate 번호 | G01, G02, G60 |
 | B | `serial_no2` | Section ID | VB087-U, VB094-U |
-| C | `rev_flag` | Revision Flag | 0 |
+| C | `rev_flag` | Section 투입 방향 | 0 (Normal), 1 (Reverse) |
 | D | `wo_dtl_id` | Work Order ID | M42100000006355708 |
 | E | `fo_desc` | Process 설명 | VT/MT Repair, CSO-C02 |
 | F | `sts` | Status | S (Started), R (Reserved), H (Holding) |
@@ -49,6 +75,48 @@
 - `skirt_status1` (AM열) ~ `skirt_status20` (A`열)
 - 각 Skirt의 제작 상태를 나타냄
 - 빈 값: `B` (Blank)
+
+---
+
+## Rev_flag - Section 투입 방향 (C열)
+
+`rev_flag`는 MES 데이터에서 Section이 Growing Line에 투입되는 방향을 나타냅니다.
+
+### Rev_flag 값
+
+| Rev_flag | 투입 방향 | 설명 |
+|----------|-----------|------|
+| **0** | Normal (정방향) | 두꺼운 쪽부터 투입, Joint No와 Skirt No 같은 방향 증가 |
+| **1** | **Reverse (역방향)** | **얇은 쪽부터 투입**, Joint No와 Skirt No **반대 방향** |
+
+### Normal 투입 (Rev_flag = 0)
+- Section은 정방향으로 Growing Line에 투입
+- 두꺼운 Skirt(하단)부터 투입
+- Joint No와 Skirt No가 **같은 방향**으로 증가
+- Gate door에 가까울수록:
+  - Joint No가 1에 가까움
+  - Skirt No도 1에 가까움
+
+### Reverse 투입 (Rev_flag = 1)
+- Section은 역방향으로 Growing Line에 투입
+- **얇은 Skirt(상단)부터 투입** (Gate door에 가까운 쪽이 얇은 스커트)
+- Joint No는 얇은 쪽부터 1, 2, 3... 증가
+- **Skirt No는 투입 방향과 무관하게 항상 동일 규칙**:
+  - 두꺼운 하단 Skirt일수록 번호가 낮음
+  - 예: T1 = 가장 두꺼운 하단 Skirt
+- **따라서 Reverse에서는 Joint No와 Skirt No 방향이 반대**:
+  - Gate door에 가까울수록 **Skirt No는 커지고** (얇음)
+  - Gate door에 가까울수록 **Joint No는 1에 가까움**
+
+### 투입 방향 비교
+
+```
+Normal (Rev_flag=0):
+Gate door ← [T1(두꺼움)]-[J1]-[T2]-[J2]-[T3]-...-[T11(얇음)]
+
+Reverse (Rev_flag=1):
+Gate door ← [T11(얇음)]-[J1]-[T10]-[J2]-[T9]-...-[T1(두꺼움)]
+```
 
 ---
 
