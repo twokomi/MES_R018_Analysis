@@ -1899,18 +1899,29 @@ function getPerformanceBand(workRate) {
 
 // Update KPIs
 function updateKPIs(workerAgg) {
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    
     const totalWorkers = new Set(workerAgg.map(w => w.workerName)).size;
     const totalValidWO = workerAgg.reduce((sum, w) => sum + w.validCount, 0);
-    const totalMinutes = workerAgg.reduce((sum, w) => sum + w.totalMinutes, 0);
-    const avgWorkRate = workerAgg.length > 0 
-        ? workerAgg.reduce((sum, w) => sum + w.workRate, 0) / workerAgg.length 
+    
+    // Calculate average rate based on current metric type
+    const avgRate = workerAgg.length > 0 
+        ? (isEfficiency 
+            ? workerAgg.reduce((sum, w) => sum + w.efficiencyRate, 0) / workerAgg.length
+            : workerAgg.reduce((sum, w) => sum + w.utilizationRate, 0) / workerAgg.length)
         : 0;
+    
+    // For Time Utilization: show total actual minutes worked (after deduplication)
+    // For Work Efficiency: show total assigned standard minutes
+    const totalValue = isEfficiency
+        ? workerAgg.reduce((sum, w) => sum + (w.assignedStandardTime || 0), 0)
+        : workerAgg.reduce((sum, w) => sum + (w.actualWorkTime || 0), 0);
     
     // Format numbers with thousand separators
     document.getElementById('kpiWorkers').textContent = totalWorkers.toLocaleString();
     document.getElementById('kpiValidWO').textContent = totalValidWO.toLocaleString();
-    document.getElementById('kpiTotalMinutes').textContent = Math.round(totalMinutes).toLocaleString();
-    document.getElementById('kpiAvgWorkRate').textContent = avgWorkRate.toFixed(1) + '%';
+    document.getElementById('kpiTotalMinutes').textContent = Math.round(totalValue).toLocaleString();
+    document.getElementById('kpiAvgWorkRate').textContent = avgRate.toFixed(1) + '%';
 }
 
 // Update performance bands
@@ -3247,59 +3258,139 @@ let modalCharts = {
 };
 
 function showWorkerDetail(workerName) {
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    
+    // Update table header based on metric type
+    const tableHeader = document.getElementById('modalRecordsTableHeader');
+    if (isEfficiency) {
+        tableHeader.innerHTML = `
+            <tr>
+                <th class="text-left p-2 font-semibold text-gray-700">Date</th>
+                <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
+                <th class="text-left p-2 font-semibold text-gray-700">Process</th>
+                <th class="text-right p-2 font-semibold text-gray-700">S/T<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Rate<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Assigned<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Actual<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Efficiency<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
+                <th class="text-center p-2 font-semibold text-gray-700">Result</th>
+            </tr>
+        `;
+    } else {
+        tableHeader.innerHTML = `
+            <tr>
+                <th class="text-left p-2 font-semibold text-gray-700">Date</th>
+                <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
+                <th class="text-left p-2 font-semibold text-gray-700">Start Time</th>
+                <th class="text-left p-2 font-semibold text-gray-700">End Time</th>
+                <th class="text-left p-2 font-semibold text-gray-700">Process</th>
+                <th class="text-right p-2 font-semibold text-gray-700">Original<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Adjusted<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-center p-2 font-semibold text-gray-700">Result</th>
+            </tr>
+        `;
+    }
+    
     // Use filtered data if available, otherwise use all processed data
     const dataSource = AppState.filteredData || AppState.processedData;
     
-    // Filter records for this worker from the current filtered dataset
-    const workerRecords = dataSource.filter(r => r.workerName === workerName);
+    // Filter records: exclude Rework and Worker S/T <= 0
+    const workerRecords = dataSource.filter(r => 
+        r.workerName === workerName && 
+        !r.rework && 
+        (r['Worker S/T'] || 0) > 0
+    );
     
     if (workerRecords.length === 0) {
-        alert('No records found for this worker in the current filter');
+        alert('No valid records found for this worker in the current filter');
         return;
     }
     
-    // Calculate summary stats
-    // Only sum workerActMins for valid records (Result Cnt = 'X')
-    const validRecordsList = workerRecords.filter(r => r.validFlag === 1);
-    const totalMinutes = validRecordsList.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
-    const totalRecords = workerRecords.length;
-    const validRecords = validRecordsList.length;
-    
-    // Count unique shifts based on workingDay + workingShift (ONLY for valid records)
+    // Count unique shifts
     const uniqueShifts = new Set();
-    validRecordsList.forEach(r => {  // validRecordsList만 사용!
-        // Use workingDay and workingShift from shift calendar
-        // This properly handles overnight shifts and O/T
+    workerRecords.forEach(r => {
         const shiftKey = `${r.workingDay}_${r.workingShift}`;
         uniqueShifts.add(shiftKey);
     });
     const shiftCount = uniqueShifts.size;
     
-    // Calculate work rate: total valid work time / (660 min * shift count) * 100
-    const avgWorkRate = shiftCount > 0 ? (totalMinutes / (660 * shiftCount)) * 100 : 0;
+    let currentRate, performanceBand, totalValue;
     
-    const performanceBand = avgWorkRate >= 80 ? 'Excellent' :
-                           avgWorkRate >= 50 ? 'Normal' :
-                           avgWorkRate >= 30 ? 'Poor' : 'Critical';
-    
-    console.log(`📊 Worker Detail for ${workerName}:`, {
-        totalMinutes: totalMinutes.toFixed(1),
-        totalRecords,
-        validRecords,
-        shiftCount,
-        avgWorkRate: avgWorkRate.toFixed(1) + '%',
-        performanceBand,
-        calculation: `${totalMinutes.toFixed(1)} / (660 * ${shiftCount}) * 100 = ${avgWorkRate.toFixed(1)}%`
-    });
+    if (isEfficiency) {
+        // Work Efficiency Rate
+        const assignedStandardTime = workerRecords.reduce((sum, r) => {
+            const rate = r['Worker Rate(%)'] || 0;
+            const st = r['Worker S/T'] || 0;
+            return sum + (st * rate / 100);
+        }, 0);
+        const actualTime = workerRecords.reduce((sum, r) => sum + (r['Worker Act'] || 0), 0);
+        
+        currentRate = actualTime > 0 ? (assignedStandardTime / actualTime) * 100 : 0;
+        performanceBand = getEfficiencyBand(currentRate);
+        totalValue = assignedStandardTime;
+        
+        console.log(`📊 Worker Detail (Efficiency) for ${workerName}:`, {
+            assignedStandardTime: assignedStandardTime.toFixed(1),
+            actualTime: actualTime.toFixed(1),
+            shiftCount,
+            efficiencyRate: currentRate.toFixed(1) + '%',
+            performanceBand: performanceBand.label,
+            calculation: `${assignedStandardTime.toFixed(1)} / ${actualTime.toFixed(1)} * 100 = ${currentRate.toFixed(1)}%`
+        });
+    } else {
+        // Time Utilization Rate: need to deduplicate overlaps per worker
+        const recordsToMerge = [...workerRecords];
+        mergeOverlappingIntervals(recordsToMerge);
+        
+        const actualWorkTime = recordsToMerge.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+        const availableTime = shiftCount * 660;
+        
+        currentRate = availableTime > 0 ? (actualWorkTime / availableTime) * 100 : 0;
+        performanceBand = getUtilizationBand(currentRate);
+        totalValue = actualWorkTime;
+        
+        console.log(`📊 Worker Detail (Utilization) for ${workerName}:`, {
+            actualWorkTime: actualWorkTime.toFixed(1),
+            availableTime,
+            shiftCount,
+            utilizationRate: currentRate.toFixed(1) + '%',
+            performanceBand: performanceBand.label,
+            calculation: `${actualWorkTime.toFixed(1)} / ${availableTime} * 100 = ${currentRate.toFixed(1)}%`
+        });
+    }
     
     // Update modal header and summary
     document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
-    document.getElementById('modalTotalMinutes').textContent = totalMinutes.toFixed(0) + ' min';
-    document.getElementById('modalWorkRate').textContent = avgWorkRate.toFixed(1) + '%';
-    document.getElementById('modalRecordCount').textContent = totalRecords;
-    document.getElementById('modalPerformanceBand').textContent = performanceBand;
+    document.getElementById('modalTotalMinutes').textContent = totalValue.toFixed(0) + (isEfficiency ? ' min (Assigned)' : ' min (Actual)');
+    document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
+    document.getElementById('modalRecordCount').textContent = workerRecords.length;
+    document.getElementById('modalPerformanceBand').textContent = performanceBand.label;
+    document.getElementById('modalPerformanceBand').style.backgroundColor = performanceBand.bgColor;
+    document.getElementById('modalPerformanceBand').style.color = performanceBand.textColor;
     
-    // Group by date for daily chart
+    // Render charts based on metric type
+    if (isEfficiency) {
+        renderEfficiencyCharts(workerRecords);
+    } else {
+        renderUtilizationCharts(workerRecords);
+    }
+    
+    // Render records table based on metric type
+    const tableBody = document.getElementById('modalRecordsTable');
+    if (isEfficiency) {
+        renderEfficiencyTable(workerRecords, tableBody);
+    } else {
+        renderUtilizationTable(workerRecords, tableBody);
+    }
+    
+    // Show modal
+    document.getElementById('workerDetailModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// Render Time Utilization charts
+function renderUtilizationCharts(workerRecords) {
+    // Group by date for daily chart (show time in minutes)
     const dailyData = {};
     workerRecords.forEach(r => {
         const date = r.workingDay || 'Unknown';
@@ -3317,7 +3408,7 @@ function showWorkerDetail(workerName) {
         modalCharts.daily.destroy();
     }
     
-    // Create daily chart
+    // Create daily chart (Time in minutes, blue theme)
     const dailyCtx = document.getElementById('modalDailyChart');
     modalCharts.daily = new Chart(dailyCtx, {
         type: 'line',
@@ -3336,19 +3427,23 @@ function showWorkerDetail(workerName) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(0)} minutes`
+                    }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: { display: true, text: 'Minutes' }
                 }
             }
         }
     });
     
-    // Group by hour of day for hourly distribution
+    // Group by hour of day for hourly distribution (minutes, blue theme)
     const hourlyData = {};
     for (let i = 0; i < 24; i++) {
         hourlyData[i] = 0;
@@ -3388,72 +3483,186 @@ function showWorkerDetail(workerName) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: false
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(0)} minutes`
+                    }
                 }
             },
             scales: {
                 x: {
-                    grid: {
-                        display: false
-                    },
+                    grid: { display: false },
                     ticks: {
-                        font: {
-                            size: 9
-                        },
+                        font: { size: 9 },
                         maxRotation: 90,
                         minRotation: 90
                     }
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        font: {
-                            size: 10
-                        }
+                    title: { display: true, text: 'Minutes' },
+                    ticks: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Work Efficiency charts
+function renderEfficiencyCharts(workerRecords) {
+    // Group by date for daily chart (show efficiency rate %)
+    const dailyData = {};
+    workerRecords.forEach(r => {
+        const date = r.workingDay || 'Unknown';
+        if (!dailyData[date]) {
+            dailyData[date] = { assigned: 0, actual: 0 };
+        }
+        const rate = r['Worker Rate(%)'] || 0;
+        const st = r['Worker S/T'] || 0;
+        dailyData[date].assigned += st * rate / 100;
+        dailyData[date].actual += r['Worker Act'] || 0;
+    });
+    
+    const dates = Object.keys(dailyData).sort();
+    const dailyEfficiency = dates.map(d => {
+        const data = dailyData[d];
+        return data.actual > 0 ? (data.assigned / data.actual) * 100 : 0;
+    });
+    
+    // Destroy existing daily chart
+    if (modalCharts.daily) {
+        modalCharts.daily.destroy();
+    }
+    
+    // Create daily chart (Efficiency %, purple theme)
+    const dailyCtx = document.getElementById('modalDailyChart');
+    modalCharts.daily = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Work Efficiency (%)',
+                data: dailyEfficiency,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(1)}%`
                     }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Efficiency (%)' }
                 }
             }
         }
     });
     
-    // Populate records table
-    const tableBody = document.getElementById('modalRecordsTable');
+    // Group by hour for hourly distribution (efficiency %, purple theme)
+    const hourlyData = {};
+    for (let i = 0; i < 24; i++) {
+        hourlyData[i] = { assigned: 0, actual: 0 };
+    }
+    
+    workerRecords.forEach(r => {
+        if (r.startDatetime) {
+            const date = new Date(r.startDatetime);
+            const hour = date.getHours();
+            const rate = r['Worker Rate(%)'] || 0;
+            const st = r['Worker S/T'] || 0;
+            hourlyData[hour].assigned += st * rate / 100;
+            hourlyData[hour].actual += r['Worker Act'] || 0;
+        }
+    });
+    
+    const hours = Object.keys(hourlyData).map(h => `${h.padStart(2, '0')}:00`);
+    const hourlyEfficiency = Object.values(hourlyData).map(data => 
+        data.actual > 0 ? (data.assigned / data.actual) * 100 : 0
+    );
+    
+    // Destroy existing process chart
+    if (modalCharts.process) {
+        modalCharts.process.destroy();
+    }
+    
+    // Create hourly distribution chart
+    const processCtx = document.getElementById('modalProcessChart');
+    modalCharts.process = new Chart(processCtx, {
+        type: 'bar',
+        data: {
+            labels: hours,
+            datasets: [{
+                label: 'Work Efficiency (%)',
+                data: hourlyEfficiency,
+                backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                borderColor: '#8b5cf6',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(1)}%`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 9 },
+                        maxRotation: 90,
+                        minRotation: 90
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Efficiency (%)' },
+                    ticks: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Time Utilization records table
+function renderUtilizationTable(workerRecords, tableBody) {
     tableBody.innerHTML = workerRecords
         .sort((a, b) => new Date(b.startDatetime) - new Date(a.startDatetime))
         .map(r => {
             const resultClass = r.resultCnt === 'X' ? 'text-green-600' : 'text-gray-400';
             const resultIcon = r.resultCnt === 'X' ? 'check-circle' : 'minus-circle';
             
-            // Format datetime to HH:MM:SS
             const formatTime = (datetime) => {
                 if (!datetime) return '-';
                 const date = new Date(datetime);
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-                return `${hours}:${minutes}:${seconds}`;
+                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
             };
             
-            // Calculate original minutes from start/end time
             const calculateOriginalMinutes = (start, end) => {
                 if (!start || !end) return 0;
-                const startDate = new Date(start);
-                const endDate = new Date(end);
-                const diffMs = endDate - startDate;
-                return Math.round(diffMs / 60000); // Convert ms to minutes
+                return Math.round((new Date(end) - new Date(start)) / 60000);
             };
             
             const originalMinutes = calculateOriginalMinutes(r.startDatetime, r.endDatetime);
             const adjustedMinutes = r.workerActMins || 0;
-            
-            // Highlight if overlap was removed (adjusted < original)
-            const minutesClass = adjustedMinutes < originalMinutes 
-                ? 'text-orange-600 font-semibold' 
-                : 'text-gray-900';
+            const minutesClass = adjustedMinutes < originalMinutes ? 'text-orange-600 font-semibold' : 'text-gray-900';
             
             return `
                 <tr class="hover:bg-gray-50">
@@ -3462,7 +3671,6 @@ function showWorkerDetail(workerName) {
                     <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.startDatetime)}</td>
                     <td class="p-2 text-gray-600 font-mono text-xs">${formatTime(r.endDatetime)}</td>
                     <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
-                    <td class="p-2 text-gray-600">${r.fdDesc || '-'}</td>
                     <td class="p-2 text-right text-gray-600">${originalMinutes}</td>
                     <td class="p-2 text-right ${minutesClass}" title="${adjustedMinutes < originalMinutes ? 'Overlap removed: -' + (originalMinutes - adjustedMinutes) + ' min' : 'No overlap'}">${adjustedMinutes.toFixed(0)}</td>
                     <td class="p-2 text-center ${resultClass}"><i class="fas fa-${resultIcon}"></i></td>
@@ -3470,10 +3678,44 @@ function showWorkerDetail(workerName) {
             `;
         })
         .join('');
-    
-    // Show modal
-    document.getElementById('workerDetailModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+}
+
+// Render Work Efficiency records table
+function renderEfficiencyTable(workerRecords, tableBody) {
+    tableBody.innerHTML = workerRecords
+        .sort((a, b) => new Date(b.startDatetime) - new Date(a.startDatetime))
+        .map(r => {
+            const resultClass = r.resultCnt === 'X' ? 'text-green-600' : 'text-gray-400';
+            const resultIcon = r.resultCnt === 'X' ? 'check-circle' : 'minus-circle';
+            
+            const st = r['Worker S/T'] || 0;
+            const rate = r['Worker Rate(%)'] || 0;
+            const assigned = st * rate / 100;
+            const actual = r['Worker Act'] || 0;
+            const efficiency = actual > 0 ? (assigned / actual) * 100 : 0;
+            
+            // Color code efficiency
+            const efficiencyClass = efficiency >= 120 ? 'text-green-600 font-bold' :
+                                   efficiency >= 100 ? 'text-blue-600 font-semibold' :
+                                   efficiency >= 80 ? 'text-gray-600' :
+                                   efficiency >= 60 ? 'text-orange-600' :
+                                   'text-red-600 font-bold';
+            
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-2">${r.workingDay || '-'}</td>
+                    <td class="p-2"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">${r.workingShift || '-'}</span></td>
+                    <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
+                    <td class="p-2 text-right text-gray-600">${st}</td>
+                    <td class="p-2 text-right text-gray-600">${rate}%</td>
+                    <td class="p-2 text-right text-gray-900">${assigned.toFixed(1)}</td>
+                    <td class="p-2 text-right text-gray-900">${actual}</td>
+                    <td class="p-2 text-right ${efficiencyClass}">${efficiency.toFixed(1)}%</td>
+                    <td class="p-2 text-center ${resultClass}"><i class="fas fa-${resultIcon}"></i></td>
+                </tr>
+            `;
+        })
+        .join('');
 }
 
 // Close Worker Detail Modal
