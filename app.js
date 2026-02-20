@@ -1,6 +1,6 @@
 // MES Individual Performance Report Application
 // Main application logic
-// Version: 2.0.1 - Category Filter Debug Added
+// Version: 3.0.0 - Two Metric System (Time Utilization & Work Efficiency)
 
 // Category order for sorting
 const CATEGORY_ORDER = {
@@ -24,6 +24,7 @@ const AppState = {
     currentFileName: '',
     currentFileSize: 0,
     allWorkers: [], // For worker search functionality
+    currentMetricType: 'utilization', // 'utilization' or 'efficiency'
     filters: {
         shift: '',
         workingDays: [],
@@ -50,7 +51,10 @@ const HEADER_SYNONYMS = {
     'enddatetime': ['enddatetime', 'end_datetime', 'end_dt', 'enddt'],
     'workeract': ['workeract', 'worker_act', 'workeractmins', 'workeractmin', 'worker_act_mins'],
     'resultcnt': ['resultcnt', 'result_cnt', 'resultcount'],
-    'sectionid': ['sectionid', 'section_id', 'sectionno']
+    'sectionid': ['sectionid', 'section_id', 'sectionno'],
+    'workerst': ['workerst', 'worker_st', 'workerstandard', 'worker_standard_time'],
+    'workerrate': ['workerrate', 'worker_rate', 'workerratepct'],
+    'rework': ['rework', 're_work', 'reworkflag']
 };
 
 // Normalize header text
@@ -558,12 +562,25 @@ function parseRawData(headers, dataRows) {
     const colWorkerAct = findColumnIndex(headers, 'workeract');
     const colResultCnt = findColumnIndex(headers, 'resultcnt');
     const colSectionId = findColumnIndex(headers, 'sectionid');
+    const colWorkerST = findColumnIndex(headers, 'workerst');
+    const colWorkerRate = findColumnIndex(headers, 'workerrate');
+    const colRework = findColumnIndex(headers, 'rework');
     
     dataRows.forEach((row, index) => {
         if (!row || row.length === 0) return;
         
         const workerName = row[colWorkerName];
         if (!workerName) return; // Skip empty rows
+        
+        // Parse Rework flag
+        let reworkFlag = false;
+        if (colRework !== -1) {
+            const reworkValue = row[colRework];
+            if (reworkValue === true || reworkValue === 'true' || reworkValue === 'True' || 
+                reworkValue === 'TRUE' || reworkValue === 1 || reworkValue === '1') {
+                reworkFlag = true;
+            }
+        }
         
         const record = {
             rowIndex: index + 2, // Excel row (1-indexed + header)
@@ -572,12 +589,18 @@ function parseRawData(headers, dataRows) {
             fdDesc: row[colFODesc] || '',
             startDatetime: colStartDt !== -1 ? parseExcelDate(row[colStartDt]) : null,
             endDatetime: colEndDt !== -1 ? parseExcelDate(row[colEndDt]) : null,
-            workerActMins: parseFloat(row[colWorkerAct]) || 0,
+            workerAct: parseFloat(row[colWorkerAct]) || 0, // Original Worker Act
+            workerActMins: parseFloat(row[colWorkerAct]) || 0, // Will be adjusted by overlap removal
+            workerST: colWorkerST !== -1 ? parseFloat(row[colWorkerST]) || 0 : 0, // Worker Standard Time
+            workerRate: colWorkerRate !== -1 ? parseFloat(row[colWorkerRate]) || 0 : 0, // Worker Rate (%)
+            rework: reworkFlag, // Rework flag
             resultCnt: row[colResultCnt]
         };
         
         parsed.push(record);
     });
+    
+    console.log(`📊 Parsed ${parsed.length} records (Rework excluded: ${parsed.filter(r => r.rework).length})`);
     
     return parsed;
 }
@@ -1541,26 +1564,41 @@ function aggregateByWorkerOnly(workerAgg) {
     
     // Use filteredData instead of processedData to respect current filters
     const dataToAggregate = AppState.filteredData || AppState.processedData;
+    
     dataToAggregate.forEach(record => {
-        if (record.validFlag !== 1) return; // Only valid records
+        // NEW: Filter out Rework and Worker S/T <= 0
+        if (record.rework === true || record.rework === 'true') return; // Exclude Rework
+        if (!record.workerST || record.workerST <= 0) return; // Exclude invalid Worker S/T
         
         const workerName = record.workerName;
         
         if (!byWorker[workerName]) {
             byWorker[workerName] = {
                 workerName: workerName,
-                totalMinutes: 0,
+                totalMinutes: 0, // For Time Utilization (overlap-removed)
+                totalMinutesOriginal: 0, // For Work Efficiency (original Worker Act)
+                assignedStandardTime: 0, // For Work Efficiency
                 validCount: 0,
                 foDesc3: '', // Will be set from workerAgg
                 workingDay: '', // Will be set from workerAgg
                 recordCount: 0,
                 shifts: new Set(), // Track unique shifts based on startDatetime
-                processTimes: {} // Track time spent on each process
+                processTimes: {}, // Track time spent on each process
+                allRecords: [] // Store all records for this worker
             };
         }
         
+        // Store all records for detailed calculation
+        byWorker[workerName].allRecords.push(record);
+        
         byWorker[workerName].totalMinutes += record.workerActMins || 0;
+        byWorker[workerName].totalMinutesOriginal += record.workerAct || 0; // Original Worker Act
         byWorker[workerName].validCount += 1;
+        
+        // Calculate assigned standard time: Worker S/T × Worker Rate
+        const workerRate = record.workerRate || 0; // Worker Rate (%)
+        const assignedTime = (record.workerST * workerRate) / 100;
+        byWorker[workerName].assignedStandardTime += assignedTime;
         
         // Track shift based on workingDay + workingShift (from shift calendar)
         // This properly handles overnight shifts and O/T
@@ -1598,30 +1636,49 @@ function aggregateByWorkerOnly(workerAgg) {
         }
     });
     
-    // Calculate work rate for each worker
+    // Calculate metrics for each worker
     const result = Object.values(byWorker).map(worker => {
         const shiftCount = worker.shifts.size;
-        // Calculate work rate as: total valid work time / (660 min * shift count) * 100
-        const workRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
+        
+        // Calculate Time Utilization Rate: total work time / (660 min * shift count) × 100
+        const utilizationRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
+        const utilizationBand = getUtilizationBand(utilizationRate);
+        
+        // Calculate Work Efficiency Rate: assigned standard time / actual time × 100
+        const efficiencyRate = worker.totalMinutesOriginal > 0 
+            ? (worker.assignedStandardTime / worker.totalMinutesOriginal) * 100 
+            : 0;
+        const efficiencyBand = getEfficiencyBand(efficiencyRate);
+        
         return {
             ...worker,
             shiftCount: shiftCount,
-            workRate: workRate,
-            performanceBand: getPerformanceBand(workRate)
+            utilizationRate: utilizationRate,
+            utilizationBand: utilizationBand,
+            efficiencyRate: efficiencyRate,
+            efficiencyBand: efficiencyBand,
+            // Legacy fields (for backward compatibility)
+            workRate: utilizationRate,
+            performanceBand: utilizationBand.label
         };
     });
     
-    // Sort by work rate descending
-    result.sort((a, b) => b.workRate - a.workRate);
+    // Sort by current metric type
+    if (AppState.currentMetricType === 'efficiency') {
+        result.sort((a, b) => b.efficiencyRate - a.efficiencyRate);
+    } else {
+        result.sort((a, b) => b.utilizationRate - a.utilizationRate);
+    }
     
     console.log('📊 Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
         name: w.workerName,
         totalMinutes: w.totalMinutes.toFixed(0),
         shifts: w.shiftCount,
-        workRate: w.workRate.toFixed(1) + '%',
-        band: w.performanceBand,
-        process: w.foDesc3,
-        calculation: `${w.totalMinutes.toFixed(0)} / (660 * ${w.shiftCount}) * 100`
+        utilizationRate: w.utilizationRate.toFixed(1) + '%',
+        efficiencyRate: w.efficiencyRate.toFixed(1) + '%',
+        utilizationBand: w.utilizationBand.label,
+        efficiencyBand: w.efficiencyBand.label,
+        process: w.foDesc3
     })));
     
     return result;
@@ -1814,6 +1871,25 @@ function aggregateByWorker(data) {
 }
 
 // Get performance band
+// Get Performance Band for Time Utilization Rate
+function getUtilizationBand(rate) {
+    if (rate >= 15) return { label: 'Excellent', color: 'green' };
+    if (rate >= 10) return { label: 'Good', color: 'blue' };
+    if (rate >= 6) return { label: 'Normal', color: 'gray' };
+    if (rate >= 3) return { label: 'Poor', color: 'orange' };
+    return { label: 'Critical', color: 'red' };
+}
+
+// Get Performance Band for Work Efficiency Rate
+function getEfficiencyBand(rate) {
+    if (rate >= 120) return { label: 'Excellent', color: 'green' };
+    if (rate >= 100) return { label: 'Good', color: 'blue' };
+    if (rate >= 80) return { label: 'Normal', color: 'gray' };
+    if (rate >= 60) return { label: 'Poor', color: 'orange' };
+    return { label: 'Critical', color: 'red' };
+}
+
+// Legacy function (kept for backward compatibility)
 function getPerformanceBand(workRate) {
     if (workRate >= 80) return 'Excellent';
     if (workRate >= 50) return 'Normal';
