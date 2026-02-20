@@ -1134,11 +1134,86 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 3.0.0 -->
+                    <div class="border-l-4 border-purple-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.0.0</h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">Major Update</span>
+                            <span class="text-xs text-gray-500">2026-02-20</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-chart-line mr-2"></i>Two New Performance Metrics
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Time Utilization Rate</strong>: Actual work time / Available time (shifts × 660min) × 100%</li>
+                                    <li><strong>Work Efficiency Rate</strong>: Assigned standard time / Actual time × 100%</li>
+                                    <li>Toggle button to switch between metrics with visual indicators</li>
+                                    <li>Performance bands updated: Excellent, Good, Normal, Poor, Critical</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-filter mr-2"></i>Enhanced Data Filtering
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Automatic exclusion of Rework records (W column = true)</li>
+                                    <li>Filter out records with Worker S/T ≤ 0</li>
+                                    <li>New columns parsed: Worker S/T (T), Worker Rate(%) (U), Rework (W)</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-user-circle mr-2"></i>Worker Detail Modal Enhancements
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Time Utilization View</strong>: Daily/hourly charts in minutes (blue theme), overlap removal highlighted</li>
+                                    <li><strong>Work Efficiency View</strong>: Daily/hourly charts in % (purple theme), efficiency color-coded</li>
+                                    <li>Dynamic table headers based on selected metric</li>
+                                    <li>Separate calculation logic for each metric type</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>Breaking Changes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Removed old "Valid-only" work rate calculation</li>
+                                    <li>Replaced single metric with dual-metric system</li>
+                                    <li>Performance band thresholds completely redesigned</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-bug mr-2"></i>Bug Fixes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Fixed overlap removal logic to work per worker (not merged across workers)</li>
+                                    <li>Corrected Worker Rate(%) handling (0% is valid, not missing)</li>
+                                    <li>Fixed performance band gaps (no empty ranges)</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-purple-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Validation:</strong> Tested with R018Worker_2026-02-18 Excel file (27,026 rows, 831 rework records excluded)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Version 2.6.0 -->
                     <div class="border-l-4 border-green-500 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 2.6.0</h3>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Previous</span>
                         </div>
                         
                         <div class="space-y-4">
