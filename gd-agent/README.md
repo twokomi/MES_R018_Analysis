@@ -24,7 +24,7 @@
 | C | `rev_flag` | Revision Flag | 0 |
 | D | `wo_dtl_id` | Work Order ID | M42100000006355708 |
 | E | `fo_desc` | Process 설명 | VT/MT Repair, CSO-C02 |
-| F | `sts` | Status | S, R |
+| F | `sts` | Status | S (Started), R (Reserved), H (Holding) |
 | G | `working_rate` | Working Rate (%) | 30.0 |
 | H | `start_dt` | 시작 일시 | 2026-02-19 09:24:00 |
 | I | `end_dt` | 종료 일시 | NaN (진행 중) |
@@ -53,6 +53,26 @@
 ---
 
 ## 상태 코드 정의
+
+### F열 Status 코드 (sts)
+Gate의 전체 진행 상태를 나타냅니다.
+
+| 코드 | 의미 | 개수 | 설명 |
+|------|------|------|------|
+| **S** | Started | 25개 | 작업 시작됨, 진행 중 |
+| **R** | Reserved | 33개 | 예약됨, 작업 대기 |
+| **H** | **Holding** | 1개 | **보류 상태** (예: G06 - Flatness Inspection) |
+| **NaN** | 정보 없음 | 1개 | Status 정보 없음 |
+
+**Holding 예시 (Gate G06):**
+- Section: VB088-U
+- Process: Flatness Inspection
+- Status: H (Holding)
+- Working Rate: 50%
+- Worker: COLLINS, TOMMY
+- 작업은 시작되었으나 어떤 이유로 보류된 상태
+
+---
 
 ### Joint Status 코드
 Joint Status는 용접 진행 상태를 나타내며, 여러 코드가 조합되어 표시됩니다.
