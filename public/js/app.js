@@ -3661,7 +3661,8 @@ function showWorkerDetail(workerName) {
             • <strong>Rate(%)</strong>: Worker's efficiency rating relative to standard<br>
             • <strong>Assigned(m)</strong>: Calculated time = S/T × Rate ÷ 100<br>
             • <strong>Actual(m)</strong>: Actual time spent on the task<br>
-            • <strong>Efficiency(%)</strong>: Performance ratio = Assigned ÷ Actual × 100
+            • <strong>Efficiency(%)</strong>: Performance ratio = Assigned ÷ Actual × 100<br>
+            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)
         `;
     } else {
         glossaryDiv.innerHTML = `
@@ -4013,9 +4014,9 @@ function renderEfficiencyTable(workerRecords, tableBody) {
             
             return `
                 <tr class="${rowClass}">
-                    <td class="p-2">${r.workingDay || '-'}</td>
+                    <td class="p-2">${outlierIcon}${r.workingDay || '-'}</td>
                     <td class="p-2"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">${r.workingShift || '-'}</span></td>
-                    <td class="p-2 font-medium">${outlierIcon}${r.foDesc3 || '-'}</td>
+                    <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
                     <td class="p-2 text-right text-gray-600">${st}</td>
                     <td class="p-2 text-right text-gray-600">${rate}%</td>
                     <td class="p-2 text-right text-gray-900">${assigned.toFixed(1)}</td>
