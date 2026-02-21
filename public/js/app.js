@@ -3355,6 +3355,9 @@ async function loadUploadById(uploadId) {
             endDatetime: d.end_datetime,
             workerAct: d.worker_act,
             workerActMins: d.worker_act,  // Add this field for consistency
+            'Worker Act': d.worker_act,   // ✅ Add Worker Act field
+            'Worker S/T': d.worker_st || 0,  // ✅ Restore Worker S/T
+            'Worker Rate(%)': d.worker_rate_pct || 0,  // ✅ Restore Worker Rate(%)
             resultCnt: d.result_cnt,
             workingDay: d.working_day,
             workingShift: d.working_shift,
@@ -3671,9 +3674,14 @@ function showWorkerDetail(workerName) {
     let dataForSummary, dataForTable;
     
     if (isEfficiency) {
-        // Efficiency: Use aggregated data (outliers already filtered)
+        // Efficiency: Use aggregated data and filter out outliers
         const cachedWorkerAgg = AppState.cachedWorkerAgg || [];
-        dataForSummary = cachedWorkerAgg.filter(r => r.workerName === workerName);
+        dataForSummary = cachedWorkerAgg.filter(r => {
+            // Filter by worker name and exclude outliers
+            if (r.workerName !== workerName) return false;
+            if (r.isOutlier) return false;  // ✅ Filter out outliers
+            return true;
+        });
         dataForTable = dataForSummary; // Same for table
     } else {
         // Utilization: Use raw processedData for detailed time records

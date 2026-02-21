@@ -51,11 +51,13 @@ app.post('/api/upload', async (c) => {
           const escape = (str: any) => String(str || '').replace(/'/g, "''")
           // foDesc2, foDesc3 저장 (process mapping 결과)
           const foDescValue = d.foDesc2 || d.foDesc || ''
-          return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0})`
+          const workerST = d['Worker S/T'] || 0
+          const workerRatePct = d['Worker Rate(%)'] || 0
+          return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0}, ${workerST}, ${workerRatePct})`
         }).join(',')
         
         await env.DB.prepare(`
-          INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate)
+          INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
           VALUES ${values}
         `).run()
       }
