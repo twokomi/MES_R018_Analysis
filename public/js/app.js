@@ -2493,7 +2493,7 @@ function updateDataTable(workerAgg) {
         // ✅ Visual styling for outliers
         const outlierThreshold = AppState.outlierThreshold || 1000;
         const isOutlier = item.isOutlier || false;
-        const rowStyle = isOutlier ? 'style="opacity: 0.4 !important; background-color: #fee2e2 !important;"' : '';
+        const cellStyle = isOutlier ? 'style="background-color: #fee2e2 !important; opacity: 0.6 !important;"' : '';
         const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${rate?.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
         
         if (isEfficiency) {
@@ -2504,33 +2504,33 @@ function updateDataTable(workerAgg) {
             const actual = item.totalMinutesOriginal || 0;
             
             return `
-                <tr ${rowStyle}>
-                    <td>${outlierIcon}${item.workerName}</td>
-                    <td>${item.foDesc3}</td>
-                    <td>${item.workingDay}</td>
-                    <td><strong>${actualShiftText}</strong></td>
-                    <td>${shiftText}</td>
-                    <td>${st.toFixed(1)}</td>
-                    <td>${workerRate.toFixed(0)}</td>
-                    <td>${assigned.toFixed(0)}</td>
-                    <td>${actual.toFixed(0)}</td>
-                    <td><strong>${rate?.toFixed(1) || '0.0'}%</strong></td>
-                    <td><span class="worker-badge ${bandClass}">${bandText}</span></td>
+                <tr>
+                    <td ${cellStyle}>${outlierIcon}${item.workerName}</td>
+                    <td ${cellStyle}>${item.foDesc3}</td>
+                    <td ${cellStyle}>${item.workingDay}</td>
+                    <td ${cellStyle}><strong>${actualShiftText}</strong></td>
+                    <td ${cellStyle}>${shiftText}</td>
+                    <td ${cellStyle}>${st.toFixed(1)}</td>
+                    <td ${cellStyle}>${workerRate.toFixed(0)}</td>
+                    <td ${cellStyle}>${assigned.toFixed(0)}</td>
+                    <td ${cellStyle}>${actual.toFixed(0)}</td>
+                    <td ${cellStyle}><strong>${rate?.toFixed(1) || '0.0'}%</strong></td>
+                    <td ${cellStyle}><span class="worker-badge ${bandClass}">${bandText}</span></td>
                 </tr>
             `;
         } else {
             // Utilization mode: show Work Time, Work Count, Utilization Rate
             return `
-                <tr ${rowStyle}>
-                    <td>${outlierIcon}${item.workerName}</td>
-                    <td>${item.foDesc3}</td>
-                    <td>${item.workingDay}</td>
-                    <td><strong>${actualShiftText}</strong></td>
-                    <td>${shiftText}</td>
-                    <td>${Math.round(item.totalMinutes)}</td>
-                    <td>${item.validCount}</td>
-                    <td><strong>${rate?.toFixed(1) || '0.0'}%</strong></td>
-                    <td><span class="worker-badge ${bandClass}">${bandText}</span></td>
+                <tr>
+                    <td ${cellStyle}>${outlierIcon}${item.workerName}</td>
+                    <td ${cellStyle}>${item.foDesc3}</td>
+                    <td ${cellStyle}>${item.workingDay}</td>
+                    <td ${cellStyle}><strong>${actualShiftText}</strong></td>
+                    <td ${cellStyle}>${shiftText}</td>
+                    <td ${cellStyle}>${Math.round(item.totalMinutes)}</td>
+                    <td ${cellStyle}>${item.validCount}</td>
+                    <td ${cellStyle}><strong>${rate?.toFixed(1) || '0.0'}%</strong></td>
+                    <td ${cellStyle}><span class="worker-badge ${bandClass}">${bandText}</span></td>
                 </tr>
             `;
         }

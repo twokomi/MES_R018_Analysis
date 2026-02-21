@@ -228,7 +228,13 @@
         }
         
         .detailed-data-table tbody tr:hover td {
-            background-color: #f8fafc;
+            background-color: #f8fafc !important;
+        }
+        
+        /* Override hover for outlier rows */
+        .detailed-data-table tbody tr:hover td[style*="fee2e2"] {
+            background-color: #fee2e2 !important;
+            opacity: 0.6 !important;
         }
         
         .filter-section {
@@ -1577,6 +1583,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=1771683693"></script>
+    <script src="js/app.js?v=1771683868"></script>
 </body>
 </html>
