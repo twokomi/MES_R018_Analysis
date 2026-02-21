@@ -2214,16 +2214,16 @@ function updatePerformanceBands(workerAgg) {
     
     if (isEfficiency) {
         // Work Efficiency bands
-        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent Workers (≥120%)';
-        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal Workers (100-<120%)';
-        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor Workers (80-<100%)';
-        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk Workers (<80%)';
+        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥120%)';
+        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (100-<120%)';
+        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (80-<100%)';
+        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<80%)';
     } else {
         // Time Utilization bands
-        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent Workers (≥80%)';
-        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal Workers (50-<80%)';
-        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor Workers (30-<50%)';
-        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk Workers (<30%)';
+        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥80%)';
+        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (50-<80%)';
+        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (30-<50%)';
+        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<30%)';
     }
     
     // Filter workers by performance band based on current metric
