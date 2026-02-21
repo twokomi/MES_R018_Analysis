@@ -140,6 +140,11 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         initTabs();
         console.log('✅ Tabs initialized');
+        
+        // ✅ Initialize tab colors based on current metric (default: Utilization = Blue)
+        initTabColors();
+        console.log('✅ Tab colors initialized');
+        
         initFileUpload();
         console.log('✅ File upload initialized');
         initFilters();
@@ -314,17 +319,39 @@ function initTabs() {
     });
 }
 
+// Initialize tab colors based on current metric
+function initTabColors() {
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    const activeColor = isEfficiency ? '#a855f7' : '#3b82f6'; // Purple for Efficiency, Blue for Utilization
+    
+    const activeTabs = document.querySelectorAll('.tab-active');
+    activeTabs.forEach(tab => {
+        tab.style.borderBottomColor = activeColor;
+        tab.style.color = activeColor;
+    });
+}
+
 // Switch to a specific tab
 function switchTab(tabName) {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
+    // Determine current metric color
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    const activeColor = isEfficiency ? '#a855f7' : '#3b82f6'; // Purple for Efficiency, Blue for Utilization
+    
     // Update active tab button
     tabButtons.forEach(btn => {
         if (btn.dataset.tab === tabName) {
             btn.classList.add('tab-active');
+            // Apply current metric color
+            btn.style.borderBottomColor = activeColor;
+            btn.style.color = activeColor;
         } else {
             btn.classList.remove('tab-active');
+            // Reset inline styles
+            btn.style.borderBottomColor = '';
+            btn.style.color = '';
         }
     });
     
@@ -4204,10 +4231,11 @@ function closeWorkerDetailModal(event) {
 
 // Toggle between Time Utilization and Work Efficiency metrics
 function toggleMetric() {
-    // Add fade-out effect
-    const reportTab = document.getElementById('reportTab');
-    reportTab.style.transition = 'opacity 0.3s ease-in-out';
-    reportTab.style.opacity = '0.5';
+    // Show transition overlay
+    const overlay = document.getElementById('metricTransitionOverlay');
+    const transitionText = document.getElementById('transitionText');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('fade-in');
     
     // Toggle metric type
     AppState.currentMetricType = AppState.currentMetricType === 'utilization' ? 'efficiency' : 'utilization';
@@ -4223,6 +4251,7 @@ function toggleMetric() {
     
     if (AppState.currentMetricType === 'efficiency') {
         // Switch to Work Efficiency (Purple theme)
+        transitionText.textContent = 'Switching to Work Efficiency...';
         document.body.style.transition = 'background-color 0.6s ease-in-out';
         document.body.style.backgroundColor = '#f3e8ff'; // More visible light purple
         
@@ -4250,6 +4279,7 @@ function toggleMetric() {
         });
     } else {
         // Switch to Time Utilization (Blue theme)
+        transitionText.textContent = 'Switching to Time Utilization...';
         document.body.style.transition = 'background-color 0.6s ease-in-out';
         document.body.style.backgroundColor = '#dbeafe'; // More visible light blue
         
@@ -4281,16 +4311,22 @@ function toggleMetric() {
     setTimeout(() => {
         updateReport();
         
-        // Fade-in effect
+        // Hide overlay after report update
         setTimeout(() => {
-            reportTab.style.opacity = '1';
+            overlay.classList.remove('fade-in');
+            overlay.classList.add('fade-out');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('fade-out');
+            }, 300);
             
             // Reset body background after a while (increased duration for visibility)
             setTimeout(() => {
                 document.body.style.backgroundColor = '';
             }, 3000);
-        }, 100);
-    }, 300);
+        }, 500);
+    }, 800);
     
     console.log(`🔄 Metric switched to: ${AppState.currentMetricType}`);
 }

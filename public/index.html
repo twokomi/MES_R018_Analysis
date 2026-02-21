@@ -37,9 +37,53 @@
             scrollbar-color: #94a3b8 #f1f5f9;
         }
         
+        /* Tab Button Styles */
+        .tab-btn {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        /* Tab Content Transition */
+        .tab-content {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        
+        .tab-content.hidden {
+            display: none;
+        }
+        
+        /* Tab Hover Effect - Minimal Gray (slightly darker) */
+        .tab-btn:hover:not(.tab-active) {
+            background: #f1f5f9;
+            color: #1f2937;
+        }
+        
+        /* Tab Hover Underline Animation */
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #cbd5e1;
+            transition: width 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .tab-btn:hover::after {
+            width: 60%;
+        }
+        
+        /* Active Tab - Default Blue (Dynamic: Purple for Efficiency, Blue for Utilization) */
         .tab-active {
             border-bottom: 3px solid #3b82f6;
             color: #3b82f6;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .tab-active::after {
+            display: none;
         }
         .card {
             background: white;
@@ -500,6 +544,48 @@
         #pivotReportView .rate-critical {
             background: #fee2e2;
             color: #991b1b;
+        }
+        
+        /* Metric Transition Overlay Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-in-out;
         }
     </style>
 </head>
@@ -1671,6 +1757,17 @@
             </div>
         </div>
     </footer>
+
+    <!-- Metric Transition Overlay -->
+    <div id="metricTransitionOverlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50 hidden transition-opacity duration-300">
+        <div class="text-center">
+            <img src="/waiv-logo.png" alt="WAIV" class="h-20 mx-auto mb-4 animate-pulse">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-spinner fa-spin text-white text-2xl"></i>
+                <span id="transitionText" class="text-white text-xl font-medium">Switching metric...</span>
+            </div>
+        </div>
+    </div>
 
     <script src="js/app.js?v=1771690200"></script>
 </body>
