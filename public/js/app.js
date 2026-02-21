@@ -1620,28 +1620,15 @@ function updateReport() {
 
 // Aggregate by worker only (consolidate all records per worker)
 function aggregateByWorkerOnly(workerAgg) {
-    // First, get all original records to calculate shifts based on startDatetime
+    // ✅ FIX: Use workerAgg directly instead of re-processing original data
+    // This ensures outliers already filtered in aggregateByWorker() stay filtered
     const byWorker = {};
     
-    // Use filteredData instead of processedData to respect current filters
-    const dataToAggregate = AppState.filteredData || AppState.processedData;
+    console.log(`📊 aggregateByWorkerOnly: Processing ${workerAgg.length} pre-aggregated records`);
     
-    dataToAggregate.forEach(record => {
-        // Filter out Rework
-        if (record.rework === true || record.rework === 'true') return;
-        
-        // Get Worker S/T value
-        const workerST = record['Worker S/T'] || record.workerST || 0;
-        
-        // IMPORTANT: For Efficiency Rate calculation, we MUST have S/T > 0
-        // For Utilization Rate, we allow all records
-        // Skip records with no S/T data ONLY in efficiency mode
-        if (AppState.currentMetricType === 'efficiency' && workerST <= 0) {
-            console.log(`⚠️ Skipped record (S/T=0): ${record.workerName} - ${record.foDesc3}`);
-            return; // Skip this record in efficiency mode
-        }
-        
-        const workerName = record.workerName;
+    // Process pre-aggregated workerAgg data
+    workerAgg.forEach(item => {
+        const workerName = item.workerName;
         
         if (!byWorker[workerName]) {
             byWorker[workerName] = {
@@ -1650,73 +1637,44 @@ function aggregateByWorkerOnly(workerAgg) {
                 totalMinutesOriginal: 0, // For Work Efficiency (original Worker Act)
                 assignedStandardTime: 0, // For Work Efficiency
                 validCount: 0,
-                foDesc3: '', // Will be set from workerAgg
-                workingDay: '', // Will be set from workerAgg
+                foDesc3: '', // Will be set from primary process
+                workingDay: '', // Will be set from latest working day
                 recordCount: 0,
-                shifts: new Set(), // Track unique shifts based on startDatetime
-                processTimes: {}, // Track time spent on each process
-                allRecords: [] // Store all records for this worker
+                shifts: new Set(), // Track unique shifts
+                processTimes: {}, // Track time per process
+                foDesc2: item.foDesc2 // Category for ordering
             };
         }
         
-        // Store all records for detailed calculation
-        byWorker[workerName].allRecords.push(record);
+        // Accumulate metrics from pre-aggregated data
+        byWorker[workerName].totalMinutes += item.totalMinutes || 0;
+        byWorker[workerName].totalMinutesOriginal += item.totalMinutesOriginal || 0;
+        byWorker[workerName].assignedStandardTime += item.assignedStandardTime || 0;
+        byWorker[workerName].validCount += item.validCount || 0;
+        byWorker[workerName].recordCount += 1;
         
-        byWorker[workerName].totalMinutes += record.workerActMins || 0;
-        byWorker[workerName].totalMinutesOriginal += record.workerAct || 0; // Original Worker Act
-        byWorker[workerName].validCount += 1;
-        
-        // Calculate assigned standard time: Worker S/T × Worker Rate
-        const workerRate = record['Worker Rate(%)'] || 0; // Worker Rate (%)
-        // workerST already declared at line 1571
-        const assignedTime = (workerST * workerRate) / 100;
-        byWorker[workerName].assignedStandardTime += assignedTime;
-        
-        // Track shift based on workingDay + workingShift (from shift calendar)
-        // This properly handles overnight shifts and O/T
-        const shiftKey = `${record.workingDay}_${record.workingShift}`;
+        // Track shifts
+        const shiftKey = `${item.workingDay}_${item.workingShift}`;
         byWorker[workerName].shifts.add(shiftKey);
         
-        // Track time per process to find the primary process
-        if (record.foDesc3) {
-            if (!byWorker[workerName].processTimes[record.foDesc3]) {
-                byWorker[workerName].processTimes[record.foDesc3] = 0;
+        // Track time per process
+        if (item.foDesc3) {
+            if (!byWorker[workerName].processTimes[item.foDesc3]) {
+                byWorker[workerName].processTimes[item.foDesc3] = 0;
             }
-            byWorker[workerName].processTimes[record.foDesc3] += record.workerActMins || 0;
+            byWorker[workerName].processTimes[item.foDesc3] += item.totalMinutes || 0;
         }
         
-        // Keep the latest working day
-        if (record.workingDay) {
-            byWorker[workerName].workingDay = record.workingDay;
+        // Keep latest working day
+        if (item.workingDay) {
+            byWorker[workerName].workingDay = item.workingDay;
         }
     });
     
-    console.log(`📊 Aggregation Summary:
-    - Total records processed: ${dataToAggregate.length}
-    - Rework records excluded: ${dataToAggregate.filter(r => r.rework).length}
-    - Records with S/T > 0: ${dataToAggregate.filter(r => {
-        const st = r['Worker S/T'] || r.workerST || 0;
-        return st > 0;
-    }).length}
+    console.log(`📊 Worker Summary:
     - Workers aggregated: ${Object.keys(byWorker).length}
     - Current metric: ${AppState.currentMetricType}
     `);
-    
-    // CRITICAL: If in Efficiency mode but NO records have S/T > 0, auto-switch to Utilization mode
-    if (AppState.currentMetricType === 'efficiency' && Object.keys(byWorker).length === 0) {
-        const recordsWithST = dataToAggregate.filter(r => {
-            const st = r['Worker S/T'] || r.workerST || 0;
-            return st > 0 && !r.rework;
-        }).length;
-        
-        if (recordsWithST === 0) {
-            console.warn('⚠️ NO RECORDS WITH S/T > 0 FOUND! Auto-switching to Utilization mode...');
-            alert('Excel 파일에 Worker S/T 데이터가 없습니다.\nUtilization Rate 모드로 자동 전환합니다.');
-            AppState.currentMetricType = 'utilization';
-            // Re-run aggregation in Utilization mode
-            return aggregateByWorkerOnly(workerAgg);
-        }
-    }
     
     // Set primary process (process with most time spent)
     Object.values(byWorker).forEach(worker => {
@@ -1725,13 +1683,6 @@ function aggregateByWorkerOnly(workerAgg) {
             const primaryProcess = Object.entries(worker.processTimes)
                 .sort((a, b) => b[1] - a[1])[0][0];
             worker.foDesc3 = primaryProcess;
-        }
-    });
-    
-    // Update record count from workerAgg
-    workerAgg.forEach(item => {
-        if (byWorker[item.workerName]) {
-            byWorker[item.workerName].recordCount += 1;
         }
     });
     
