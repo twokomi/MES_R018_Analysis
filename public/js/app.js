@@ -1203,12 +1203,17 @@ function updateWorkingDayOptions(selectedShift) {
         }
         datesByMonth[month].push(date);
         
-        // Calculate week number (ISO week)
-        const d = new Date(date);
+        // Calculate week number (ISO week) using local dates to avoid timezone issues
+        const [yearNum, monthNum, dayNum] = date.split('-').map(Number);
+        const d = new Date(yearNum, monthNum - 1, dayNum); // Local date
         const dayOfWeek = d.getDay() || 7; // Sunday = 7
-        const weekStart = new Date(d);
-        weekStart.setDate(d.getDate() - dayOfWeek + 1); // Monday of the week
-        const weekKey = weekStart.toISOString().substring(0, 10);
+        const mondayDate = dayNum - dayOfWeek + 1; // Monday's day of month
+        const weekStartDate = new Date(yearNum, monthNum - 1, mondayDate);
+        const weekKey = `${yearNum}-${String(weekStartDate.getMonth() + 1).padStart(2, '0')}-${String(weekStartDate.getDate()).padStart(2, '0')}`;
+        
+        // Debug log for ALL dates to verify week calculation
+        console.log(`📅 ${date} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}) → Week ${weekKey} (Mon)`);
+
         
         if (!datesByWeek[weekKey]) {
             datesByWeek[weekKey] = [];
@@ -1243,14 +1248,22 @@ function updateWorkingDayOptions(selectedShift) {
         html += '<div class="flex flex-wrap gap-2">';
         sortedWeeks.forEach((weekStart, index) => {
             const dates = datesByWeek[weekStart].sort();
-            const weekEnd = dates[dates.length - 1];
+            
+            // Calculate week end date (Sunday = Monday + 6 days)
+            // Use local date parsing to avoid timezone issues
+            const [yearNum, monthNum, dayNum] = weekStart.split('-').map(Number);
+            const weekStartDate = new Date(yearNum, monthNum - 1, dayNum); // Local date
+            const weekEndDate = new Date(yearNum, monthNum - 1, dayNum + 6); // Add 6 days
+            
+            const weekStartStr = weekStart.substring(5); // MM-DD
+            const weekEndStr = `${String(weekEndDate.getMonth() + 1).padStart(2, '0')}-${String(weekEndDate.getDate()).padStart(2, '0')}`;
             
             // Calculate ISO week number
-            const d = new Date(weekStart);
+            const d = new Date(yearNum, monthNum - 1, dayNum);
             const yearStart = new Date(d.getFullYear(), 0, 1);
             const weekNum = Math.ceil((((d - yearStart) / 86400000) + yearStart.getDay() + 1) / 7);
             
-            const weekLabel = `WK${weekNum}: ${weekStart.substring(5)} ~ ${weekEnd.substring(5)}`;
+            const weekLabel = `WK${weekNum}: ${weekStartStr} ~ ${weekEndStr}`;
             const weekDatesStr = dates.join(',');
             html += `
                 <button onclick="selectWeekDates('${weekDatesStr}')" class="px-3 py-1.5 text-xs bg-green-100 hover:bg-green-600 hover:text-white text-green-700 rounded font-medium transition-all active:bg-green-700 active:scale-95 shadow-sm hover:shadow-md">
@@ -2044,10 +2057,9 @@ function aggregateByWorker(data) {
                 validCount: 0,
                 seq: record.seq,
                 // ✅ FIX: Initialize accumulation fields for Efficiency mode
-                'Worker S/T': 0,  // Will accumulate below
-                'Worker Rate(%)': 0,  // Will accumulate below
-                assignedStandardTime: 0,
-                totalMinutesOriginal: 0
+                'Worker S/T': 0,  // Will accumulate S/T
+                assignedStandardTime: 0,  // Will accumulate Adjusted S/T
+                totalMinutesOriginal: 0  // Will accumulate Actual
             };
         }
         
@@ -2072,9 +2084,8 @@ function aggregateByWorker(data) {
             }
             
             aggregated[key]['Worker S/T'] += st;  // Accumulate S/T
-            aggregated[key]['Worker Rate(%)'] += rate;  // Accumulate Rate
-            aggregated[key].assignedStandardTime += assigned;
-            aggregated[key].totalMinutesOriginal += record['Worker Act'] || 0;
+            aggregated[key].assignedStandardTime += assigned;  // Accumulate Adjusted S/T
+            aggregated[key].totalMinutesOriginal += record['Worker Act'] || 0;  // Accumulate Actual
         } else {
             invalidRecords++;
         }
@@ -3693,7 +3704,7 @@ function showWorkerDetail(workerName) {
                 <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
                 <th class="text-left p-2 font-semibold text-gray-700">Process</th>
                 <th class="text-right p-2 font-semibold text-gray-700">S/T<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
-                <th class="text-right p-2 font-semibold text-gray-700">Rate<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Worker Rate<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Assigned<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Actual<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Efficiency<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
@@ -3789,9 +3800,59 @@ function showWorkerDetail(workerName) {
     
     // Update modal header and summary
     document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
-    document.getElementById('modalTotalMinutes').textContent = totalValue.toFixed(0) + (isEfficiency ? ' min (Assigned)' : ' min (Actual)');
-    document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
-    document.getElementById('modalRecordCount').textContent = dataForSummary.length + ' records';
+    
+    // Update modal KPIs based on metric type
+    if (isEfficiency) {
+        // Efficiency Mode: Show Assigned S/T and Actual Time
+        const assignedStandardTime = dataForSummary.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
+        const actualTime = dataForSummary.reduce((sum, r) => sum + (r.totalMinutesOriginal || 0), 0);
+        const assignedHours = assignedStandardTime / 60;
+        const actualHours = actualTime / 60;
+        const avgAssignedPerRecord = dataForSummary.length > 0 ? assignedHours / dataForSummary.length : 0;
+        
+        // Update card labels for Efficiency
+        document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Records';
+        document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Assigned S/T';
+        document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Actual Time';
+        document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Efficiency Rate';
+        
+        // Update values
+        document.getElementById('modalTotalShifts').textContent = dataForSummary.length.toLocaleString();
+        document.getElementById('modalTotalShiftTime').textContent = assignedHours.toFixed(1) + ' hr';
+        document.getElementById('modalTotalMinutes').textContent = actualHours.toFixed(1) + ' hr';
+        document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
+        
+        // Update descriptions
+        document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'activities';
+        document.querySelector('#modalTotalShiftTime').nextElementSibling.textContent = 'standard time';
+        document.querySelector('#modalTotalMinutes').nextElementSibling.textContent = 'actual time';
+        document.querySelector('#modalWorkRate').nextElementSibling.textContent = 'performance';
+    } else {
+        // Utilization Mode: Show Shifts, Shift Time, Work Time
+        const totalShiftMinutes = shiftCount * 660;
+        const totalShiftHours = totalShiftMinutes / 60;
+        const totalValueHours = totalValue / 60;
+        
+        // Update card labels for Utilization
+        document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shifts';
+        document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shift Time';
+        document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Work Time';
+        document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Work Rate';
+        
+        // Update values
+        document.getElementById('modalTotalShifts').textContent = shiftCount.toLocaleString();
+        document.getElementById('modalTotalShiftTime').textContent = totalShiftHours.toFixed(1) + ' hr';
+        document.getElementById('modalTotalMinutes').textContent = totalValueHours.toFixed(1) + ' hr';
+        document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
+        
+        // Update descriptions
+        document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'shifts';
+        document.querySelector('#modalTotalShiftTime').nextElementSibling.textContent = 'available';
+        document.querySelector('#modalTotalMinutes').nextElementSibling.textContent = 'actual';
+        document.querySelector('#modalWorkRate').nextElementSibling.textContent = 'performance';
+    }
+    
+    document.getElementById('modalRecordCount').textContent = dataForSummary.length.toLocaleString();
     
     // ✅ FIX: Remove background color, only use text color
     const bandElement = document.getElementById('modalPerformanceBand');
@@ -3805,13 +3866,13 @@ function showWorkerDetail(workerName) {
         glossaryDiv.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Glossary:</strong><br>
             • <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
-            • <strong>Rate(%)</strong>: Worker's efficiency rating relative to standard<br>
-            • <strong>Assigned(m)</strong>: Calculated time = S/T × Rate ÷ 100<br>
-            • <strong>Actual(m)</strong>: Actual time spent on the task<br>
+            • <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
+            • <strong>Assigned(m)</strong>: Adjusted S/T = S/T × Worker Rate ÷ 100<br>
+            • <strong>Actual(m)</strong>: Actual time spent by this worker<br>
             • <strong>Efficiency(%)</strong>: Performance ratio = Assigned ÷ Actual × 100<br>
             • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)<br>
             <br>
-            <strong class="text-purple-600">📌 Note:</strong> The efficiency shown here is the <strong>overall average</strong> across all ${dataForSummary.length} records for this worker. Individual record efficiencies may vary (see table below).
+            <strong class="text-purple-600">📌 Note:</strong> Multiple workers can share one task (e.g., Worker A: 60%, Worker B: 40%). The overall efficiency shown in KPI is the <strong>total average</strong> across all ${dataForSummary.length} records.
         `;
     } else {
         glossaryDiv.innerHTML = `
@@ -4196,10 +4257,12 @@ function renderEfficiencyTable(workerRecords, tableBody) {
         .sort((a, b) => (b.workingDay || '').localeCompare(a.workingDay || ''))
         .map(r => {
             // ✅ Use aggregated data fields
-            const actual = r.totalMinutesOriginal || 0;
-            const assigned = r.assignedStandardTime || 0;
+            const st = r['Worker S/T'] || 0;  // Total S/T (accumulated)
+            const assigned = r.assignedStandardTime || 0;  // Total Adjusted S/T (accumulated)
+            const actual = r.totalMinutesOriginal || 0;  // Total Actual (accumulated)
             const efficiency = r.efficiencyRate || 0;
-            const rate = actual > 0 ? (assigned / actual) * 100 : 0;
+            // Calculate Rate from aggregated data: (Assigned / S/T) × 100
+            const rate = st > 0 ? (assigned / st) * 100 : 0;
             
             // Check if outlier (should already be filtered, but double-check)
             const isOutlier = r.isOutlier || false;
@@ -4218,7 +4281,7 @@ function renderEfficiencyTable(workerRecords, tableBody) {
                     <td class="p-2">${outlierIcon}${r.workingDay || '-'}</td>
                     <td class="p-2"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">${r.workingShift || '-'} ${r.actualShift || ''}</span></td>
                     <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
-                    <td class="p-2 text-right text-gray-600">${Math.round(actual)}</td>
+                    <td class="p-2 text-right text-gray-600">${Math.round(st)}</td>
                     <td class="p-2 text-right text-gray-600">${rate.toFixed(0)}%</td>
                     <td class="p-2 text-right text-gray-900">${Math.round(assigned)}</td>
                     <td class="p-2 text-right text-gray-900">${Math.round(actual)}</td>
