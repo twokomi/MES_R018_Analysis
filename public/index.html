@@ -223,6 +223,11 @@
             background-color: #ffffff !important;
         }
         
+        /* Outlier row styling */
+        .detailed-data-table tbody tr.outlier-row td {
+            background-color: #fee2e2 !important;
+        }
+        
         .detailed-data-table tbody tr:hover {
             background-color: #f8fafc;
         }
@@ -231,10 +236,9 @@
             background-color: #f8fafc !important;
         }
         
-        /* Override hover for outlier rows */
-        .detailed-data-table tbody tr:hover td[style*="fee2e2"] {
-            background-color: #fee2e2 !important;
-            opacity: 0.6 !important;
+        /* Maintain outlier styling on hover */
+        .detailed-data-table tbody tr.outlier-row:hover td {
+            background-color: #fecaca !important;
         }
         
         .filter-section {
@@ -1583,6 +1587,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=1771683868"></script>
+    <script src="js/app.js?v=1771684273"></script>
 </body>
 </html>
