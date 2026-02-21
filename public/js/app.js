@@ -2195,7 +2195,7 @@ function updatePerformanceBands(workerAgg) {
     const excellentDiv = document.getElementById('excellentWorkers');
     if (excellent.length > 0) {
         excellentDiv.innerHTML = '<div class="space-y-2">' + excellent.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-green-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
@@ -2214,7 +2214,7 @@ function updatePerformanceBands(workerAgg) {
     const normalDiv = document.getElementById('normalWorkers');
     if (normal.length > 0) {
         normalDiv.innerHTML = '<div class="space-y-2">' + normal.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-blue-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
@@ -2233,7 +2233,7 @@ function updatePerformanceBands(workerAgg) {
     const poorDiv = document.getElementById('poorWorkers');
     if (poor.length > 0) {
         poorDiv.innerHTML = '<div class="space-y-2">' + poor.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-orange-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-orange-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
@@ -2252,7 +2252,7 @@ function updatePerformanceBands(workerAgg) {
     const criticalDiv = document.getElementById('criticalWorkers');
     if (critical.length > 0) {
         criticalDiv.innerHTML = '<div class="space-y-2">' + critical.map(w => 
-            `<div class="flex flex-col p-4 bg-white border-l-4 border-red-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
+            `<div class="flex flex-col p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-800">${w.workerName}</span>
                     <span class="text-red-600 font-bold text-lg">${getRate(w).toFixed(1)}%</span>
