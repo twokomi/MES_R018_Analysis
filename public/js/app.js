@@ -2023,10 +2023,20 @@ function aggregateByWorker(data) {
             // ✅ FIX: Accumulate efficiency fields (S/T, Rate, Assigned, Actual)
             const st = record['Worker S/T'] || 0;
             const rate = record['Worker Rate(%)'] || 0;
+            const assigned = (st * rate / 100);
+            
+            // ⚠️ DEBUG: Log when Worker S/T or Rate is 0
+            if (totalRecords <= 5 && (st === 0 || rate === 0)) {
+                console.warn(`⚠️ Record ${totalRecords}: Worker S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}`, {
+                    worker: record.workerName,
+                    process: record.foDesc3,
+                    allFields: Object.keys(record).filter(k => k.includes('S/T') || k.includes('Rate') || k.includes('Worker'))
+                });
+            }
             
             aggregated[key]['Worker S/T'] += st;  // Accumulate S/T
             aggregated[key]['Worker Rate(%)'] += rate;  // Accumulate Rate
-            aggregated[key].assignedStandardTime += (st * rate / 100);
+            aggregated[key].assignedStandardTime += assigned;
             aggregated[key].totalMinutesOriginal += record['Worker Act'] || 0;
         } else {
             invalidRecords++;
@@ -3987,8 +3997,10 @@ function renderEfficiencyCharts(workerRecords) {
             return false;
         }
         
-        // ✅ FIX: Calculate efficiency directly for raw records (aggregated 'Work Rate(%)' field doesn't exist here)
-        const assigned = ((r.S_T || 0) * (r.Rate || 0)) / 100;
+        // ✅ FIX: Use correct field names from parseRawData
+        const st = r['Worker S/T'] || 0;
+        const rate = r['Worker Rate(%)'] || 0;
+        const assigned = (st * rate) / 100;
         const actual = r['Worker Act'] || 0;
         const efficiency = actual > 0 ? (assigned / actual) * 100 : 0;
         
@@ -4035,13 +4047,14 @@ function renderEfficiencyCharts(workerRecords) {
         if (!hourlyData[hour]) {
             hourlyData[hour] = { assigned: 0, actual: 0 };
         }
-        // Calculate assigned and actual from Work Rate
-        const workRate = r['Work Rate(%)'] || 0;
-        const workerAct = r['Worker Act'] || 0;
-        const assigned = (workerAct * workRate) / 100;
+        // ✅ FIX: Use correct field names Worker S/T and Worker Rate(%)
+        const st = r['Worker S/T'] || 0;
+        const rate = r['Worker Rate(%)'] || 0;
+        const assigned = (st * rate) / 100;
+        const actual = r['Worker Act'] || 0;
         
         hourlyData[hour].assigned += assigned;
-        hourlyData[hour].actual += workerAct;
+        hourlyData[hour].actual += actual;
     });
     
     // Sort hours
