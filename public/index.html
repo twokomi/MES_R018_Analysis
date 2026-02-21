@@ -861,15 +861,15 @@
                     <div class="text-sm mb-1">Total Workers</div>
                     <div class="text-3xl font-bold" id="kpiWorkers">0</div>
                 </div>
-                <div class="kpi-card success">
-                    <div class="text-sm mb-1">Valid Work Orders</div>
-                    <div class="text-3xl font-bold" id="kpiValidWO">0</div>
+                <div class="kpi-card success" id="kpiSecondCard">
+                    <div class="text-sm mb-1" id="kpiSecondLabel">Total S/T (min)</div>
+                    <div class="text-3xl font-bold" id="kpiSecondValue">0</div>
                 </div>
-                <div class="kpi-card warning">
-                    <div class="text-sm mb-1" id="kpiTotalTimeLabel">Total Work Time (min)</div>
-                    <div class="text-3xl font-bold" id="kpiTotalMinutes">0</div>
+                <div class="kpi-card warning" id="kpiThirdCard">
+                    <div class="text-sm mb-1" id="kpiThirdLabel">Total Assigned Time (min)</div>
+                    <div class="text-3xl font-bold" id="kpiThirdValue">0</div>
                 </div>
-                <div class="kpi-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06);">
+                <div class="kpi-card" id="kpiAvgRateCard" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06);">
                     <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;" id="kpiAvgRateLabel">Average Rate</div>
                     <div class="text-3xl font-bold" id="kpiAvgWorkRate" style="color: #1f2937;">0%</div>
                 </div>
@@ -882,7 +882,7 @@
                         <i class="fas fa-filter text-orange-600 text-lg"></i>
                         <div>
                             <label class="text-sm font-semibold text-gray-800">Outlier Threshold</label>
-                            <p class="text-xs text-gray-600">W/O with rate > threshold will be auto-filtered</p>
+                            <p class="text-xs text-gray-600">Records with rate > threshold will be filtered</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">

@@ -1800,6 +1800,7 @@ function aggregateByWorkerOnly(workerAgg) {
                 totalMinutes: 0, // For Time Utilization (overlap-removed)
                 totalMinutesOriginal: 0, // For Work Efficiency (original Worker Act)
                 assignedStandardTime: 0, // For Work Efficiency
+                'Worker S/T': 0, // ✅ NEW: Total Standard Time
                 validCount: 0,
                 foDesc3: '', // Will be set from primary process
                 workingDay: '', // Will be set from latest working day
@@ -1814,6 +1815,7 @@ function aggregateByWorkerOnly(workerAgg) {
         byWorker[workerName].totalMinutes += item.totalMinutes || 0;
         byWorker[workerName].totalMinutesOriginal += item.totalMinutesOriginal || 0;
         byWorker[workerName].assignedStandardTime += item.assignedStandardTime || 0;
+        byWorker[workerName]['Worker S/T'] += item['Worker S/T'] || 0; // ✅ NEW: Accumulate S/T
         byWorker[workerName].validCount += item.validCount || 0;
         byWorker[workerName].recordCount += 1;
         
@@ -2255,47 +2257,73 @@ function getPerformanceBand(workRate) {
 function updateKPIs(workerAgg) {
     const isEfficiency = AppState.currentMetricType === 'efficiency';
     
-    // Update KPI label based on metric type
-    const kpiLabel = document.getElementById('kpiAvgRateLabel');
-    if (kpiLabel) {
-        kpiLabel.textContent = isEfficiency ? 'Average Efficiency Rate' : 'Average Utilization Rate';
-    }
-    
-    const kpiTotalTimeLabel = document.getElementById('kpiTotalTimeLabel');
-    if (kpiTotalTimeLabel) {
-        kpiTotalTimeLabel.textContent = isEfficiency ? 'Total Assigned Time (min)' : 'Total Work Time (min)';
-    }
-    
+    // Total Workers
     const totalWorkers = new Set(workerAgg.map(w => w.workerName)).size;
-    const totalValidWO = workerAgg.reduce((sum, w) => sum + w.validCount, 0);
     
-    // Calculate average rate based on current metric type
-    const avgRate = workerAgg.length > 0 
-        ? (isEfficiency 
-            ? workerAgg.reduce((sum, w) => sum + (w.efficiencyRate || 0), 0) / workerAgg.length
-            : workerAgg.reduce((sum, w) => sum + (w.utilizationRate || 0), 0) / workerAgg.length)
-        : 0;
+    // Update labels and calculate values based on metric type
+    const secondLabel = document.getElementById('kpiSecondLabel');
+    const thirdLabel = document.getElementById('kpiThirdLabel');
+    const avgRateLabel = document.getElementById('kpiAvgRateLabel');
+    const avgRateCard = document.getElementById('kpiAvgRateCard');
+    
+    let secondValue, thirdValue, avgRate;
+    
+    if (isEfficiency) {
+        // ⚡ Efficiency Mode
+        // Card 2: Total Adjusted S/T (Total Assigned Time)
+        secondLabel.textContent = 'Total Adjusted S/T (min)';
+        secondValue = workerAgg.reduce((sum, w) => sum + (w.assignedStandardTime || 0), 0);
+        
+        // Card 3: Total Actual Time
+        thirdLabel.textContent = 'Total Actual Time (min)';
+        thirdValue = workerAgg.reduce((sum, w) => sum + (w.totalMinutesOriginal || 0), 0);
+        
+        // Card 4: Average Efficiency Rate = (Total Adjusted S/T / Total Actual) × 100
+        avgRateLabel.textContent = 'Average Efficiency Rate';
+        avgRate = thirdValue > 0 ? (secondValue / thirdValue) * 100 : 0;
+        
+        // Purple theme
+        avgRateCard.style.background = 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)';
+        avgRateCard.style.border = '2px solid #9333ea';
+        avgRateCard.style.boxShadow = '0 4px 6px -1px rgba(147, 51, 234, 0.1), 0 2px 4px -1px rgba(147, 51, 234, 0.06)';
+        avgRateLabel.style.color = '#7e22ce';
+        
+    } else {
+        // ⏱️ Utilization Mode
+        // Card 2: Total Shift Time (workers × 660 min)
+        secondLabel.textContent = 'Total Shift Time (min)';
+        secondValue = totalWorkers * 660; // 11 hours = 660 minutes
+        
+        // Card 3: Total Work Time (sum of actual work time after deduplication)
+        thirdLabel.textContent = 'Total Work Time (min)';
+        thirdValue = workerAgg.reduce((sum, w) => sum + (w.totalMinutes || 0), 0);
+        
+        // Card 4: Average Utilization Rate = (Total Work Time / Total Shift Time) × 100
+        avgRateLabel.textContent = 'Average Utilization Rate';
+        avgRate = secondValue > 0 ? (thirdValue / secondValue) * 100 : 0;
+        
+        // Blue theme
+        avgRateCard.style.background = 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)';
+        avgRateCard.style.border = '2px solid #0284c7';
+        avgRateCard.style.boxShadow = '0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06)';
+        avgRateLabel.style.color = '#0369a1';
+    }
     
     console.log(`📊 KPI Calculation:
     - Metric: ${isEfficiency ? 'Efficiency' : 'Utilization'}
-    - Workers: ${workerAgg.length}
-    - Total Rate: ${isEfficiency ? workerAgg.reduce((sum, w) => sum + (w.efficiencyRate || 0), 0).toFixed(2) : workerAgg.reduce((sum, w) => sum + (w.utilizationRate || 0), 0).toFixed(2)}
-    - Average Rate: ${avgRate.toFixed(2)}%
+    - Total Workers: ${totalWorkers}
+    - Card 2 (${secondLabel.textContent}): ${secondValue.toFixed(0)}
+    - Card 3 (${thirdLabel.textContent}): ${thirdValue.toFixed(0)}
+    - Average Rate Calculation: (${secondValue.toFixed(0)} / ${thirdValue.toFixed(0)}) × 100 = ${avgRate.toFixed(2)}%
     `);
     
-    // For Time Utilization: show total actual minutes worked (after deduplication)
-    // For Work Efficiency: show total assigned standard minutes
-    const totalValue = isEfficiency
-        ? workerAgg.reduce((sum, w) => sum + (w.assignedStandardTime || 0), 0)
-        : workerAgg.reduce((sum, w) => sum + (w.totalMinutes || 0), 0);
-    
-    // Format numbers with thousand separators
+    // Update display
     document.getElementById('kpiWorkers').textContent = totalWorkers.toLocaleString();
-    document.getElementById('kpiValidWO').textContent = totalValidWO.toLocaleString();
-    document.getElementById('kpiTotalMinutes').textContent = Math.round(totalValue).toLocaleString();
+    document.getElementById('kpiSecondValue').textContent = Math.round(secondValue).toLocaleString();
+    document.getElementById('kpiThirdValue').textContent = Math.round(thirdValue).toLocaleString();
     document.getElementById('kpiAvgWorkRate').textContent = avgRate.toFixed(1) + '%';
     
-    // ✅ Show/hide Outlier Threshold control based on metric type
+    // Show/hide Outlier Threshold control based on metric type
     const outlierControl = document.getElementById('outlierThresholdControl');
     if (outlierControl) {
         outlierControl.style.display = isEfficiency ? 'block' : 'none';
@@ -3777,7 +3805,7 @@ function showWorkerDetail(workerName) {
                 <th class="text-left p-2 font-semibold text-gray-700">Process</th>
                 <th class="text-right p-2 font-semibold text-gray-700">S/T<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Worker Rate<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
-                <th class="text-right p-2 font-semibold text-gray-700">Assigned<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
+                <th class="text-right p-2 font-semibold text-gray-700">Adjusted S/T<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Actual<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Efficiency<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
             </tr>
@@ -3947,9 +3975,9 @@ function showWorkerDetail(workerName) {
             <strong class="text-purple-700">Work Efficiency Glossary:</strong><br>
             • <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
             • <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
-            • <strong>Assigned(m)</strong>: Adjusted S/T = S/T × Worker Rate ÷ 100<br>
+            • <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Worker Rate ÷ 100<br>
             • <strong>Actual(m)</strong>: Actual time spent by this worker<br>
-            • <strong>Efficiency(%)</strong>: Performance ratio = Assigned ÷ Actual × 100<br>
+            • <strong>Efficiency(%)</strong>: Performance ratio = Adjusted S/T ÷ Actual × 100<br>
             • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)<br>
             <br>
             <strong class="text-purple-600">📌 Note:</strong> Multiple workers can share one task (e.g., Worker A: 60%, Worker B: 40%). The overall efficiency shown in KPI is the <strong>total average</strong> across all ${dataForSummary.length} records.
