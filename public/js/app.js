@@ -513,13 +513,21 @@ function handleFileUpload(file) {
             
             updateProgress(50);
             
-            // Find Raw sheet
-            const rawSheetName = workbook.SheetNames.find(name => 
+            // Find Raw sheet (prefer 'Raw' sheet, fallback to first sheet)
+            let rawSheetName = workbook.SheetNames.find(name => 
                 normalizeHeader(name) === 'RAW'
             );
             
+            // If no 'Raw' sheet found, use the first sheet
             if (!rawSheetName) {
-                throw new Error("'Raw' 시트를 찾을 수 없습니다.");
+                rawSheetName = workbook.SheetNames[0];
+                console.log(`ℹ️ 'Raw' 시트를 찾을 수 없어 첫 번째 시트를 사용합니다: "${rawSheetName}"`);
+            } else {
+                console.log(`✅ 'Raw' 시트를 찾았습니다: "${rawSheetName}"`);
+            }
+            
+            if (!rawSheetName) {
+                throw new Error("Excel 파일에 시트가 없습니다.");
             }
             
             updateProgress(60);
