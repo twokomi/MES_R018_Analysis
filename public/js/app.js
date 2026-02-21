@@ -609,6 +609,20 @@ function parseRawData(headers, dataRows) {
         rework: colRework
     });
     
+    // ⚠️ CRITICAL: Check if Worker S/T or Rate columns are missing
+    if (colWorkerST === -1) {
+        console.error('❌ CRITICAL ERROR: Worker S/T column not found in Excel!');
+        console.error('   Expected headers: Worker S/T, Worker ST, workerst, st, Standard Time');
+        console.error('   Actual headers:', headers);
+        console.error('   All Efficiency values will be 0.');
+    }
+    if (colWorkerRate === -1) {
+        console.error('❌ CRITICAL ERROR: Worker Rate(%) column not found in Excel!');
+        console.error('   Expected headers: Worker Rate(%), Worker Rate, workerrate, rate');
+        console.error('   Actual headers:', headers);
+        console.error('   All Efficiency values will be 0.');
+    }
+    
     dataRows.forEach((row, index) => {
         if (!row || row.length === 0) return;
         
@@ -656,8 +670,24 @@ function parseRawData(headers, dataRows) {
             'Worker S/T': r['Worker S/T'],
             workerRate: r.workerRate,
             'Worker Rate(%)': r['Worker Rate(%)'],
-            workerAct: r.workerAct
+            workerAct: r.workerAct,
+            calculatedAssigned: (r['Worker S/T'] * r['Worker Rate(%)'] / 100).toFixed(2)
         })));
+        
+        // ⚠️ CRITICAL: Check if Worker S/T and Rate columns are all zeros
+        const allSTZero = parsed.every(r => r['Worker S/T'] === 0);
+        const allRateZero = parsed.every(r => r['Worker Rate(%)'] === 0);
+        
+        if (allSTZero && allRateZero) {
+            console.error('❌ CRITICAL ERROR: All Worker S/T and Worker Rate(%) values are 0!');
+            console.error('   This will cause all Efficiency values to be 0.');
+            console.error('   Excel column mapping may be incorrect.');
+            console.error('   Check Excel headers: Worker S/T, Worker Rate(%)');
+        } else if (allSTZero) {
+            console.warn('⚠️ WARNING: All Worker S/T values are 0!');
+        } else if (allRateZero) {
+            console.warn('⚠️ WARNING: All Worker Rate(%) values are 0!');
+        }
     }
     
     return parsed;
@@ -2004,6 +2034,19 @@ function aggregateByWorker(data) {
     });
     
     console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid (outlier marking will be applied next)`);
+    
+    // ✅ DEBUG: Check if assignedStandardTime is being accumulated
+    const sampleAggregated = Object.values(aggregated).slice(0, 3);
+    console.log('🔍 Sample aggregated data (first 3):', sampleAggregated.map(item => ({
+        worker: item.workerName,
+        day: item.workingDay,
+        process: item.foDesc3,
+        'Worker S/T': item['Worker S/T'],
+        'Worker Rate(%)': item['Worker Rate(%)'],
+        assignedStandardTime: item.assignedStandardTime,
+        totalMinutesOriginal: item.totalMinutesOriginal,
+        calculatedEfficiency: item.totalMinutesOriginal > 0 ? ((item.assignedStandardTime / item.totalMinutesOriginal) * 100).toFixed(1) + '%' : '0%'
+    })));
     
     // Convert to array and calculate rates
     const result = Object.values(aggregated).map(item => {
