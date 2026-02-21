@@ -1768,6 +1768,15 @@
         </div>
     </footer>
 
+    <!-- Filter Loading Indicator (Top-right, with fade-out) -->
+    <div id="filterLoadingIndicator" class="fixed top-20 right-6 bg-white rounded-lg shadow-xl p-4 flex items-center gap-3 z-40 hidden transition-opacity duration-300">
+        <img src="/waiv-logo.png" alt="WAIV" class="h-8 animate-pulse">
+        <div class="flex flex-col">
+            <span class="text-gray-800 text-sm font-semibold">Processing...</span>
+            <span class="text-gray-500 text-xs">Applying filters</span>
+        </div>
+    </div>
+
     <!-- Metric Transition Overlay -->
     <div id="metricTransitionOverlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50 hidden transition-opacity duration-300">
         <div class="text-center">

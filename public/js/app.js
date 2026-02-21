@@ -162,7 +162,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const value = parseInt(input.value) || 1000;
             AppState.outlierThreshold = value;
             console.log(`🎯 Outlier threshold updated: ${value}%`);
-            updateReport();
+            
+            // Show loading indicator
+            const loadingIndicator = document.getElementById('filterLoadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.style.opacity = '1';
+            }
+            
+            // Use setTimeout to allow UI to update before heavy processing
+            setTimeout(() => {
+                updateReport();
+                
+                // Hide loading indicator with fade-out effect
+                if (loadingIndicator) {
+                    setTimeout(() => {
+                        // Start fade-out
+                        loadingIndicator.style.opacity = '0';
+                        // Remove from DOM after fade completes
+                        setTimeout(() => {
+                            loadingIndicator.classList.add('hidden');
+                        }, 300); // Match transition-opacity duration-300
+                    }, 500);
+                }
+            }, 50);
         });
         
         // ✅ NEW: Worker search
@@ -1554,6 +1577,13 @@ function updateCheckboxDisplay(type) {
 
 // Apply filters
 function applyFilters() {
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('filterLoadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden');
+        loadingIndicator.style.opacity = '1';
+    }
+    
     // Get checked working days
     const dayCheckboxes = document.querySelectorAll('.workingDay-checkbox:checked');
     const selectedDays = Array.from(dayCheckboxes).map(cb => cb.value).filter(v => v);
@@ -1588,11 +1618,36 @@ function applyFilters() {
     document.getElementById('filterWorkerDropdown')?.classList.add('hidden');
     document.getElementById('filterWorkingShiftDropdown')?.classList.add('hidden');
     
-    updateReport();
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+        updateReport();
+        
+        // Hide loading indicator with fade-out effect
+        if (loadingIndicator) {
+            setTimeout(() => {
+                // Start fade-out
+                loadingIndicator.style.opacity = '0';
+                // Remove from DOM after fade completes
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300); // Match transition-opacity duration-300
+            }, 500); // Keep visible for at least 500ms for smooth UX
+        }
+    }, 50);
 }
 
 // Reset filters
 function resetFilters() {
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('filterLoadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden');
+        loadingIndicator.style.opacity = '1';
+        // Update text for reset action
+        const textElement = loadingIndicator.querySelector('span.text-xs');
+        if (textElement) textElement.textContent = 'Resetting filters';
+    }
+    
     // Reset radio buttons
     const shiftRadio = document.querySelector('input[name="shift"][value=""]');
     if (shiftRadio) shiftRadio.checked = true;
@@ -1623,8 +1678,25 @@ function resetFilters() {
         workers: []
     };
     
-    updateFilterOptions();
-    updateReport();
+    // Use setTimeout to allow UI to update before heavy processing
+    setTimeout(() => {
+        updateFilterOptions();
+        updateReport();
+        
+        // Hide loading indicator with fade-out and restore text
+        if (loadingIndicator) {
+            setTimeout(() => {
+                // Start fade-out
+                loadingIndicator.style.opacity = '0';
+                // Remove from DOM after fade completes
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                    const textElement = loadingIndicator.querySelector('span.text-xs');
+                    if (textElement) textElement.textContent = 'Applying filters';
+                }, 300); // Match transition-opacity duration-300
+            }, 500);
+        }
+    }, 50);
 }
 
 // Get filtered data
