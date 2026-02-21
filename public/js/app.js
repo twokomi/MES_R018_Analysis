@@ -3964,35 +3964,6 @@ function renderEfficiencyCharts(workerRecords) {
         }
     });
 }
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => `${context.parsed.y.toFixed(1)}%`
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        font: { size: 9 },
-                        maxRotation: 90,
-                        minRotation: 90
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Efficiency (%)' },
-                    ticks: { font: { size: 10 } }
-                }
-            }
-        }
-    });
-}
 
 // Render Time Utilization records table
 function renderUtilizationTable(workerRecords, tableBody) {
