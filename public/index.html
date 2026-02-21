@@ -242,15 +242,15 @@
             background: #fee2e2;
             color: #991b1b;
         }
-        /* Modern Table Design */
-        table {
+        /* Modern Table Design (excludes pivot-table) */
+        table:not(.pivot-table) {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
             border-radius: 12px;
             overflow: hidden;
         }
-        th {
+        table:not(.pivot-table) th {
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             padding: 1rem 0.75rem;
             text-align: left;
@@ -262,24 +262,24 @@
             border-bottom: 2px solid #e2e8f0;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 5;
         }
-        td {
+        table:not(.pivot-table) td {
             padding: 0.875rem 0.75rem;
             border: 1px solid #f1f5f9;
             background-color: #ffffff;
             font-size: 0.875rem;
         }
-        tr {
+        table:not(.pivot-table) tr {
             transition: all 0.15s ease;
         }
-        tr:hover {
+        table:not(.pivot-table) tr:hover {
             background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
             transform: scale(1.001);
             box-shadow: var(--shadow-sm);
         }
         }
-        /* Pivot Table */
+        /* Pivot Table - Override general table styles */
         .pivot-table {
             width: 100%;
             border-collapse: separate;
@@ -288,19 +288,22 @@
         }
         
         .pivot-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: #1f2937;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 100 !important;
+            background: #1f2937 !important;
         }
         
         .pivot-table thead th {
             background: #1f2937 !important;
             color: white !important;
-            padding: 0.5rem;
-            text-align: center;
-            font-size: 0.75rem;
+            padding: 0.5rem !important;
+            text-align: center !important;
+            font-size: 0.75rem !important;
             border: 1px solid #e5e7eb !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 100 !important;
         }
         
         .pivot-table td {
