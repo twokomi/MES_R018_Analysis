@@ -932,15 +932,22 @@ function calculateWorkingDayShift(datetime) {
         // Night shift: 18:00-05:59
         workingShift = 'Night';
         
-        // If time is 00:00-05:59 (before 06:00), working day is previous day
+        // CRITICAL: Night shift spans two calendar days
+        // Night shift always belongs to the day it STARTS (18:00)
+        // If time is 00:00-05:59, it's the continuation of previous day's night shift
+        // So we need to go back TWO days from the current datetime
         if (timeInMinutes < dayStartMinutes) {
+            // 00:00-05:59: This is the END of night shift that started on (date-1) at 18:00
+            // So working day = (date - 1)
             workingDay.setDate(workingDay.getDate() - 1);
         }
-        // If time is 18:00-23:59, working day stays the same
+        // If time is 18:00-23:59, working day stays the same (night shift just started)
     }
     
     // Format as YYYY-MM-DD
     const workingDayStr = workingDay.toISOString().split('T')[0];
+    
+    console.log(`🕐 calculateWorkingDayShift: ${datetime.toISOString()} (${hours}:${minutes.toString().padStart(2,'0')}) → ${workingDayStr} ${workingShift}`);
     
     return {
         workingDay: workingDayStr,
@@ -1780,7 +1787,11 @@ function updatePivotReport(workerAgg) {
         processGroups[processKey].workers[workerKey][dateKey] = {
             validCount: item.validCount,
             totalMinutes: item.totalMinutes,
-            workRate: item.workRate
+            totalMinutesOriginal: item.totalMinutesOriginal || 0,
+            assignedStandardTime: item.assignedStandardTime || 0,
+            workerRate: item['Worker Rate(%)'] || 0,
+            workRate: item.workRate,
+            efficiencyRate: item.efficiencyRate || 0
         };
     });
     
@@ -1795,16 +1806,27 @@ function updatePivotReport(workerAgg) {
     html += '<tr>';
     html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle;">Worker Name</th>';
     allDates.forEach(date => {
-        html += `<th colspan="3">${date}</th>`;
+        const isEfficiency = AppState.currentMetricType === 'efficiency';
+        const colspan = isEfficiency ? 6 : 3;
+        html += `<th colspan="${colspan}">${date}</th>`;
     });
     html += '</tr>';
     
     html += '<tr>';
     allDates.forEach(() => {
         const isEfficiency = AppState.currentMetricType === 'efficiency';
-        html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'S/T(m)' : 'WO Count'}</th>`;
-        html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'Assigned(m)' : 'Std Time(m)'}</th>`;
-        html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'Efficiency Rate' : 'Work Rate'}</th>`;
+        if (isEfficiency) {
+            html += `<th style="font-size: 0.7rem;">S/T(m)</th>`;
+            html += `<th style="font-size: 0.7rem;">Rate(%)</th>`;
+            html += `<th style="font-size: 0.7rem;">Assigned(m)</th>`;
+            html += `<th style="font-size: 0.7rem;">Actual(m)</th>`;
+            html += `<th style="font-size: 0.7rem;">Efficiency</th>`;
+            html += `<th style="font-size: 0.7rem;">WO#</th>`;
+        } else {
+            html += `<th style="font-size: 0.7rem;">WO Count</th>`;
+            html += `<th style="font-size: 0.7rem;">Work Time(m)</th>`;
+            html += `<th style="font-size: 0.7rem;">Utilization</th>`;
+        }
     });
     html += '</tr>';
     html += '</thead>';
@@ -1825,7 +1847,9 @@ function updatePivotReport(workerAgg) {
     
     sortedProcesses.forEach(([processName, processData]) => {
         // Process header row - LEFT ALIGNED
-        html += `<tr><td colspan="${1 + allDates.length * 3}" class="process-cell" style="text-align: left; padding-left: 1rem; font-weight: 700; font-size: 0.95rem;">${processName}</td></tr>`;
+        const isEfficiency = AppState.currentMetricType === 'efficiency';
+        const colsPerDate = isEfficiency ? 6 : 3;
+        html += `<tr><td colspan="${1 + allDates.length * colsPerDate}" class="process-cell" style="text-align: left; padding-left: 1rem; font-weight: 700; font-size: 0.95rem;">${processName}</td></tr>`;
         
         // Worker rows
         const sortedWorkers = Object.keys(processData.workers).sort();
@@ -1835,17 +1859,41 @@ function updatePivotReport(workerAgg) {
             
             allDates.forEach(date => {
                 const dateData = processData.workers[workerName][date];
+                const isEfficiency = AppState.currentMetricType === 'efficiency';
                 
                 if (dateData) {
-                    const rateClass = dateData.workRate >= 80 ? 'work-rate-high' :
-                                    dateData.workRate >= 50 ? 'work-rate-normal' :
-                                    dateData.workRate >= 30 ? 'work-rate-low' : 'work-rate-critical';
-                    
-                    html += `<td>${dateData.validCount}</td>`;
-                    html += `<td>${Math.round(dateData.totalMinutes)}</td>`;
-                    html += `<td class="${rateClass}">${dateData.workRate.toFixed(0)}%</td>`;
+                    if (isEfficiency) {
+                        // Efficiency Mode: S/T, Rate, Assigned, Actual, Efficiency, WO Count
+                        const actual = dateData.totalMinutesOriginal || 0; // Actual time (Worker Act)
+                        const assigned = dateData.assignedStandardTime || 0; // Assigned = S/T × Rate ÷ 100
+                        const rate = actual > 0 ? (assigned / actual) * 100 : 0; // Rate = Assigned ÷ Actual
+                        const efficiency = dateData.efficiencyRate || 0;
+                        const woCount = dateData.validCount || 0; // Number of work orders
+                        
+                        const efficiencyClass = efficiency >= 120 ? 'work-rate-high' :
+                                              efficiency >= 100 ? 'work-rate-normal' :
+                                              efficiency >= 80 ? 'work-rate-low' : 'work-rate-critical';
+                        
+                        // Display: S/T (as Actual), Rate, Assigned, Actual, Efficiency, WO Count
+                        html += `<td>${Math.round(actual)}</td>`; // S/T column shows actual time
+                        html += `<td>${rate.toFixed(0)}%</td>`; // Rate = (Assigned/Actual)×100
+                        html += `<td>${Math.round(assigned)}</td>`; // Assigned
+                        html += `<td>${Math.round(actual)}</td>`; // Actual
+                        html += `<td class="${efficiencyClass}">${efficiency.toFixed(0)}%</td>`; // Efficiency
+                        html += `<td>${woCount}</td>`; // WO Count
+                    } else {
+                        // Utilization Mode: WO Count, Work Time, Utilization
+                        const rateClass = dateData.workRate >= 80 ? 'work-rate-high' :
+                                        dateData.workRate >= 50 ? 'work-rate-normal' :
+                                        dateData.workRate >= 30 ? 'work-rate-low' : 'work-rate-critical';
+                        
+                        html += `<td>${dateData.validCount}</td>`;
+                        html += `<td>${Math.round(dateData.totalMinutes)}</td>`;
+                        html += `<td class="${rateClass}">${dateData.workRate.toFixed(0)}%</td>`;
+                    }
                 } else {
-                    html += '<td>-</td><td>-</td><td>-</td>';
+                    const emptyCols = isEfficiency ? 6 : 3;
+                    html += '<td>-</td>'.repeat(emptyCols);
                 }
             });
             
@@ -1863,11 +1911,21 @@ function updatePivotReport(workerAgg) {
     
     if (isEfficiency) {
         pivotGlossary.innerHTML = `
-            <strong class="text-purple-700">Work Efficiency Metric:</strong><br>
-            • <strong>S/T(m)</strong>: Standard Time - total expected time for tasks<br>
-            • <strong>Assigned(m)</strong>: Total assigned standard time (S/T × Rate ÷ 100)<br>
-            • <strong>Efficiency</strong>: Performance ratio = Assigned ÷ Actual × 100%<br>
-            <span class="text-xs italic">Note: Only records with S/T > 0 are included in Efficiency calculation</span>
+            <strong class="text-purple-700">Work Efficiency Metric Explained:</strong><br>
+            • <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
+            • <strong>Rate(%)</strong>: Worker performance multiplier - (Assigned ÷ Actual) × 100%<br>
+            • <strong>Assigned(m)</strong>: Adjusted time based on worker skill = S/T × Rate ÷ 100<br>
+            • <strong>Actual(m)</strong>: Real time the worker spent<br>
+            • <strong>Efficiency</strong>: Overall performance = (Assigned ÷ Actual) × 100%<br>
+            • <strong>WO#</strong>: Number of work orders completed<br>
+            • <strong>🚫 Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
+            <br>
+            <strong class="text-sm">📘 Example Calculation:</strong><br>
+            <span class="text-xs">
+            Worker has S/T=54m, Rate=783%, Assigned=423m (54×783÷100), Actual=660m<br>
+            → Efficiency = 423÷660×100 = 64%<br>
+            This means the worker completed 423 minutes of adjusted work in 660 actual minutes.
+            </span>
         `;
     } else {
         pivotGlossary.innerHTML = `
