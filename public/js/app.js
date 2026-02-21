@@ -2493,7 +2493,7 @@ function updateDataTable(workerAgg) {
         // ✅ Visual styling for outliers
         const outlierThreshold = AppState.outlierThreshold || 1000;
         const isOutlier = item.isOutlier || false;
-        const rowClass = isOutlier ? 'opacity-40' : '';
+        const rowStyle = isOutlier ? 'style="opacity: 0.4; background-color: #f3f4f6;"' : '';
         const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${rate?.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
         
         if (isEfficiency) {
@@ -2504,7 +2504,7 @@ function updateDataTable(workerAgg) {
             const actual = item.totalMinutesOriginal || 0;
             
             return `
-                <tr class="${rowClass}">
+                <tr ${rowStyle}>
                     <td>${outlierIcon}${item.workerName}</td>
                     <td>${item.foDesc3}</td>
                     <td>${item.workingDay}</td>
@@ -2521,7 +2521,7 @@ function updateDataTable(workerAgg) {
         } else {
             // Utilization mode: show Work Time, Work Count, Utilization Rate
             return `
-                <tr class="${rowClass}">
+                <tr ${rowStyle}>
                     <td>${outlierIcon}${item.workerName}</td>
                     <td>${item.foDesc3}</td>
                     <td>${item.workingDay}</td>
