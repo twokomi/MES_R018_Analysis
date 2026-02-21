@@ -1902,21 +1902,7 @@ function aggregateByWorker(data) {
             });
         }
         
-        // ✅ A안: W/O 레벨 Outlier 필터링 (Efficiency 모드일 때만)
-        if (AppState.currentMetricType === 'efficiency') {
-            const st = record['Worker S/T'] || 0;
-            const rate = record['Worker Rate(%)'] || 0;
-            const assigned = st * rate / 100;
-            const actual = record['Worker Act'] || 0;
-            const efficiencyRate = actual > 0 ? (assigned / actual) * 100 : 0;
-            
-            const outlierThreshold = AppState.outlierThreshold || 1000;
-            if (efficiencyRate > outlierThreshold) {
-                console.warn(`🚫 W/O filtered (>${outlierThreshold}%): ${record.workerName}, ${record.workingDay}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
-                filteredOutliers++;
-                return; // Skip this record
-            }
-        }
+        // ℹ️ Individual record outlier filtering removed - now done at aggregation level
         
         // Group by: worker + day + shift + actualShift + process for display purposes
         const key = `${record.workerName}|${record.workingDay}|${record.workingShift}|${record.actualShift}|${record.foDesc3}`;
@@ -1956,7 +1942,7 @@ function aggregateByWorker(data) {
         }
     });
     
-    console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid, ${filteredOutliers} outliers filtered (>${AppState.outlierThreshold}%)`);
+    console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid (outlier marking will be applied next)`);
     
     // Convert to array and calculate rates
     const result = Object.values(aggregated).map(item => {
@@ -1982,12 +1968,18 @@ function aggregateByWorker(data) {
             utilizationBand: getUtilizationBand(utilizationRate),
             efficiencyRate: efficiencyRate,
             efficiencyBand: getEfficiencyBand(efficiencyRate),
-            isOutlier: isOutlier, // ✅ NEW: Flag for visual styling
+            isOutlier: isOutlier, // ✅ Flag for visual styling in table
             // Legacy fields
             workRate: utilizationRate,
             performanceBand: getPerformanceBand(utilizationRate)
         };
     });
+    
+    // Count outliers for logging
+    const outlierCount = result.filter(r => r.isOutlier).length;
+    if (outlierCount > 0) {
+        console.log(`📊 Outlier marking complete: ${outlierCount} records marked (will be shown in gray with 🚫 icon)`);
+    }
     
     // Sort by seq, then worker name
     result.sort((a, b) => {
