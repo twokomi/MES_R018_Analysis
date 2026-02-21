@@ -3921,9 +3921,7 @@ function renderEfficiencyCharts(workerRecords) {
         }
     });
     
-    // ⚠️ Hourly distribution NOT AVAILABLE for aggregated data
-    // Aggregated data doesn't have individual startDatetime
-    // Show a message instead
+    // ✅ Hourly distribution: Use raw processedData for individual time records
     const processCtx = document.getElementById('modalProcessChart');
     if (modalCharts.process) {
         modalCharts.process.destroy();
@@ -3934,15 +3932,82 @@ function renderEfficiencyCharts(workerRecords) {
         return;
     }
     
-    // Create empty chart with message
+    // Get worker name from first record
+    const workerName = workerRecords[0]?.workerName;
+    
+    // Get raw records for hourly distribution (need startDatetime)
+    const rawRecords = (AppState.processedData || []).filter(r => 
+        r.workerName === workerName && 
+        !r.rework && 
+        r.startDatetime &&
+        r['Work Rate(%)'] <= AppState.outlierThreshold // Apply outlier threshold
+    );
+    
+    if (rawRecords.length === 0) {
+        // No hourly data available
+        modalCharts.process = new Chart(processCtx, {
+            type: 'bar',
+            data: {
+                labels: ['No hourly data available'],
+                datasets: [{
+                    label: 'N/A',
+                    data: [0],
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'No time records with valid start times'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                }
+            }
+        });
+        return;
+    }
+    
+    // Group by hour
+    const hourlyData = {};
+    rawRecords.forEach(r => {
+        const hour = r.startDatetime.getHours();
+        if (!hourlyData[hour]) {
+            hourlyData[hour] = { assigned: 0, actual: 0 };
+        }
+        // Calculate assigned and actual from Work Rate
+        const workRate = r['Work Rate(%)'] || 0;
+        const workerAct = r['Worker Act'] || 0;
+        const assigned = (workerAct * workRate) / 100;
+        
+        hourlyData[hour].assigned += assigned;
+        hourlyData[hour].actual += workerAct;
+    });
+    
+    // Sort hours
+    const hours = Object.keys(hourlyData).map(Number).sort((a, b) => a - b);
+    const hourlyEfficiency = hours.map(h => {
+        const data = hourlyData[h];
+        return data.actual > 0 ? (data.assigned / data.actual) * 100 : 0;
+    });
+    
+    // Create hourly chart
     modalCharts.process = new Chart(processCtx, {
         type: 'bar',
         data: {
-            labels: ['Hourly data not available in aggregated view'],
+            labels: hours.map(h => `${h}:00`),
             datasets: [{
-                label: 'N/A',
-                data: [0],
-                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                label: 'Hourly Efficiency (%)',
+                data: hourlyEfficiency,
+                backgroundColor: 'rgba(139, 92, 246, 0.7)',
             }]
         },
         options: {
@@ -3950,15 +4015,16 @@ function renderEfficiencyCharts(workerRecords) {
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Hourly distribution requires individual time records'
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.parsed.y.toFixed(1)}%`
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 1
+                    title: { display: true, text: 'Efficiency (%)' }
                 }
             }
         }
