@@ -3936,12 +3936,18 @@ function renderEfficiencyCharts(workerRecords) {
     const workerName = workerRecords[0]?.workerName;
     
     // Get raw records for hourly distribution (need startDatetime)
-    const rawRecords = (AppState.processedData || []).filter(r => 
-        r.workerName === workerName && 
-        !r.rework && 
-        r.startDatetime &&
-        r['Work Rate(%)'] <= AppState.outlierThreshold // Apply outlier threshold
-    );
+    const rawRecords = (AppState.processedData || []).filter(r => {
+        if (r.workerName !== workerName || r.rework || !r.startDatetime) {
+            return false;
+        }
+        
+        // ✅ FIX: Calculate efficiency directly for raw records (aggregated 'Work Rate(%)' field doesn't exist here)
+        const assigned = ((r.S_T || 0) * (r.Rate || 0)) / 100;
+        const actual = r['Worker Act'] || 0;
+        const efficiency = actual > 0 ? (assigned / actual) * 100 : 0;
+        
+        return efficiency <= AppState.outlierThreshold; // Apply outlier threshold
+    });
     
     if (rawRecords.length === 0) {
         // No hourly data available
