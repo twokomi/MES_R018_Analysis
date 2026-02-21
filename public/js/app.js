@@ -2493,7 +2493,7 @@ function updateDataTable(workerAgg) {
         // ✅ Visual styling for outliers
         const outlierThreshold = AppState.outlierThreshold || 1000;
         const isOutlier = item.isOutlier || false;
-        const rowStyle = isOutlier ? 'style="opacity: 0.4; background-color: #f3f4f6;"' : '';
+        const rowStyle = isOutlier ? 'style="opacity: 0.4 !important; background-color: #fee2e2 !important;"' : '';
         const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${rate?.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
         
         if (isEfficiency) {
