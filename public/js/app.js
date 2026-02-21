@@ -2290,9 +2290,11 @@ function updateKPIs(workerAgg) {
         
     } else {
         // ⏱️ Utilization Mode
-        // Card 2: Total Shift Time (workers × 660 min)
+        // Card 2: Total Shift Time (total shifts × 660 min)
         secondLabel.textContent = 'Total Shift Time (min)';
-        secondValue = totalWorkers * 660; // 11 hours = 660 minutes
+        // ✅ CORRECTED: Sum of all actual shifts worked by all workers
+        const totalShifts = workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0);
+        secondValue = totalShifts * 660; // Each shift = 11 hours = 660 minutes
         
         // Card 3: Total Work Time (sum of actual work time after deduplication)
         thirdLabel.textContent = 'Total Work Time (min)';
@@ -2312,6 +2314,7 @@ function updateKPIs(workerAgg) {
     console.log(`📊 KPI Calculation:
     - Metric: ${isEfficiency ? 'Efficiency' : 'Utilization'}
     - Total Workers: ${totalWorkers}
+    ${!isEfficiency ? `- Total Shifts: ${workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0)}` : ''}
     - Card 2 (${secondLabel.textContent}): ${secondValue.toFixed(0)}
     - Card 3 (${thirdLabel.textContent}): ${thirdValue.toFixed(0)}
     - Average Rate Calculation: (${secondValue.toFixed(0)} / ${thirdValue.toFixed(0)}) × 100 = ${avgRate.toFixed(2)}%
