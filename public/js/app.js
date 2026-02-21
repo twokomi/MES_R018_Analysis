@@ -1951,7 +1951,7 @@ function aggregateByWorker(data) {
         }
     });
     
-    console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid, ${filteredOutliers} outliers filtered (>${AppState.outlierThreshold}%)`);
+    console.log(`📊 Aggregation summary (before final filter): ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid, ${filteredOutliers} outliers filtered (>${AppState.outlierThreshold}%)`);
     
     // Convert to array and calculate rates
     const result = Object.values(aggregated).map(item => {
@@ -1975,15 +1975,33 @@ function aggregateByWorker(data) {
         };
     });
     
+    // ✅ SECOND PASS: Filter aggregated results by final efficiency rate
+    let finalFilteredCount = 0;
+    const finalResult = result.filter(item => {
+        if (AppState.currentMetricType === 'efficiency') {
+            const outlierThreshold = AppState.outlierThreshold || 1000;
+            if (item.efficiencyRate > outlierThreshold) {
+                console.warn(`🚫 Aggregated W/O filtered (>${outlierThreshold}%): ${item.workerName}, ${item.workingDay}, ${item.foDesc3}, Efficiency: ${item.efficiencyRate.toFixed(1)}%`);
+                finalFilteredCount++;
+                return false;
+            }
+        }
+        return true;
+    });
+    
+    if (finalFilteredCount > 0) {
+        console.log(`📊 Final aggregation filter: ${finalFilteredCount} additional outliers removed, ${finalResult.length} records remaining`);
+    }
+    
     // Sort by seq, then worker name
-    result.sort((a, b) => {
+    finalResult.sort((a, b) => {
         const seqA = a.seq !== undefined ? a.seq : 999;
         const seqB = b.seq !== undefined ? b.seq : 999;
         if (seqA !== seqB) return seqA - seqB;
         return a.workerName.localeCompare(b.workerName);
     });
     
-    return result;
+    return finalResult;
 }
 
 // Get performance band
