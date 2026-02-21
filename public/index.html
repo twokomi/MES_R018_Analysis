@@ -1298,6 +1298,71 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 3.2.0 -->
+                    <div class="border-l-4 border-blue-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.2.0</h3>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="text-xs text-gray-500">2026-02-21</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-chart-bar mr-2"></i>KPI Cards Redesign
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>4-Card Layout Restored</strong> with meaningful metrics for both modes</li>
+                                    <li><strong>Utilization Mode</strong>: Total Workers, Total Shift Time, Total Work Time, Avg Utilization Rate</li>
+                                    <li><strong>Efficiency Mode</strong>: Total Workers, Total Adjusted S/T, Total Actual Time, Avg Efficiency Rate</li>
+                                    <li><strong>Accurate Calculations</strong>: Average Rate = (Card 2 / Card 3) × 100</li>
+                                    <li><strong>Dynamic Color Themes</strong>: Blue for Utilization, Purple for Efficiency</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-spinner mr-2"></i>Loading Indicators
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Filter Loading</strong>: Appears when applying filters or resetting</li>
+                                    <li><strong>Outlier Threshold Loading</strong>: Shows during Outlier Threshold updates</li>
+                                    <li><strong>Smooth Animation</strong>: 300ms fade-out transition for professional UX</li>
+                                    <li><strong>Top-Right Position</strong>: Non-intrusive WAIV logo + spinner display</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-book mr-2"></i>Glossary Improvements
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Terminology Unified</strong>: "Assigned(m)" → "Adjusted S/T(m)"</li>
+                                    <li><strong>Consistent Naming</strong>: Modal table headers and glossary now match</li>
+                                    <li><strong>Clear Formula</strong>: Adjusted S/T = S/T × Worker Rate ÷ 100</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-bug mr-2"></i>Bug Fixes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Worker S/T Accumulation</strong>: Fixed missing aggregation in aggregateByWorkerOnly</li>
+                                    <li><strong>KPI Calculation Logic</strong>: Corrected card order and calculation formulas</li>
+                                    <li><strong>Card Value Consistency</strong>: Total S/T no longer shows 0 in Efficiency mode</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-blue-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Improvement:</strong> Average Rate is now accurately calculated from displayed card values, ensuring transparency and correctness
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                
                     <!-- Version 3.0.0 -->
                     <div class="border-l-4 border-purple-600 pl-4">
                         <div class="flex items-center gap-3 mb-2">
