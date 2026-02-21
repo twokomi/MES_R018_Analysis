@@ -1802,7 +1802,7 @@ function updatePivotReport(workerAgg) {
     html += '<tr>';
     allDates.forEach(() => {
         const isEfficiency = AppState.currentMetricType === 'efficiency';
-        html += '<th style="font-size: 0.7rem;">WO Count</th>';
+        html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'S/T(m)' : 'WO Count'}</th>`;
         html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'Assigned(m)' : 'Std Time(m)'}</th>`;
         html += `<th style="font-size: 0.7rem;">${isEfficiency ? 'Efficiency Rate' : 'Work Rate'}</th>`;
     });
@@ -1864,7 +1864,7 @@ function updatePivotReport(workerAgg) {
     if (isEfficiency) {
         pivotGlossary.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Metric:</strong><br>
-            • <strong>WO Count</strong>: Number of valid work orders completed<br>
+            • <strong>S/T(m)</strong>: Standard Time - total expected time for tasks<br>
             • <strong>Assigned(m)</strong>: Total assigned standard time (S/T × Rate ÷ 100)<br>
             • <strong>Efficiency</strong>: Performance ratio = Assigned ÷ Actual × 100%<br>
             <span class="text-xs italic">Note: Only records with S/T > 0 are included in Efficiency calculation</span>
