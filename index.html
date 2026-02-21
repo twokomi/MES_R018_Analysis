@@ -481,11 +481,11 @@
                 </div>
                 <!-- Metric Toggle Button -->
                 <div class="flex items-center gap-4">
-                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md">
+                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md w-80">
                         <i id="metricIcon" class="fas fa-clock text-blue-500 text-xl"></i>
                         <div class="text-left">
                             <div id="metricLabel" class="text-sm font-semibold text-gray-800">Time Utilization</div>
-                            <div id="metricDescription" class="text-xs text-gray-500">작업 시간 가동률</div>
+                            <div id="metricDescription" class="text-xs text-gray-500">Actual work time usage rate</div>
                         </div>
                         <i class="fas fa-exchange-alt text-gray-400 ml-2"></i>
                     </button>
@@ -751,7 +751,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-green-700">
+                        <h4 id="excellentTitle" class="font-bold text-green-700">
                             <i class="fas fa-trophy mr-2"></i>
                             Excellent Workers (≥80%)
                         </h4>
@@ -770,26 +770,7 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-blue-700">
-                            <i class="fas fa-thumbs-up mr-2"></i>
-                            Good Workers
-                        </h4>
-                        <div class="flex gap-2">
-                            <button onclick="sortPerformanceBand('good', 'asc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="오름차순 정렬">
-                                <i class="fas fa-arrow-up"></i>
-                            </button>
-                            <button onclick="sortPerformanceBand('good', 'desc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="내림차순 정렬">
-                                <i class="fas fa-arrow-down"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="goodWorkers" class="min-h-[60px] max-h-[300px] overflow-y-auto">
-                        <p class="text-gray-500 text-sm">No data available</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-gray-700">
+                        <h4 id="normalTitle" class="font-bold text-gray-700">
                             <i class="fas fa-check-circle mr-2"></i>
                             Normal Workers
                         </h4>
@@ -808,7 +789,7 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-orange-700">
+                        <h4 id="poorTitle" class="font-bold text-orange-700">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
                             Poor Workers
                         </h4>
@@ -827,7 +808,7 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-red-700">
+                        <h4 id="criticalTitle" class="font-bold text-red-700">
                             <i class="fas fa-times-circle mr-2"></i>
                             At-Risk Workers (&lt;30%)
                         </h4>
@@ -876,6 +857,13 @@
                 </div>
                 <div id="pivotReportView" class="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <p class="text-gray-500 text-center py-8">데이터를 업로드하고 Filters를 적용해주세요</p>
+                </div>
+                
+                <!-- Pivot Report Glossary -->
+                <div id="pivotGlossary" class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="text-xs text-gray-500 leading-relaxed">
+                        <!-- Dynamic content will be inserted by JavaScript -->
+                    </div>
                 </div>
             </div>
 
@@ -1495,6 +1483,13 @@
                                 <!-- Records will be inserted here -->
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Glossary Section -->
+                    <div id="modalGlossary" class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="text-xs text-gray-500 leading-relaxed">
+                            <!-- Dynamic content will be inserted by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>

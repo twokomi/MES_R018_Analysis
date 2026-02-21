@@ -112,6 +112,16 @@ app.post('/api/upload', async (c) => {
 app.get('/api/uploads', async (c) => {
   try {
     const { env } = c
+    
+    // Check if DB is available (local dev without D1 binding)
+    if (!env.DB) {
+      return c.json({ 
+        success: true, 
+        uploads: [],
+        message: 'Database not available in local development mode. Use Excel upload instead.'
+      })
+    }
+    
     const { results } = await env.DB.prepare(`
       SELECT id, filename, upload_date, file_size, total_records, unique_workers, date_range_start, date_range_end
       FROM excel_uploads
@@ -121,7 +131,12 @@ app.get('/api/uploads', async (c) => {
     
     return c.json({ success: true, uploads: results })
   } catch (error: any) {
-    return c.json({ success: false, error: error.message }, 500)
+    console.error('Error fetching uploads:', error)
+    return c.json({ 
+      success: false, 
+      error: error.message,
+      message: 'Database error. Please use Excel file upload instead.'
+    }, 500)
   }
 })
 

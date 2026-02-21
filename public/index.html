@@ -470,13 +470,26 @@
         
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">
-                    Individual Performance Report
-                </h1>
-                <p class="text-gray-600 mt-2">
-                    Individual Worker Productivity Reports & Performance Tracking
-                </p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        Individual Performance Report
+                    </h1>
+                    <p class="text-gray-600 mt-2">
+                        Individual Worker Productivity Reports & Performance Tracking
+                    </p>
+                </div>
+                <!-- Metric Toggle Button -->
+                <div class="flex items-center gap-4">
+                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md w-80 h-20">
+                        <i id="metricIcon" class="fas fa-clock text-blue-500 text-xl"></i>
+                        <div class="text-left">
+                            <div id="metricLabel" class="text-sm font-semibold text-gray-800">Time Utilization</div>
+                            <div id="metricDescription" class="text-xs text-gray-500">Actual work time usage rate</div>
+                        </div>
+                        <i class="fas fa-exchange-alt text-gray-400 ml-2"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -725,12 +738,35 @@
                     <div class="text-3xl font-bold" id="kpiValidWO">0</div>
                 </div>
                 <div class="kpi-card warning">
-                    <div class="text-sm mb-1">Total Work Time (min)</div>
+                    <div class="text-sm mb-1" id="kpiTotalTimeLabel">Total Work Time (min)</div>
                     <div class="text-3xl font-bold" id="kpiTotalMinutes">0</div>
                 </div>
                 <div class="kpi-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06);">
-                    <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;">Average Work Rate</div>
+                    <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;" id="kpiAvgRateLabel">Average Rate</div>
                     <div class="text-3xl font-bold" id="kpiAvgWorkRate" style="color: #1f2937;">0%</div>
+                </div>
+            </div>
+            
+            <!-- Outlier Threshold Control -->
+            <div id="outlierThresholdControl" class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-filter text-orange-600 text-lg"></i>
+                        <div>
+                            <label class="text-sm font-semibold text-gray-800">Outlier Threshold</label>
+                            <p class="text-xs text-gray-600">W/O with rate > threshold will be auto-filtered</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="outlierThresholdInput" 
+                               value="1000" min="100" max="10000" step="100"
+                               class="w-24 px-3 py-2 border border-gray-300 rounded-md text-center font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <span class="text-lg font-bold text-gray-700">%</span>
+                        <button id="applyThresholdBtn" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition font-semibold text-sm">
+                            <i class="fas fa-sync-alt mr-1"></i>
+                            Apply
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -738,9 +774,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-green-700">
+                        <h4 id="excellentTitle" class="font-bold text-green-700">
                             <i class="fas fa-trophy mr-2"></i>
-                            Excellent Workers (≥80%)
+                            <span id="excellentRange">Excellent Workers (≥80%)</span>
                         </h4>
                         <div class="flex gap-2">
                             <button onclick="sortPerformanceBand('excellent', 'asc')" class="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition" title="오름차순 정렬">
@@ -757,15 +793,15 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-blue-700">
+                        <h4 id="normalTitle" class="font-bold text-gray-700">
                             <i class="fas fa-check-circle mr-2"></i>
-                            Normal Workers (50-80%)
+                            <span id="normalRange">Normal Workers (50~79%)</span>
                         </h4>
                         <div class="flex gap-2">
-                            <button onclick="sortPerformanceBand('normal', 'asc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="오름차순 정렬">
+                            <button onclick="sortPerformanceBand('normal', 'asc')" class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition" title="오름차순 정렬">
                                 <i class="fas fa-arrow-up"></i>
                             </button>
-                            <button onclick="sortPerformanceBand('normal', 'desc')" class="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition" title="내림차순 정렬">
+                            <button onclick="sortPerformanceBand('normal', 'desc')" class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition" title="내림차순 정렬">
                                 <i class="fas fa-arrow-down"></i>
                             </button>
                         </div>
@@ -776,9 +812,9 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-orange-700">
+                        <h4 id="poorTitle" class="font-bold text-orange-700">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Low Performers (30-50%)
+                            <span id="poorRange">Poor Workers (30~49%)</span>
                         </h4>
                         <div class="flex gap-2">
                             <button onclick="sortPerformanceBand('poor', 'asc')" class="text-xs px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded transition" title="오름차순 정렬">
@@ -795,7 +831,7 @@
                 </div>
                 <div class="card">
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-red-700">
+                        <h4 id="criticalTitle" class="font-bold text-red-700">
                             <i class="fas fa-times-circle mr-2"></i>
                             At-Risk Workers (&lt;30%)
                         </h4>
@@ -845,6 +881,13 @@
                 <div id="pivotReportView" class="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <p class="text-gray-500 text-center py-8">데이터를 업로드하고 Filters를 적용해주세요</p>
                 </div>
+                
+                <!-- Pivot Report Glossary -->
+                <div id="pivotGlossary" class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="text-xs text-gray-500 leading-relaxed">
+                        <!-- Dynamic content will be inserted by JavaScript -->
+                    </div>
+                </div>
             </div>
 
             <!-- Data Table -->
@@ -854,10 +897,19 @@
                         <i class="fas fa-table text-blue-600 mr-2"></i>
                         Detailed Data
                     </h3>
-                    <button id="toggleViewBtn2" class="btn btn-secondary text-sm">
-                        <i class="fas fa-exchange-alt mr-1"></i>
-                        Switch to Date Report
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <!-- Worker Search -->
+                        <div class="relative">
+                            <input type="text" id="workerSearchInput" 
+                                   placeholder="Search worker..." 
+                                   class="pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <button id="toggleViewBtn2" class="btn btn-secondary text-sm">
+                            <i class="fas fa-exchange-alt mr-1"></i>
+                            Switch to Date Report
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table id="dataTable" class="detailed-data-table">
@@ -870,7 +922,7 @@
                                 <th>Day/Night</th>
                                 <th>Work Time (min)</th>
                                 <th>Work Count</th>
-                                <th>Work Rate</th>
+                                <th id="workRateHeader">Work Rate</th>
                                 <th>Performance Grade</th>
                             </tr>
                         </thead>
@@ -970,7 +1022,17 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Apply Filters</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Switch Metric Mode</h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><strong>Toggle Button</strong>: Click to switch between Utilization & Efficiency</li>
+                                <li><strong>Utilization Rate</strong>: Measures time usage (Actual work time / Available time × 100)</li>
+                                <li><strong>Efficiency Rate</strong>: Measures productivity (Assigned standard time / Actual time × 100)</li>
+                                <li><strong>Note</strong>: Reports, bands, and charts update automatically</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
                                 <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
@@ -983,7 +1045,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Required Headers (Raw Sheet)</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Required Headers (Raw Sheet)</h3>
                             <p class="text-gray-700 mb-2">Raw sheet must include these headers:</p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Worker Name</strong>: Worker name</li>
@@ -995,22 +1057,28 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Performance Grades</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Performance Grades</h3>
+                            <p class="text-gray-700 mb-2"><strong>Utilization Rate Bands:</strong></p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><span class="worker-badge badge-excellent">Excellent</span>: Work rate ≥ 80%</li>
-                                <li><span class="worker-badge badge-normal">Normal</span>: Work rate 50-80%</li>
-                                <li><span class="worker-badge badge-poor">Poor</span>: Work rate 30-50%</li>
-                                <li><span class="worker-badge badge-critical">At-Risk</span>: Work rate &lt; 30%</li>
+                                <li><span class="worker-badge badge-excellent">Excellent</span>: ≥ 80%</li>
+                                <li><span class="worker-badge badge-normal">Normal</span>: 50-79%</li>
+                                <li><span class="worker-badge badge-poor">Poor</span>: 30-49%</li>
+                                <li><span class="worker-badge badge-critical">At-Risk</span>: &lt; 30%</li>
                             </ul>
-                            <p class="text-sm text-gray-600 mt-2">
-                                <strong>Work Rate Formula:</strong> (Total Valid Minutes / Total Shifts / 660) × 100%
-                                <br><span class="text-xs">• 660 minutes = 11 hours per shift</span>
-                                <br><span class="text-xs">• Total Shifts = Number of unique (workingDay + workingShift) combinations</span>
+                            <p class="text-gray-700 mb-2 mt-3"><strong>Efficiency Rate Bands:</strong></p>
+                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                <li><span class="worker-badge badge-excellent">Excellent</span>: ≥ 120%</li>
+                                <li><span class="worker-badge badge-normal">Normal</span>: 100-119%</li>
+                                <li><span class="worker-badge badge-poor">Poor</span>: 80-99%</li>
+                                <li><span class="worker-badge badge-critical">At-Risk</span>: &lt; 80%</li>
+                            </ul>
+                            <p class="text-sm text-gray-600 mt-3">
+                                <strong>⚠️ Data Quality:</strong> Workers with rates >1000% are filtered from aggregated reports (console logs show filtered workers)
                             </p>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Worker Detail Modal</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">7. Worker Detail Modal</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Click any worker card</strong> to view detailed information</li>
                                 <li>View daily work time trends (line chart)</li>
@@ -1102,11 +1170,86 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 3.0.0 -->
+                    <div class="border-l-4 border-purple-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.0.0</h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">Major Update</span>
+                            <span class="text-xs text-gray-500">2026-02-20</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-chart-line mr-2"></i>Two New Performance Metrics
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Time Utilization Rate</strong>: Actual work time / Available time (shifts × 660min) × 100%</li>
+                                    <li><strong>Work Efficiency Rate</strong>: Assigned standard time / Actual time × 100%</li>
+                                    <li>Toggle button to switch between metrics with visual indicators</li>
+                                    <li>Performance bands updated: Excellent, Good, Normal, Poor, Critical</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-filter mr-2"></i>Enhanced Data Filtering
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Automatic exclusion of Rework records (W column = true)</li>
+                                    <li>Filter out records with Worker S/T ≤ 0</li>
+                                    <li>New columns parsed: Worker S/T (T), Worker Rate(%) (U), Rework (W)</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-user-circle mr-2"></i>Worker Detail Modal Enhancements
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Time Utilization View</strong>: Daily/hourly charts in minutes (blue theme), overlap removal highlighted</li>
+                                    <li><strong>Work Efficiency View</strong>: Daily/hourly charts in % (purple theme), efficiency color-coded</li>
+                                    <li>Dynamic table headers based on selected metric</li>
+                                    <li>Separate calculation logic for each metric type</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>Breaking Changes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Removed old "Valid-only" work rate calculation</li>
+                                    <li>Replaced single metric with dual-metric system</li>
+                                    <li>Performance band thresholds completely redesigned</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-bug mr-2"></i>Bug Fixes
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li>Fixed overlap removal logic to work per worker (not merged across workers)</li>
+                                    <li>Corrected Worker Rate(%) handling (0% is valid, not missing)</li>
+                                    <li>Fixed performance band gaps (no empty ranges)</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-purple-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Validation:</strong> Tested with R018Worker_2026-02-18 Excel file (27,026 rows, 831 rework records excluded)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Version 2.6.0 -->
                     <div class="border-l-4 border-green-500 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 2.6.0</h3>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Previous</span>
                         </div>
                         
                         <div class="space-y-4">
@@ -1206,7 +1349,40 @@
                         </div>
                     </div>
                     
-                    <!-- Version 2.0.0 -->
+                    <!-- Version 3.0.0 -->
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.0.0</h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">2026-02-21</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-star mr-2"></i>Two Metric System
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Dual Metric Mode</strong>: Toggle between Utilization Rate & Efficiency Rate</li>
+                                    <li><strong>Utilization Rate</strong>: Actual work time / Available time × 100</li>
+                                    <li><strong>Efficiency Rate</strong>: Assigned standard time / Actual time × 100</li>
+                                    <li><strong>Dynamic Headers</strong>: Table headers adapt to current metric type</li>
+                                    <li><strong>Performance Bands</strong>: Separate thresholds for each metric</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-filter mr-2"></i>Data Quality
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Outlier Filtering</strong>: Automatically filters workers with rates >1000% from aggregated reports</li>
+                                    <li><strong>Note</strong>: Individual work orders are preserved; only worker-level totals are filtered</li>
+                                    <li><strong>Threshold</strong>: Configurable (default: 1000%)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="border-l-4 border-blue-500 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 2.0.0</h3>
@@ -1314,7 +1490,7 @@
                 <!-- Summary Section -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="text-gray-600 text-sm font-semibold mb-1">Total Work Time</div>
+                        <div class="text-gray-600 text-sm font-semibold mb-1" id="modalTotalTimeLabel">Total Work Time</div>
                         <div class="text-2xl font-bold text-gray-900" id="modalTotalMinutes">0</div>
                         <div class="text-xs text-gray-500 mt-1">minutes</div>
                     </div>
@@ -1365,7 +1541,7 @@
                     </h4>
                     <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0">
+                            <thead id="modalRecordsTableHeader" class="bg-gray-100 border-b-2 border-gray-300 sticky top-0">
                                 <tr>
                                     <th class="text-left p-2 font-semibold text-gray-700">Date</th>
                                     <th class="text-left p-2 font-semibold text-gray-700">Shift</th>
@@ -1389,11 +1565,18 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Glossary Section -->
+                    <div id="modalGlossary" class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="text-xs text-gray-500 leading-relaxed">
+                            <!-- Dynamic content will be inserted by JavaScript -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=1771626378"></script>
 </body>
 </html>
