@@ -1946,18 +1946,20 @@ function aggregateByWorker(data) {
             });
         }
         
-        // ✅ A안: W/O 레벨 Outlier 필터링
-        const st = record['Worker S/T'] || 0;
-        const rate = record['Worker Rate(%)'] || 0;
-        const assigned = st * rate / 100;
-        const actual = record['Worker Act'] || 0;
-        const efficiencyRate = actual > 0 ? (assigned / actual) * 100 : 0;
-        
-        const outlierThreshold = AppState.outlierThreshold || 1000;
-        if (efficiencyRate > outlierThreshold) {
-            console.warn(`🚫 W/O filtered (>${outlierThreshold}%): ${record.workerName}, ${record.workingDay}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
-            filteredOutliers++;
-            return; // Skip this record
+        // ✅ A안: W/O 레벨 Outlier 필터링 (Efficiency 모드일 때만)
+        if (AppState.currentMetricType === 'efficiency') {
+            const st = record['Worker S/T'] || 0;
+            const rate = record['Worker Rate(%)'] || 0;
+            const assigned = st * rate / 100;
+            const actual = record['Worker Act'] || 0;
+            const efficiencyRate = actual > 0 ? (assigned / actual) * 100 : 0;
+            
+            const outlierThreshold = AppState.outlierThreshold || 1000;
+            if (efficiencyRate > outlierThreshold) {
+                console.warn(`🚫 W/O filtered (>${outlierThreshold}%): ${record.workerName}, ${record.workingDay}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
+                filteredOutliers++;
+                return; // Skip this record
+            }
         }
         
         // Group by: worker + day + shift + actualShift + process for display purposes
