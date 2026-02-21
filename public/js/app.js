@@ -1630,6 +1630,11 @@ function aggregateByWorkerOnly(workerAgg) {
     workerAgg.forEach(item => {
         const workerName = item.workerName;
         
+        // ✅ Skip outliers for KPI/Chart calculations
+        if (item.isOutlier) {
+            return;
+        }
+        
         if (!byWorker[workerName]) {
             byWorker[workerName] = {
                 workerName: workerName,
@@ -1951,7 +1956,7 @@ function aggregateByWorker(data) {
         }
     });
     
-    console.log(`📊 Aggregation summary (before final filter): ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid, ${filteredOutliers} outliers filtered (>${AppState.outlierThreshold}%)`);
+    console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid, ${filteredOutliers} outliers filtered (>${AppState.outlierThreshold}%)`);
     
     // Convert to array and calculate rates
     const result = Object.values(aggregated).map(item => {
@@ -1963,45 +1968,36 @@ function aggregateByWorker(data) {
             ? (item.assignedStandardTime / item.totalMinutesOriginal) * 100 
             : 0;
         
+        // ✅ Mark outliers for visual display (but don't filter them out)
+        const outlierThreshold = AppState.outlierThreshold || 1000;
+        const isOutlier = (AppState.currentMetricType === 'efficiency' && efficiencyRate > outlierThreshold);
+        
+        if (isOutlier) {
+            console.warn(`🚫 Outlier marked (>${outlierThreshold}%): ${item.workerName}, ${item.workingDay}, ${item.foDesc3}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
+        }
+        
         return {
             ...item,
             utilizationRate: utilizationRate,
             utilizationBand: getUtilizationBand(utilizationRate),
             efficiencyRate: efficiencyRate,
             efficiencyBand: getEfficiencyBand(efficiencyRate),
+            isOutlier: isOutlier, // ✅ NEW: Flag for visual styling
             // Legacy fields
             workRate: utilizationRate,
             performanceBand: getPerformanceBand(utilizationRate)
         };
     });
     
-    // ✅ SECOND PASS: Filter aggregated results by final efficiency rate
-    let finalFilteredCount = 0;
-    const finalResult = result.filter(item => {
-        if (AppState.currentMetricType === 'efficiency') {
-            const outlierThreshold = AppState.outlierThreshold || 1000;
-            if (item.efficiencyRate > outlierThreshold) {
-                console.warn(`🚫 Aggregated W/O filtered (>${outlierThreshold}%): ${item.workerName}, ${item.workingDay}, ${item.foDesc3}, Efficiency: ${item.efficiencyRate.toFixed(1)}%`);
-                finalFilteredCount++;
-                return false;
-            }
-        }
-        return true;
-    });
-    
-    if (finalFilteredCount > 0) {
-        console.log(`📊 Final aggregation filter: ${finalFilteredCount} additional outliers removed, ${finalResult.length} records remaining`);
-    }
-    
     // Sort by seq, then worker name
-    finalResult.sort((a, b) => {
+    result.sort((a, b) => {
         const seqA = a.seq !== undefined ? a.seq : 999;
         const seqB = b.seq !== undefined ? b.seq : 999;
         if (seqA !== seqB) return seqA - seqB;
         return a.workerName.localeCompare(b.workerName);
     });
     
-    return finalResult;
+    return result;
 }
 
 // Get performance band
@@ -2502,6 +2498,12 @@ function updateDataTable(workerAgg) {
         const shiftText = item.workingShift === 'Day' ? 'Day' : 'Night';
         const actualShiftText = item.actualShift || '-';
         
+        // ✅ Visual styling for outliers
+        const outlierThreshold = AppState.outlierThreshold || 1000;
+        const isOutlier = item.isOutlier || false;
+        const rowClass = isOutlier ? 'opacity-40' : '';
+        const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${rate?.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
+        
         if (isEfficiency) {
             // Efficiency mode: show S/T, Rate, Assigned, Actual, Efficiency Rate
             const st = item['Worker S/T'] || 0;
@@ -2510,8 +2512,8 @@ function updateDataTable(workerAgg) {
             const actual = item.totalMinutesOriginal || 0;
             
             return `
-                <tr>
-                    <td>${item.workerName}</td>
+                <tr class="${rowClass}">
+                    <td>${outlierIcon}${item.workerName}</td>
                     <td>${item.foDesc3}</td>
                     <td>${item.workingDay}</td>
                     <td><strong>${actualShiftText}</strong></td>
@@ -2527,8 +2529,8 @@ function updateDataTable(workerAgg) {
         } else {
             // Utilization mode: show Work Time, Work Count, Utilization Rate
             return `
-                <tr>
-                    <td>${item.workerName}</td>
+                <tr class="${rowClass}">
+                    <td>${outlierIcon}${item.workerName}</td>
                     <td>${item.foDesc3}</td>
                     <td>${item.workingDay}</td>
                     <td><strong>${actualShiftText}</strong></td>
