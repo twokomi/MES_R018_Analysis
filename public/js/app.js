@@ -895,6 +895,8 @@ function processData(rawData) {
             console.log(`      DateTime: ${timeStr}`);
             console.log(`      Working Day: ${r.workingDay}, Shift: ${r.workingShift}, Actual: ${r.actualShift}`);
             console.log(`      Result Cnt: "${r.resultCnt}", Valid: ${r.validFlag}, Minutes: ${r.workerActMins}`);
+            // ✅ DEBUG: Check efficiency fields
+            console.log(`      🔍 EFFICIENCY FIELDS: Worker S/T=${r['Worker S/T']}, Worker Rate(%)=${r['Worker Rate(%)']}, Worker Act=${r['Worker Act']}`);
         });
     }
     
@@ -3406,6 +3408,13 @@ async function loadUploadById(uploadId) {
             startDatetime: d.startDatetime ? new Date(d.startDatetime) : null,
             endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
         }));
+        
+        // ✅ DEBUG: Check if Worker S/T and Worker Rate(%) are loaded from DB
+        console.log('🔍 DEBUG: First 3 rawData records after DB load:');
+        AppState.rawData.slice(0, 3).forEach((r, idx) => {
+            console.log(`  [${idx+1}] Worker: ${r.workerName}`);
+            console.log(`      Worker S/T: ${r['Worker S/T']}, Worker Rate(%): ${r['Worker Rate(%)']}, Worker Act: ${r['Worker Act']}`);
+        });
         
         // Re-process the data with current mappings
         console.log('🔄 Re-processing data with mappings...');
