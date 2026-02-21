@@ -11,45 +11,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ===== Professional Design Upgrade ===== */
-        
-        /* Modern CSS Variables for consistent theming */
-        :root {
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --secondary-color: #8b5cf6;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-            --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.16);
-        }
-        
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            background-attachment: fixed;
         }
         
-        /* Glass Morphism Effect */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-md);
-        }
-        
-        /* Smooth Transitions */
-        * {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* Enhanced Scrollbar */
+        /* Unified Gray Scrollbar Styles */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -72,86 +38,33 @@
         }
         
         .tab-active {
-            border-bottom: 3px solid var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 600;
-            position: relative;
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
         }
-        .tab-active::after {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
-            animation: shimmer 2s infinite;
-        }
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-        
-        /* Enhanced Card Design with Glass Effect */
         .card {
             background: white;
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            position: relative;
-            overflow: hidden;
-        }
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
         }
         .card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-4px);
-            border-color: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
         }
-        .card:hover::before {
-            opacity: 1;
-        }
-        
-        /* Premium KPI Cards */
         .kpi-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            background: white;
             color: #1f2937;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: var(--shadow-md);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            position: relative;
-            overflow: hidden;
-        }
-        .kpi-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
         }
         .kpi-card:hover {
-            box-shadow: var(--shadow-xl);
-            transform: scale(1.02);
-        }
-        .kpi-card:hover::after {
-            opacity: 1;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
         }
         .kpi-card.success .text-3xl {
             color: #111827;
@@ -177,54 +90,29 @@
             font-size: 0.875rem;
             opacity: 0.9;
         }
-        /* Modern Upload Zone */
         .upload-zone {
             border: 3px dashed #cbd5e1;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 3rem;
             text-align: center;
             cursor: pointer;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .upload-zone::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s;
         }
         .upload-zone:hover {
-            border-color: var(--primary-color);
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            transform: scale(1.01);
-        }
-        .upload-zone:hover::before {
-            opacity: 1;
+            border-color: #3b82f6;
+            background: #f8fafc;
         }
         .upload-zone.dragover {
-            border-color: var(--primary-color);
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            box-shadow: var(--shadow-lg);
-            transform: scale(1.02);
+            border-color: #3b82f6;
+            background: #eff6ff;
         }
-        
-        /* Premium Badges */
         .worker-badge {
             display: inline-block;
-            padding: 0.375rem 1rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.875rem;
-            font-weight: 600;
+            font-weight: 500;
             margin: 0.25rem;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.2s ease;
-        }
-        .worker-badge:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
         }
         .badge-excellent {
             background: #d1fae5;
@@ -242,44 +130,26 @@
             background: #fee2e2;
             color: #991b1b;
         }
-        /* Modern Table Design (excludes pivot-table) */
-        table:not(.pivot-table) {
+        table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            border-radius: 12px;
-            overflow: hidden;
+            border-collapse: collapse;
         }
-        table:not(.pivot-table) th {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            padding: 1rem 0.75rem;
+        th {
+            background: #f1f5f9;
+            padding: 0.75rem;
             text-align: left;
-            font-weight: 700;
-            font-size: 0.875rem;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-weight: 600;
             border-bottom: 2px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 5;
         }
-        table:not(.pivot-table) td {
-            padding: 0.875rem 0.75rem;
-            border: 1px solid #f1f5f9;
+        td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
             background-color: #ffffff;
-            font-size: 0.875rem;
         }
-        table:not(.pivot-table) tr {
-            transition: all 0.15s ease;
+        tr:hover {
+            background: #f8fafc;
         }
-        table:not(.pivot-table) tr:hover {
-            background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
-            transform: scale(1.001);
-            box-shadow: var(--shadow-sm);
-        }
-        }
-        /* Pivot Table - Override general table styles */
+        /* Pivot Table */
         .pivot-table {
             width: 100%;
             border-collapse: separate;
@@ -288,22 +158,19 @@
         }
         
         .pivot-table thead {
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 100 !important;
-            background: #1f2937 !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #1f2937;
         }
         
         .pivot-table thead th {
             background: #1f2937 !important;
             color: white !important;
-            padding: 0.5rem !important;
-            text-align: center !important;
-            font-size: 0.75rem !important;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.75rem;
             border: 1px solid #e5e7eb !important;
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 100 !important;
         }
         
         .pivot-table td {
@@ -635,6 +502,139 @@
             color: #991b1b;
         }
     </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Logo -->
+        <div class="mb-4">
+            <img src="/waiv-logo.png" alt="WAIV Logo" class="h-12">
+        </div>
+        
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">
+                        Individual Performance Report
+                    </h1>
+                    <p class="text-gray-600 mt-2">
+                        Individual Worker Productivity Reports & Performance Tracking
+                    </p>
+                </div>
+                <!-- Metric Toggle Button -->
+                <div class="flex items-center gap-4">
+                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md w-80 h-20">
+                        <i id="metricIcon" class="fas fa-clock text-blue-500 text-xl"></i>
+                        <div class="text-left">
+                            <div id="metricLabel" class="text-sm font-semibold text-gray-800">Time Utilization</div>
+                            <div id="metricDescription" class="text-xs text-gray-500">Actual work time usage rate</div>
+                        </div>
+                        <i class="fas fa-exchange-alt text-gray-400 ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="flex border-b">
+                <button class="tab-btn tab-active px-6 py-3 font-medium" data-tab="upload">
+                    <i class="fas fa-file-upload mr-2"></i>Data Upload
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="report">
+                    <i class="fas fa-chart-bar mr-2"></i>Report
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="mapping">
+                    <i class="fas fa-sitemap mr-2"></i>Process Mapping
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="manual">
+                    <i class="fas fa-book mr-2"></i>User Guide
+                </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="changelog">
+                    <i class="fas fa-history mr-2"></i>Update Log
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="uploadTab" class="tab-content">
+            <!-- Upload File List Section -->
+            <div class="card mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">
+                        <i class="fas fa-database text-blue-600 mr-2"></i>
+                        Saved Uploads
+                    </h2>
+                    <button id="refreshUploadsBtn" class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="uploadsList" class="space-y-2">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                        <p>No saved uploads yet. Upload a file to get started.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upload New File Section -->
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-file-upload text-blue-600 mr-2"></i>
+                    Upload New File
+                </h2>
+                <div id="uploadZone" class="upload-zone">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">
+                        Drag & Drop Excel File
+                    </h3>
+                    <p class="text-gray-500 mb-4">
+                        Excel (.xlsx, .xls) file with worker time records
+                    </p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-folder-open"></i>
+                        Select File
+                    </button>
+                </div>
+                
+                <div id="uploadStatus" class="mt-4 hidden">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-blue-500 mr-3"></i>
+                            <span class="text-blue-700 font-medium">Processing file...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="uploadResult" class="mt-4 hidden">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                        <h4 class="font-semibold text-green-800 mb-2">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Upload Successful!
+                        </h4>
+                        <div class="text-sm text-green-700 space-y-1">
+                            <p><strong>Processed Records:</strong> <span id="recordCount">0</span></p>
+                            <p><strong>Date Range:</strong> <span id="dateRange">-</span></p>
+                            <p><strong>Worker Count:</strong> <span id="workerCount">0</span></p>
+                        </div>
+                        <div class="mt-4 flex gap-3">
+                            <button id="saveToDatabaseBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
+                                <i class="fas fa-database mr-2"></i>
+                                Save to Database
+                            </button>
+                            <span id="saveStatus" class="text-sm text-gray-600 flex items-center hidden">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                Saved to database
+                            </span>
+                        </div>
+                    </div>
+                </div>
 </head>
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-6 max-w-7xl">
