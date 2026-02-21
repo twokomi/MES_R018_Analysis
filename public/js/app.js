@@ -3683,7 +3683,7 @@ function showWorkerDetail(workerName) {
     document.getElementById('modalWorkerName').innerHTML = `<i class="fas fa-user-circle mr-2"></i>${workerName}`;
     document.getElementById('modalTotalMinutes').textContent = totalValue.toFixed(0) + (isEfficiency ? ' min (Assigned)' : ' min (Actual)');
     document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
-    document.getElementById('modalRecordCount').textContent = dataForSummary.length;
+    document.getElementById('modalRecordCount').textContent = dataForSummary.length + ' records';
     
     // ✅ FIX: Remove background color, only use text color
     const bandElement = document.getElementById('modalPerformanceBand');
@@ -3701,7 +3701,9 @@ function showWorkerDetail(workerName) {
             • <strong>Assigned(m)</strong>: Calculated time = S/T × Rate ÷ 100<br>
             • <strong>Actual(m)</strong>: Actual time spent on the task<br>
             • <strong>Efficiency(%)</strong>: Performance ratio = Assigned ÷ Actual × 100<br>
-            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)
+            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)<br>
+            <br>
+            <strong class="text-purple-600">📌 Note:</strong> The efficiency shown here is the <strong>overall average</strong> across all ${dataForSummary.length} records for this worker. Individual record efficiencies may vary (see table below).
         `;
     } else {
         glossaryDiv.innerHTML = `
@@ -3863,10 +3865,9 @@ function renderEfficiencyCharts(workerRecords) {
         if (!dailyData[date]) {
             dailyData[date] = { assigned: 0, actual: 0 };
         }
-        const rate = r['Worker Rate(%)'] || 0;
-        const st = r['Worker S/T'] || 0;
-        dailyData[date].assigned += st * rate / 100;
-        dailyData[date].actual += r['Worker Act'] || 0;
+        // ✅ Use aggregated data fields
+        dailyData[date].assigned += r.assignedStandardTime || 0;
+        dailyData[date].actual += r.totalMinutesOriginal || 0;
     });
     
     const dates = Object.keys(dailyData).sort();
@@ -3882,6 +3883,11 @@ function renderEfficiencyCharts(workerRecords) {
     
     // Create daily chart (Efficiency %, purple theme)
     const dailyCtx = document.getElementById('modalDailyChart');
+    if (!dailyCtx) {
+        console.error('modalDailyChart canvas not found');
+        return;
+    }
+    
     modalCharts.daily = new Chart(dailyCtx, {
         type: 'line',
         data: {
@@ -3915,47 +3921,49 @@ function renderEfficiencyCharts(workerRecords) {
         }
     });
     
-    // Group by hour for hourly distribution (efficiency %, purple theme)
-    const hourlyData = {};
-    for (let i = 0; i < 24; i++) {
-        hourlyData[i] = { assigned: 0, actual: 0 };
-    }
-    
-    workerRecords.forEach(r => {
-        if (r.startDatetime) {
-            const date = new Date(r.startDatetime);
-            const hour = date.getHours();
-            const rate = r['Worker Rate(%)'] || 0;
-            const st = r['Worker S/T'] || 0;
-            hourlyData[hour].assigned += st * rate / 100;
-            hourlyData[hour].actual += r['Worker Act'] || 0;
-        }
-    });
-    
-    const hours = Object.keys(hourlyData).map(h => `${h.padStart(2, '0')}:00`);
-    const hourlyEfficiency = Object.values(hourlyData).map(data => 
-        data.actual > 0 ? (data.assigned / data.actual) * 100 : 0
-    );
-    
-    // Destroy existing process chart
+    // ⚠️ Hourly distribution NOT AVAILABLE for aggregated data
+    // Aggregated data doesn't have individual startDatetime
+    // Show a message instead
+    const processCtx = document.getElementById('modalProcessChart');
     if (modalCharts.process) {
         modalCharts.process.destroy();
     }
     
-    // Create hourly distribution chart
-    const processCtx = document.getElementById('modalProcessChart');
+    if (!processCtx) {
+        console.error('modalProcessChart canvas not found');
+        return;
+    }
+    
+    // Create empty chart with message
     modalCharts.process = new Chart(processCtx, {
         type: 'bar',
         data: {
-            labels: hours,
+            labels: ['Hourly data not available in aggregated view'],
             datasets: [{
-                label: 'Work Efficiency (%)',
-                data: hourlyEfficiency,
-                backgroundColor: 'rgba(139, 92, 246, 0.6)',
-                borderColor: '#8b5cf6',
-                borderWidth: 1
+                label: 'N/A',
+                data: [0],
+                backgroundColor: 'rgba(139, 92, 246, 0.2)',
             }]
         },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Hourly distribution requires individual time records'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1
+                }
+            }
+        }
+    });
+}
         options: {
             responsive: true,
             maintainAspectRatio: false,
