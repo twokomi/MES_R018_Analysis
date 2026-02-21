@@ -3729,15 +3729,15 @@ function showWorkerDetail(workerName) {
     let dataForSummary, dataForTable;
     
     if (isEfficiency) {
-        // Efficiency: Use aggregated data and filter out outliers
+        // Efficiency: Use aggregated data
         const cachedWorkerAgg = AppState.cachedWorkerAgg || [];
-        dataForSummary = cachedWorkerAgg.filter(r => {
-            // Filter by worker name and exclude outliers
-            if (r.workerName !== workerName) return false;
-            if (r.isOutlier) return false;  // ✅ Filter out outliers
-            return true;
-        });
-        dataForTable = dataForSummary; // Same for table
+        const allRecords = cachedWorkerAgg.filter(r => r.workerName === workerName);
+        
+        // For KPI calculation: exclude outliers
+        dataForSummary = allRecords.filter(r => !r.isOutlier);
+        
+        // For table display: show ALL records (including outliers with red highlight)
+        dataForTable = allRecords;
     } else {
         // Utilization: Use raw processedData for detailed time records
         const dataSource = AppState.filteredData || AppState.processedData;
@@ -3745,14 +3745,20 @@ function showWorkerDetail(workerName) {
         dataForTable = dataForSummary; // Same for table
     }
     
-    if (dataForSummary.length === 0) {
+    // Check if we have any records to display
+    if (dataForTable.length === 0) {
         alert('No valid records found for this worker in the current filter');
         return;
     }
     
-    // Count unique shifts
+    // If all records are outliers, show warning but continue
+    if (dataForSummary.length === 0 && dataForTable.length > 0) {
+        console.warn(`⚠️ All ${dataForTable.length} records for ${workerName} are outliers (>${AppState.outlierThreshold}%)`);
+    }
+    
+    // Count unique shifts (use dataForTable to include outliers)
     const uniqueShifts = new Set();
-    dataForSummary.forEach(r => {
+    dataForTable.forEach(r => {
         const shiftKey = `${r.workingDay}_${r.workingShift}`;
         uniqueShifts.add(shiftKey);
     });
@@ -3761,9 +3767,11 @@ function showWorkerDetail(workerName) {
     let currentRate, performanceBand, totalValue;
     
     if (isEfficiency) {
-        // ✅ FIX: Use aggregated data (outliers already excluded)
-        const assignedStandardTime = dataForSummary.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
-        const actualTime = dataForSummary.reduce((sum, r) => sum + (r.totalMinutesOriginal || 0), 0);
+        // ✅ FIX: Use aggregated data (outliers already excluded for KPI)
+        // If all are outliers, use dataForTable for display but show warning
+        const dataForKPI = dataForSummary.length > 0 ? dataForSummary : dataForTable;
+        const assignedStandardTime = dataForKPI.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
+        const actualTime = dataForKPI.reduce((sum, r) => sum + (r.totalMinutesOriginal || 0), 0);
         
         currentRate = actualTime > 0 ? (assignedStandardTime / actualTime) * 100 : 0;
         performanceBand = getEfficiencyBand(currentRate);
