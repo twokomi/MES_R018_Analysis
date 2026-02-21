@@ -1976,9 +1976,9 @@ function aggregateByWorker(data) {
                 totalMinutes: 0,
                 validCount: 0,
                 seq: record.seq,
-                // ✅ FIX: Preserve original fields for Efficiency mode
-                'Worker S/T': record['Worker S/T'] || 0,
-                'Worker Rate(%)': record['Worker Rate(%)'] || 0,
+                // ✅ FIX: Initialize accumulation fields for Efficiency mode
+                'Worker S/T': 0,  // Will accumulate below
+                'Worker Rate(%)': 0,  // Will accumulate below
                 assignedStandardTime: 0,
                 totalMinutesOriginal: 0
             };
@@ -1990,9 +1990,12 @@ function aggregateByWorker(data) {
             aggregated[key].validCount += 1;
             validRecords++;
             
-            // ✅ FIX: Accumulate efficiency fields
+            // ✅ FIX: Accumulate efficiency fields (S/T, Rate, Assigned, Actual)
             const st = record['Worker S/T'] || 0;
             const rate = record['Worker Rate(%)'] || 0;
+            
+            aggregated[key]['Worker S/T'] += st;  // Accumulate S/T
+            aggregated[key]['Worker Rate(%)'] += rate;  // Accumulate Rate
             aggregated[key].assignedStandardTime += (st * rate / 100);
             aggregated[key].totalMinutesOriginal += record['Worker Act'] || 0;
         } else {
