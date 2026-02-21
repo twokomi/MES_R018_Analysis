@@ -3988,6 +3988,8 @@ function renderUtilizationTable(workerRecords, tableBody) {
 
 // Render Work Efficiency records table
 function renderEfficiencyTable(workerRecords, tableBody) {
+    const outlierThreshold = AppState.outlierThreshold || 1000;
+    
     tableBody.innerHTML = workerRecords
         .sort((a, b) => new Date(b.startDatetime) - new Date(a.startDatetime))
         .map(r => {
@@ -3997,6 +3999,11 @@ function renderEfficiencyTable(workerRecords, tableBody) {
             const actual = r['Worker Act'] || 0;
             const efficiency = actual > 0 ? (assigned / actual) * 100 : 0;
             
+            // Check if outlier
+            const isOutlier = AppState.currentMetricType === 'efficiency' && efficiency > outlierThreshold;
+            const rowClass = isOutlier ? 'modal-outlier-row' : 'hover:bg-gray-50';
+            const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${efficiency.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
+            
             // Color code efficiency
             const efficiencyClass = efficiency >= 120 ? 'text-green-600 font-bold' :
                                    efficiency >= 100 ? 'text-blue-600 font-semibold' :
@@ -4005,10 +4012,10 @@ function renderEfficiencyTable(workerRecords, tableBody) {
                                    'text-red-600 font-bold';
             
             return `
-                <tr class="hover:bg-gray-50">
+                <tr class="${rowClass}">
                     <td class="p-2">${r.workingDay || '-'}</td>
                     <td class="p-2"><span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">${r.workingShift || '-'}</span></td>
-                    <td class="p-2 font-medium">${r.foDesc3 || '-'}</td>
+                    <td class="p-2 font-medium">${outlierIcon}${r.foDesc3 || '-'}</td>
                     <td class="p-2 text-right text-gray-600">${st}</td>
                     <td class="p-2 text-right text-gray-600">${rate}%</td>
                     <td class="p-2 text-right text-gray-900">${assigned.toFixed(1)}</td>
