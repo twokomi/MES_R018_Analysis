@@ -1131,8 +1131,9 @@
                         <section>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload & Save</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) with <strong>'Raw'</strong> sheet</li>
+                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) - automatically detects data sheet</li>
                                 <li>Drag & drop file or click 'Select File' button</li>
+                                <li>System auto-detects sheet with required headers (Worker Name, FO Desc, etc.)</li>
                                 <li>Review the processed data and reports</li>
                                 <li><strong>Click "Save to Database"</strong> to store data in Cloudflare D1</li>
                                 <li><strong>Tip:</strong> Include ShiftCalendar sheet in Excel for Shift (A/B/C) filtering</li>
@@ -1150,17 +1151,20 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Switch Metric Mode</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. View KPI Cards & Switch Metric Mode</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Toggle Button</strong>: Click to switch between Utilization & Efficiency</li>
-                                <li><strong>Utilization Rate</strong>: Measures time usage (Actual work time / Available time × 100)</li>
-                                <li><strong>Efficiency Rate</strong>: Measures productivity (Assigned standard time / Actual time × 100)</li>
-                                <li><strong>Note</strong>: Reports, bands, and charts update automatically</li>
+                                <li><strong>4 KPI Cards</strong>: View key metrics at a glance</li>
+                                <li><strong>Utilization Mode</strong>: Total Workers, Total Shift Time, Total Work Time, Avg Utilization Rate</li>
+                                <li><strong>Efficiency Mode</strong>: Total Workers, Total Adjusted S/T, Total Actual Time, Avg Efficiency Rate</li>
+                                <li><strong>Toggle Button</strong>: Click to switch between Utilization & Efficiency modes</li>
+                                <li><strong>Utilization Rate</strong>: Time usage = (Actual work time / Available shift time × 100)</li>
+                                <li><strong>Efficiency Rate</strong>: Productivity = (Adjusted standard time / Actual time × 100)</li>
+                                <li><strong>Note</strong>: All reports, bands, charts, and tables update automatically</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters & Outlier Control</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
                                 <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
@@ -1168,19 +1172,25 @@
                                 <li><strong>Category</strong>: BT Process, DS, BT Complete, WT, IM, etc.</li>
                                 <li><strong>Process</strong>: Specific processes (FO Desc 3)</li>
                                 <li><strong>Worker</strong>: Individual workers (searchable)</li>
-                                <li><strong>Click "Apply Filter"</strong> to update reports</li>
+                                <li><strong>Outlier Threshold</strong>: Set threshold % to filter outliers in Efficiency mode (default: 1000%)</li>
+                                <li><strong>Click "Apply Filter"</strong> to update reports (loading indicator appears during processing)</li>
+                                <li><strong>Reset</strong>: Clear all filters to view full dataset</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Required Headers (Raw Sheet)</h3>
-                            <p class="text-gray-700 mb-2">Raw sheet must include these headers:</p>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Required Excel Headers</h3>
+                            <p class="text-gray-700 mb-2">Excel file must include these headers (sheet auto-detected):</p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Worker Name</strong>: Worker name</li>
-                                <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description</li>
+                                <li><strong>Worker Name</strong>: Worker identifier</li>
+                                <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description (split into FO Desc 2 & 3)</li>
                                 <li><strong>Start Datetime</strong>: Work start time</li>
-                                <li><strong>Worker Act</strong>: Work time (minutes)</li>
-                                <li><strong>Result Cnt</strong>: Work result count (X = completed)</li>
+                                <li><strong>End Datetime</strong>: Work end time (for overlap removal)</li>
+                                <li><strong>Worker Act</strong>: Work time in minutes</li>
+                                <li><strong>Worker S/T</strong>: Standard time (for Efficiency calculation)</li>
+                                <li><strong>Worker Rate(%)</strong>: Work progress rate (for Efficiency calculation)</li>
+                                <li><strong>Result Cnt</strong>: Work result count (X = completed, Rework excluded)</li>
+                                <li><strong>Optional:</strong> ShiftCalendar sheet for Shift (A/B/C) filtering</li>
                             </ul>
                         </section>
 
@@ -1208,10 +1218,14 @@
                         <section>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">7. Worker Detail Modal</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Click any worker card</strong> to view detailed information</li>
-                                <li>View daily work time trends (line chart)</li>
-                                <li>See hourly work distribution (donut chart)</li>
-                                <li>Check detailed work records (date, shift, process, time)</li>
+                                <li><strong>Click any worker card</strong> in Performance Bands to view detailed information</li>
+                                <li><strong>KPI Summary</strong>: Total Shifts, Shift/Work Time, Performance Rate</li>
+                                <li><strong>Daily Trends</strong>: Line chart showing work time by date</li>
+                                <li><strong>Hourly Distribution</strong>: Bar chart showing work time by hour</li>
+                                <li><strong>Detailed Records Table</strong>: Date, shift, process, time breakdown</li>
+                                <li><strong>Utilization Mode</strong>: Shows individual records with start/end times</li>
+                                <li><strong>Efficiency Mode</strong>: Shows aggregated records with outlier indicators (🚫)</li>
+                                <li><strong>Glossary</strong>: Context-specific term definitions at the bottom</li>
                             </ul>
                         </section>
                     </div>
