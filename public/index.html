@@ -1131,12 +1131,11 @@
                         <section>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">1. Data Upload & Save</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) - automatically detects data sheet</li>
+                                <li><strong>Upload Excel file</strong> (.xlsx, .xls) downloaded from MES R018</li>
                                 <li>Drag & drop file or click 'Select File' button</li>
-                                <li>System auto-detects sheet with required headers (Worker Name, FO Desc, etc.)</li>
+                                <li>System automatically detects data and processes it</li>
                                 <li>Review the processed data and reports</li>
                                 <li><strong>Click "Save to Database"</strong> to store data in Cloudflare D1</li>
-                                <li><strong>Tip:</strong> Include ShiftCalendar sheet in Excel for Shift (A/B/C) filtering</li>
                             </ul>
                         </section>
 
@@ -1164,7 +1163,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters & Outlier Control</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
                                 <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
@@ -1172,26 +1171,51 @@
                                 <li><strong>Category</strong>: BT Process, DS, BT Complete, WT, IM, etc.</li>
                                 <li><strong>Process</strong>: Specific processes (FO Desc 3)</li>
                                 <li><strong>Worker</strong>: Individual workers (searchable)</li>
-                                <li><strong>Outlier Threshold</strong>: Set threshold % to filter outliers in Efficiency mode (default: 1000%)</li>
                                 <li><strong>Click "Apply Filter"</strong> to update reports (loading indicator appears during processing)</li>
                                 <li><strong>Reset</strong>: Clear all filters to view full dataset</li>
                             </ul>
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">5. Required Excel Headers</h3>
-                            <p class="text-gray-700 mb-2">Excel file must include these headers (sheet auto-detected):</p>
-                            <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><strong>Worker Name</strong>: Worker identifier</li>
-                                <li><strong>FO Desc</strong> or <strong>FD Desc</strong>: Process description (split into FO Desc 2 & 3)</li>
-                                <li><strong>Start Datetime</strong>: Work start time</li>
-                                <li><strong>End Datetime</strong>: Work end time (for overlap removal)</li>
-                                <li><strong>Worker Act</strong>: Work time in minutes</li>
-                                <li><strong>Worker S/T</strong>: Standard time (for Efficiency calculation)</li>
-                                <li><strong>Worker Rate(%)</strong>: Work progress rate (for Efficiency calculation)</li>
-                                <li><strong>Result Cnt</strong>: Work result count (X = completed, Rework excluded)</li>
-                                <li><strong>Optional:</strong> ShiftCalendar sheet for Shift (A/B/C) filtering</li>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                <i class="fas fa-filter text-purple-600 mr-2"></i>
+                                5. Outlier Threshold (Efficiency Mode Only)
+                            </h3>
+                            <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-3">
+                                <p class="text-gray-800 font-semibold mb-2">
+                                    <i class="fas fa-info-circle text-purple-600 mr-1"></i>
+                                    What is an Outlier?
+                                </p>
+                                <p class="text-gray-700 text-sm mb-2">
+                                    An <strong>outlier</strong> is a worker whose efficiency rate is unusually high (e.g., 1500%, 2000%). 
+                                    This often indicates data entry errors or exceptional cases that should be excluded from average calculations.
+                                </p>
+                            </div>
+                            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                                <li>
+                                    <strong>Default Threshold: 1000%</strong>
+                                    <p class="text-sm text-gray-600 ml-6">Workers with efficiency > 1000% are automatically filtered out from KPI calculations</p>
+                                </li>
+                                <li>
+                                    <strong>Adjustable</strong>
+                                    <p class="text-sm text-gray-600 ml-6">Change the threshold (e.g., 500%, 800%, 1200%) and click "Apply" to recalculate</p>
+                                </li>
+                                <li>
+                                    <strong>Visual Indicators</strong>
+                                    <p class="text-sm text-gray-600 ml-6">Outliers are marked with 🚫 icon and red background in tables</p>
+                                </li>
+                                <li>
+                                    <strong>Still Visible</strong>
+                                    <p class="text-sm text-gray-600 ml-6">Outliers appear in detailed tables but don't affect average calculations</p>
+                                </li>
                             </ul>
+                            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                <p class="text-sm text-yellow-800">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    <strong>Example:</strong> If a worker shows 1500% efficiency, this is likely a data error. 
+                                    The outlier filter prevents this extreme value from skewing your average efficiency rate.
+                                </p>
+                            </div>
                         </section>
 
                         <section>
@@ -1210,8 +1234,9 @@
                                 <li><span class="worker-badge badge-poor">Poor</span>: 80-99%</li>
                                 <li><span class="worker-badge badge-critical">At-Risk</span>: &lt; 80%</li>
                             </ul>
-                            <p class="text-sm text-gray-600 mt-3">
-                                <strong>⚠️ Data Quality:</strong> Workers with rates >1000% are filtered from aggregated reports (console logs show filtered workers)
+                            <p class="text-sm text-purple-600 mt-3 font-semibold">
+                                <i class="fas fa-filter mr-1"></i>
+                                Note: Outliers (>1000% by default) are automatically filtered from KPI calculations. See "Outlier Threshold" section for details.
                             </p>
                         </section>
 
