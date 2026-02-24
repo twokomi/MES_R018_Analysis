@@ -16,6 +16,7 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 - 🎯 **성과 밴드**: Excellent/Good/Normal/Poor/Critical (5단계)
 - 👤 **작업자 상세 모달**: 차트, 이력, 지표별 분기
 - 🔍 **고급 필터링**: Shift, 날짜, 공정, 작업자 다중 선택
+- 💡 **컨텍스트 안내 (NEW v3.4.0)**: Working Shift 필터별 툴팁/경고로 데이터 해석 가이드 제공
 - ⏱️ **로딩 인디케이터**: 필터 적용/초기화 시 부드러운 애니메이션
 - 🌍 **Full English Interface**: 전체 영어 인터페이스
 
@@ -23,7 +24,8 @@ MES Individual Performance Report는 제조 실행 시스템(MES)의 작업자�
 
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
-- **최신 배포**: https://29969ca7.mes-r018-analysis.pages.dev (2026-02-21)
+- **최신 배포**: v3.4.0 (2026-02-24)
+- **최신 기능**: Shift Filter 컨텍스트 안내 및 User Guide 가독성 개선
 
 ### GitHub 저장소
 - **저장소**: https://github.com/twokomi/MES_R018_Analysis

@@ -2109,6 +2109,29 @@ function updateKPIs(workerAgg) {
     if (outlierControl) {
         outlierControl.style.display = isEfficiency ? 'block' : 'none';
     }
+    
+    // ✅ Show/hide Total Workers info icon based on Working Shift filter
+    const kpiWorkersInfoIcon = document.getElementById('kpiWorkersInfoIcon');
+    const shiftFilterWarning = document.getElementById('shiftFilterWarning');
+    const currentShift = AppState.filters.workingShift;
+    
+    if (kpiWorkersInfoIcon) {
+        // Show info icon only when filter is "All" or empty (default)
+        if (currentShift === 'All' || currentShift === '') {
+            kpiWorkersInfoIcon.classList.remove('hidden');
+        } else {
+            kpiWorkersInfoIcon.classList.add('hidden');
+        }
+    }
+    
+    if (shiftFilterWarning) {
+        // Show warning only when filter is "Day" or "Night"
+        if (currentShift === 'Day' || currentShift === 'Night') {
+            shiftFilterWarning.classList.remove('hidden');
+        } else {
+            shiftFilterWarning.classList.add('hidden');
+        }
+    }
 }
 
 // Update performance bands

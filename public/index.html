@@ -576,8 +576,21 @@
             }
         }
         
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
         .animate-pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .fa-spin {
+            animation: spin 1s linear infinite !important;
         }
         
         .fade-in {
@@ -586,6 +599,46 @@
         
         .fade-out {
             animation: fadeOut 0.3s ease-in-out;
+        }
+        
+        /* Custom Radio Button as Square Checkbox Style */
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.25rem; /* Square with slight rounded corners */
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="radio"]:hover {
+            border-color: #3b82f6;
+        }
+        
+        input[type="radio"]:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        input[type="radio"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        input[type="radio"]:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -741,20 +794,20 @@
                             </button>
                             <div id="filterShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                                 <div class="p-2">
-                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
-                                        <input type="radio" name="shift" value="" class="mr-3" checked onchange="updateSingleSelect('shift', '')">
-                                        <span class="text-sm text-gray-700">All</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer rounded border-b-2 border-gray-300 bg-gray-50 font-semibold">
+                                        <input type="radio" name="shift" value="" class="mr-3 h-4 w-4 text-blue-600" checked onchange="updateSingleSelect('shift', '')">
+                                        <span class="text-sm text-blue-700">All Shifts</span>
                                     </label>
                                     <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
-                                        <input type="radio" name="shift" value="A" class="mr-3" onchange="updateSingleSelect('shift', 'A')">
+                                        <input type="radio" name="shift" value="A" class="mr-3 h-4 w-4 text-blue-600" onchange="updateSingleSelect('shift', 'A')">
                                         <span class="text-sm text-gray-700">A Shift</span>
                                     </label>
                                     <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
-                                        <input type="radio" name="shift" value="B" class="mr-3" onchange="updateSingleSelect('shift', 'B')">
+                                        <input type="radio" name="shift" value="B" class="mr-3 h-4 w-4 text-blue-600" onchange="updateSingleSelect('shift', 'B')">
                                         <span class="text-sm text-gray-700">B Shift</span>
                                     </label>
                                     <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
-                                        <input type="radio" name="shift" value="C" class="mr-3" onchange="updateSingleSelect('shift', 'C')">
+                                        <input type="radio" name="shift" value="C" class="mr-3 h-4 w-4 text-blue-600" onchange="updateSingleSelect('shift', 'C')">
                                         <span class="text-sm text-gray-700">C Shift</span>
                                     </label>
                                 </div>
@@ -782,16 +835,16 @@
                             </button>
                             <div id="filterWorkingShiftDropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                                 <div class="p-2">
-                                    <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
-                                        <input type="radio" name="workingShift" value="" class="mr-3" checked onchange="updateSingleSelect('workingShift', '')">
-                                        <span class="text-sm text-gray-700">All</span>
+                                    <label class="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer rounded border-b-2 border-gray-300 bg-gray-50 font-semibold">
+                                        <input type="radio" name="workingShift" value="" class="mr-3 h-4 w-4 text-blue-600" checked onchange="updateSingleSelect('workingShift', '')">
+                                        <span class="text-sm text-blue-700">All Working Shifts</span>
                                     </label>
                                     <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded border-b border-gray-100">
-                                        <input type="radio" name="workingShift" value="Day" class="mr-3" onchange="updateSingleSelect('workingShift', 'Day')">
+                                        <input type="radio" name="workingShift" value="Day" class="mr-3 h-4 w-4 text-blue-600" onchange="updateSingleSelect('workingShift', 'Day')">
                                         <span class="text-sm text-gray-700">Day</span>
                                     </label>
                                     <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer rounded">
-                                        <input type="radio" name="workingShift" value="Night" class="mr-3" onchange="updateSingleSelect('workingShift', 'Night')">
+                                        <input type="radio" name="workingShift" value="Night" class="mr-3 h-4 w-4 text-blue-600" onchange="updateSingleSelect('workingShift', 'Night')">
                                         <span class="text-sm text-gray-700">Night</span>
                                     </label>
                                 </div>
@@ -858,7 +911,11 @@
             <!-- KPI Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="kpi-card">
-                    <div class="text-sm mb-1">Total Workers</div>
+                    <div class="text-sm mb-1 flex items-center gap-2">
+                        Total Workers
+                        <i id="kpiWorkersInfoIcon" class="fas fa-info-circle text-blue-500 cursor-help hidden" 
+                           title="Workers may appear in both Day and Night shifts due to overtime work."></i>
+                    </div>
                     <div class="text-3xl font-bold" id="kpiWorkers">0</div>
                 </div>
                 <div class="kpi-card success" id="kpiSecondCard">
@@ -872,6 +929,17 @@
                 <div class="kpi-card" id="kpiAvgRateCard" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06);">
                     <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;" id="kpiAvgRateLabel">Average Rate</div>
                     <div class="text-3xl font-bold" id="kpiAvgWorkRate" style="color: #1f2937;">0%</div>
+                </div>
+            </div>
+            
+            <!-- Shift Filter Warning Banner -->
+            <div id="shiftFilterWarning" class="hidden mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-lg mt-1"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">⚠️ This view includes overtime workers from previous shifts.</p>
+                        <p class="text-xs text-gray-600 mt-1">Performance rates may not reflect actual efficiency.</p>
+                    </div>
                 </div>
             </div>
             
@@ -1154,10 +1222,23 @@
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>4 KPI Cards</strong>: View key metrics at a glance</li>
                                 <li><strong>Utilization Mode</strong>: Total Workers, Total Shift Time, Total Work Time, Avg Utilization Rate</li>
-                                <li><strong>Efficiency Mode</strong>: Total Workers, Total Adjusted S/T, Total Actual Time, Avg Efficiency Rate</li>
+                                <li><strong>Efficiency Mode</strong>: Total Workers, Total Adjusted S/T, Total Shift Time, Avg Efficiency Rate</li>
                                 <li><strong>Toggle Button</strong>: Click to switch between Utilization & Efficiency modes</li>
-                                <li><strong>Utilization Rate</strong>: Time usage = (Actual work time / Available shift time × 100)</li>
-                                <li><strong>Efficiency Rate</strong>: Productivity = (Adjusted standard time / Actual time × 100)</li>
+                                <li>
+                                    <strong>Utilization Rate</strong>: (Work time ÷ Shift time) × 100
+                                    <p class="text-sm text-gray-600 ml-6">Measures: "How much of the shift time was spent working?"</p>
+                                    <p class="text-xs text-blue-600 ml-6">Example: 260 min work ÷ 660 min shift × 100 = 39.4%</p>
+                                </li>
+                                <li>
+                                    <strong>Efficiency Rate (Shift Productivity)</strong>: (Adjusted S/T ÷ Shift time) × 100
+                                    <p class="text-sm text-gray-600 ml-6">Measures: "How much standard work was completed per shift?"</p>
+                                    <p class="text-xs text-purple-600 ml-6">Also known as "Shift Productivity" - measures output per shift (660 min)</p>
+                                    <p class="text-xs text-purple-600 ml-6">Example: 1000 min S/T ÷ 660 min shift × 100 = 151.5%</p>
+                                    <button onclick="document.getElementById('efficiencyExampleModal').classList.remove('hidden')" 
+                                            class="ml-6 mt-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition animate-pulse font-semibold">
+                                        <i class="fas fa-chart-line mr-1"></i>View Examples
+                                    </button>
+                                </li>
                                 <li><strong>Note</strong>: All reports, bands, charts, and tables update automatically</li>
                             </ul>
                         </section>
@@ -1187,26 +1268,30 @@
                                     What is an Outlier?
                                 </p>
                                 <p class="text-gray-700 text-sm mb-2">
-                                    An <strong>outlier</strong> is a worker whose efficiency rate is unusually high (e.g., 1500%, 2000%). 
-                                    This often indicates data entry errors or exceptional cases that should be excluded from average calculations.
+                                    An <strong>outlier</strong> is a work record with an unusually high efficiency rate (e.g., 1500%, 2000%). 
+                                    This typically occurs when Worker Rate (%) is very high, indicating significant task completion.
+                                </p>
+                                <p class="text-gray-700 text-sm font-semibold bg-purple-100 p-2 rounded">
+                                    ⚠️ <strong>Important:</strong> Outliers represent real work and are <strong>included in all calculations</strong>. 
+                                    They are only highlighted in red for visual reference.
                                 </p>
                             </div>
                             <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
                                 <li>
                                     <strong>Default Threshold: 1000%</strong>
-                                    <p class="text-sm text-gray-600 ml-6">Workers with efficiency > 1000% are automatically filtered out from KPI calculations</p>
+                                    <p class="text-sm text-gray-600 ml-6">Records with efficiency > 1000% are marked as outliers for visual identification</p>
                                 </li>
                                 <li>
                                     <strong>Adjustable</strong>
-                                    <p class="text-sm text-gray-600 ml-6">Change the threshold (e.g., 500%, 800%, 1200%) and click "Apply" to recalculate</p>
+                                    <p class="text-sm text-gray-600 ml-6">Change the threshold (e.g., 500%, 800%, 1200%) to adjust which records are visually marked</p>
                                 </li>
                                 <li>
                                     <strong>Visual Indicators</strong>
                                     <p class="text-sm text-gray-600 ml-6">Outliers are marked with 🚫 icon and red background in tables</p>
                                 </li>
                                 <li>
-                                    <strong>Still Visible</strong>
-                                    <p class="text-sm text-gray-600 ml-6">Outliers appear in detailed tables but don't affect average calculations</p>
+                                    <strong>Included in Calculations</strong>
+                                    <p class="text-sm text-gray-600 ml-6">All outlier records are included in KPI, charts, and efficiency calculations</p>
                                 </li>
                             </ul>
                             <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -1229,14 +1314,14 @@
                             </ul>
                             <p class="text-gray-700 mb-2 mt-3"><strong>Efficiency Rate Bands:</strong></p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                                <li><span class="worker-badge badge-excellent">Excellent</span>: ≥ 120%</li>
-                                <li><span class="worker-badge badge-normal">Normal</span>: 100-119%</li>
-                                <li><span class="worker-badge badge-poor">Poor</span>: 80-99%</li>
-                                <li><span class="worker-badge badge-critical">At-Risk</span>: &lt; 80%</li>
+                                <li><span class="worker-badge badge-excellent">Excellent</span>: ≥ 100%</li>
+                                <li><span class="worker-badge badge-normal">Normal</span>: 80-99%</li>
+                                <li><span class="worker-badge badge-poor">Poor</span>: 60-79%</li>
+                                <li><span class="worker-badge badge-critical">At-Risk</span>: &lt; 60%</li>
                             </ul>
                             <p class="text-sm text-purple-600 mt-3 font-semibold">
-                                <i class="fas fa-filter mr-1"></i>
-                                Note: Outliers (>1000% by default) are automatically filtered from KPI calculations. See "Outlier Threshold" section for details.
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Note: Outliers (>1000% by default) are visually marked in red but included in all calculations. See "Outlier Threshold" section for details.
                             </p>
                         </section>
 
@@ -1337,11 +1422,106 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 3.4.2 -->
+                    <div class="border-l-4 border-purple-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.4.2</h3>
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="text-xs text-gray-500">2026-02-24</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>Critical Bug Fix: Outlier Calculation
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Fixed</strong>: Outlier records (efficiency > 1000%) were incorrectly excluded from all calculations</li>
+                                    <li><strong>Corrected</strong>: Outliers now properly included in KPI, charts, and worker detail calculations</li>
+                                    <li><strong>Visual</strong>: Outlier records remain highlighted in red for reference</li>
+                                    <li><strong>Impact</strong>: All efficiency metrics now accurately reflect total work completed</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-purple-700 mb-2">
+                                    <i class="fas fa-lightbulb mr-2"></i>Why This Matters
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Outliers are real work</strong>: High Worker Rate (%) indicates task completion, not data errors</li>
+                                    <li><strong>Efficiency formula</strong>: Total Adjusted S/T ÷ Shift Time × 100</li>
+                                    <li><strong>All work counts</strong>: Excluding outliers artificially deflated efficiency metrics</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-purple-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Note:</strong> Outlier records are now included in all calculations but remain visually marked in red for easy identification.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- Version 3.3.0 -->
+                    <div class="border-l-4 border-orange-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 3.3.0</h3>
+                            <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">⚠️ Breaking Change</span>
+                            <span class="text-xs text-gray-500">2026-02-21</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-orange-700 mb-2">
+                                    <i class="fas fa-calculator mr-2"></i>Efficiency Calculation Formula Changed
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Previous</strong>: Efficiency = (Adjusted S/T ÷ Actual Time) × 100</li>
+                                    <li><strong>New</strong>: Efficiency = (Adjusted S/T ÷ Shift Time) × 100</li>
+                                    <li><strong>Shift Time</strong>: Fixed at 660 minutes per shift</li>
+                                    <li><strong>Reasoning</strong>: Prevents distortion from extremely short Actual Time entries</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-orange-700 mb-2">
+                                    <i class="fas fa-balance-scale mr-2"></i>Why This Change?
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Issue</strong>: Short Actual Time (e.g., 2 min) inflates efficiency to 3000%</li>
+                                    <li><strong>Solution</strong>: Using Shift Time (660 min) provides consistent productivity measurement</li>
+                                    <li><strong>Benefit</strong>: Measures how much standard work was completed per shift</li>
+                                    <li><strong>Distinction</strong>: Utilization tracks time usage; Efficiency tracks work output</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-orange-700 mb-2">
+                                    <i class="fas fa-lightbulb mr-2"></i>Updated Interpretation
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>100% Efficiency</strong>: Completed exactly one shift's worth of standard work</li>
+                                    <li><strong>150% Efficiency</strong>: Completed 1.5× standard workload (high productivity)</li>
+                                    <li><strong>70% Efficiency</strong>: Completed 0.7× standard workload (needs improvement)</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-orange-800">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Breaking Change:</strong> Efficiency values calculated with this version are not directly comparable with previous versions. 
+                                    The new formula provides more accurate shift-based productivity measurements.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                
                     <!-- Version 3.2.1 -->
                     <div class="border-l-4 border-green-600 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 3.2.1</h3>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Previous</span>
                             <span class="text-xs text-gray-500">2026-02-21</span>
                         </div>
                         
@@ -1785,7 +1965,7 @@
                 <!-- Charts Section -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
-                        <h4 class="font-bold text-gray-800 mb-3">
+                        <h4 id="modalDailyChartTitle" class="font-bold text-gray-800 mb-3">
                             <i class="fas fa-calendar-day mr-2"></i>
                             Daily Work Time
                         </h4>
@@ -1794,7 +1974,7 @@
                         </div>
                     </div>
                     <div class="bg-white rounded-lg border border-gray-200 p-4">
-                        <h4 class="font-bold text-gray-800 mb-3">
+                        <h4 id="modalHourlyChartTitle" class="font-bold text-gray-800 mb-3">
                             <i class="fas fa-clock mr-2"></i>
                             Hourly Work Distribution
                         </h4>
@@ -1888,7 +2068,7 @@
             <div class="mt-4 pt-4 border-t border-gray-100 text-center">
                 <p class="text-xs text-gray-400">
                     <span class="inline-flex items-center gap-2">
-                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-mono">v3.2.1</span>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-mono">v3.4.2</span>
                         <span>|</span>
                         <span><i class="fas fa-server mr-1"></i>Cloudflare Pages + D1</span>
                         <span>|</span>
@@ -1921,6 +2101,134 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=1771690200"></script>
+    <!-- Efficiency Example Modal -->
+    <div id="efficiencyExampleModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-white">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Performance Metrics Examples
+                </h2>
+                <button onclick="document.getElementById('efficiencyExampleModal').classList.add('hidden')" 
+                        class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 p-4">
+                    <p class="text-gray-800 font-semibold mb-2">
+                        <i class="fas fa-info-circle text-purple-600 mr-1"></i>
+                        Key Concepts
+                    </p>
+                    <div class="space-y-2 text-sm">
+                        <p class="text-gray-700">
+                            <strong class="text-blue-700">Utilization Rate:</strong> How much of the shift time was spent working?<br>
+                            <span class="font-mono bg-white px-2 py-1 rounded ml-4">Work Time ÷ Shift Time (660 min) × 100</span>
+                        </p>
+                        <p class="text-gray-700 mt-2">
+                            <strong class="text-purple-700">Efficiency Rate (Shift Productivity):</strong> How much standard work was completed per shift?<br>
+                            <span class="font-mono bg-white px-2 py-1 rounded ml-4">Adjusted S/T ÷ Shift Time (660 min) × 100</span>
+                            <span class="text-xs text-purple-600 ml-4 block mt-1">Also known as "Shift Productivity" - measures output per 11-hour shift</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Case 1: High Performer -->
+                <div class="border border-green-200 rounded-lg overflow-hidden">
+                    <div class="bg-green-100 px-4 py-3 border-b border-green-200">
+                        <h3 class="font-bold text-green-900 flex items-center gap-2">
+                            <span class="worker-badge badge-excellent">Excellent</span>
+                            Case 1: High Performer
+                        </h3>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Utilization Rate</p>
+                                <p class="text-2xl font-bold text-green-600">90%</p>
+                                <p class="text-xs text-gray-500">600 min / 660 min</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Efficiency Rate</p>
+                                <p class="text-2xl font-bold text-green-600">150%</p>
+                                <p class="text-xs text-gray-500">1000 min S/T / 660 min</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-700 mt-3">
+                            <strong>Interpretation:</strong> Worked 90% of shift time and completed 150% of standard work. 
+                            This worker processed more orders than the standard amount (e.g., 2 orders of 500 min S/T each).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Case 2: Slower Worker -->
+                <div class="border border-orange-200 rounded-lg overflow-hidden">
+                    <div class="bg-orange-100 px-4 py-3 border-b border-orange-200">
+                        <h3 class="font-bold text-orange-900 flex items-center gap-2">
+                            <span class="worker-badge badge-poor">Poor</span>
+                            Case 2: Slower Worker
+                        </h3>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Utilization Rate</p>
+                                <p class="text-2xl font-bold text-orange-600">95%</p>
+                                <p class="text-xs text-gray-500">630 min / 660 min</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Efficiency Rate</p>
+                                <p class="text-2xl font-bold text-orange-600">70%</p>
+                                <p class="text-xs text-gray-500">460 min S/T / 660 min</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-700 mt-3">
+                            <strong>Interpretation:</strong> Worked almost full shift (95%) but completed only 70% of standard work. 
+                            This indicates the worker is slower or processed fewer orders than expected.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Case 3: Idle Time -->
+                <div class="border border-red-200 rounded-lg overflow-hidden">
+                    <div class="bg-red-100 px-4 py-3 border-b border-red-200">
+                        <h3 class="font-bold text-red-900 flex items-center gap-2">
+                            <span class="worker-badge badge-critical">At-Risk</span>
+                            Case 3: High Idle Time
+                        </h3>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Utilization Rate</p>
+                                <p class="text-2xl font-bold text-red-600">40%</p>
+                                <p class="text-xs text-gray-500">260 min / 660 min</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-gray-600">Efficiency Rate</p>
+                                <p class="text-2xl font-bold text-red-600">60%</p>
+                                <p class="text-xs text-gray-500">400 min S/T / 660 min</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-700 mt-3">
+                            <strong>Interpretation:</strong> Worked only 40% of shift with 60% of standard work completed. 
+                            This indicates significant idle time and low productivity. Action required.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-900">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        <strong>Key Insight:</strong> Use both metrics together! Utilization shows time investment, 
+                        while Efficiency shows work output. High Utilization + High Efficiency = Top performer.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js?v=1771972545857"></script>
 </body>
 </html>

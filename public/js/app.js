@@ -435,6 +435,7 @@ function handleFileUpload(file) {
     
     showUploadStatus(true);
     updateProgress(10);
+    showLoadingOverlay('Uploading Excel file...');
     
     const reader = new FileReader();
     
@@ -622,18 +623,21 @@ function handleFileUpload(file) {
             
             setTimeout(() => {
                 showUploadStatus(false);
+                hideLoadingOverlay();
             }, 1000);
             
         } catch (error) {
             console.error('File parsing error:', error);
             alert('파일 처리 중 오류가 발생했습니다:\n' + error.message);
             showUploadStatus(false);
+            hideLoadingOverlay();
         }
     };
     
     reader.onerror = function() {
         alert('파일을 읽는 중 오류가 발생했습니다.');
         showUploadStatus(false);
+        hideLoadingOverlay();
     };
     
     reader.readAsArrayBuffer(file);
@@ -666,6 +670,10 @@ function parseRawData(headers, dataRows) {
         workerAct: colWorkerAct,
         rework: colRework
     });
+    
+    // ✅ DEBUG: Show actual Excel headers
+    console.log('📋 Actual Excel headers (first 20):', headers.slice(0, 20));
+    console.log('📋 Normalized headers (first 20):', headers.slice(0, 20).map(h => normalizeHeader(h)));
     
     // ⚠️ CRITICAL: Check if Worker S/T or Rate columns are missing
     if (colWorkerST === -1) {
@@ -1358,7 +1366,13 @@ function updateFilterOptions() {
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
-        categoryDropdown.innerHTML = uniqueCategories.map(category => `
+        const allChecked = checkedCategories.length === 0 || checkedCategories.length === uniqueCategories.length;
+        categoryDropdown.innerHTML = `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer border-b-2 border-gray-300 bg-gray-50 font-semibold">
+                <input type="checkbox" value="__ALL__" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="toggleAllCheckboxes('category')" ${allChecked ? 'checked' : ''}>
+                <span class="text-sm text-blue-700">All Categories</span>
+            </label>
+        ` + uniqueCategories.map(category => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
                 <input type="checkbox" value="${category}" class="mr-3 h-4 w-4 text-blue-600 category-checkbox" onchange="updateCheckboxDisplay('category')" ${checkedCategories.includes(category) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${category}</span>
@@ -1398,7 +1412,13 @@ function updateFilterOptions() {
     
     const processDropdown = document.getElementById('filterProcessDropdown');
     if (processDropdown) {
-        processDropdown.innerHTML = processes.map(process => `
+        const allChecked = checkedProcesses.length === 0 || checkedProcesses.length === processes.length;
+        processDropdown.innerHTML = `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer border-b-2 border-gray-300 bg-gray-50 font-semibold">
+                <input type="checkbox" value="__ALL__" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="toggleAllCheckboxes('process')" ${allChecked ? 'checked' : ''}>
+                <span class="text-sm text-blue-700">All Processes</span>
+            </label>
+        ` + processes.map(process => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100">
                 <input type="checkbox" value="${process}" class="mr-3 h-4 w-4 text-blue-600 process-checkbox" onchange="updateCheckboxDisplay('process')" ${checkedProcesses.includes(process) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${process}</span>
@@ -1412,7 +1432,13 @@ function updateFilterOptions() {
     
     const workerList = document.getElementById('filterWorkerList');
     if (workerList) {
-        workerList.innerHTML = uniqueWorkers.map(worker => `
+        const allChecked = checkedWorkers.length === 0 || checkedWorkers.length === uniqueWorkers.length;
+        workerList.innerHTML = `
+            <label class="flex items-center px-3 py-2 hover:bg-blue-100 cursor-pointer border-b-2 border-gray-300 bg-gray-50 font-semibold worker-item">
+                <input type="checkbox" value="__ALL__" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="toggleAllCheckboxes('worker')" ${allChecked ? 'checked' : ''}>
+                <span class="text-sm text-blue-700">All Workers</span>
+            </label>
+        ` + uniqueWorkers.map(worker => `
             <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 worker-item">
                 <input type="checkbox" value="${worker}" class="mr-3 h-4 w-4 text-blue-600 worker-checkbox" onchange="updateCheckboxDisplay('worker')" ${checkedWorkers.includes(worker) ? 'checked' : ''}>
                 <span class="text-sm text-gray-700">${worker}</span>
@@ -1554,17 +1580,44 @@ function toggleMonthDates(month) {
     }
 }
 
+// Toggle all checkboxes for a filter type
+function toggleAllCheckboxes(type) {
+    const allCheckbox = document.querySelector(`.${type}-checkbox[value="__ALL__"]`);
+    const itemCheckboxes = document.querySelectorAll(`.${type}-checkbox:not([value="__ALL__"])`);
+    
+    if (allCheckbox && allCheckbox.checked) {
+        // Check all items
+        itemCheckboxes.forEach(cb => cb.checked = true);
+    } else {
+        // Uncheck all items
+        itemCheckboxes.forEach(cb => cb.checked = false);
+    }
+    
+    updateCheckboxDisplay(type);
+}
+
 // Update checkbox display
 function updateCheckboxDisplay(type) {
-    const checkboxes = document.querySelectorAll(`.${type}-checkbox:checked`);
+    const checkboxes = document.querySelectorAll(`.${type}-checkbox:checked:not([value="__ALL__"])`);
     const selected = Array.from(checkboxes).map(cb => cb.value).filter(v => v);
     const displayBtn = document.getElementById(`filter${type.charAt(0).toUpperCase() + type.slice(1)}Display`);
+    
+    // Update "All" checkbox state
+    const allCheckbox = document.querySelector(`.${type}-checkbox[value="__ALL__"]`);
+    const allItemCheckboxes = document.querySelectorAll(`.${type}-checkbox:not([value="__ALL__"])`);
+    const allChecked = Array.from(allItemCheckboxes).every(cb => cb.checked);
+    if (allCheckbox) {
+        allCheckbox.checked = allChecked;
+    }
     
     if (displayBtn) {
         const textSpan = displayBtn.querySelector('span');
         if (selected.length === 0) {
             textSpan.textContent = 'Select...';
             textSpan.className = 'text-gray-500';
+        } else if (allChecked) {
+            textSpan.textContent = 'All';
+            textSpan.className = 'text-blue-700 font-semibold';
         } else if (selected.length === 1) {
             textSpan.textContent = selected[0];
             textSpan.className = 'text-gray-900';
@@ -1590,15 +1643,15 @@ function applyFilters() {
     
     // Get checked categories
     const categoryCheckboxes = document.querySelectorAll('.category-checkbox:checked');
-    const selectedCategories = Array.from(categoryCheckboxes).map(cb => cb.value).filter(v => v);
+    const selectedCategories = Array.from(categoryCheckboxes).map(cb => cb.value).filter(v => v && v !== '__ALL__');
     
     // Get checked processes
     const processCheckboxes = document.querySelectorAll('.process-checkbox:checked');
-    const selectedProcesses = Array.from(processCheckboxes).map(cb => cb.value).filter(v => v);
+    const selectedProcesses = Array.from(processCheckboxes).map(cb => cb.value).filter(v => v && v !== '__ALL__');
     
     // Get checked workers
     const workerCheckboxes = document.querySelectorAll('.worker-checkbox:checked');
-    const selectedWorkers = Array.from(workerCheckboxes).map(cb => cb.value).filter(v => v);
+    const selectedWorkers = Array.from(workerCheckboxes).map(cb => cb.value).filter(v => v && v !== '__ALL__');
     
     AppState.filters = {
         shift: getRadioValue('shift'),
@@ -1761,6 +1814,34 @@ function updateReport() {
     // Store filtered data in AppState for use in Worker Detail modal
     AppState.filteredData = filteredData;
     
+    // 🔍 DEBUG: Check Day+Night overlap workers and their actual time distribution
+    if (AppState.filters.workingShift === 'All') {
+        const dayData = filteredData.filter(r => r.workingShift === 'Day');
+        const nightData = filteredData.filter(r => r.workingShift === 'Night');
+        
+        const dayWorkers = new Set(dayData.map(r => r.workerName));
+        const nightWorkers = new Set(nightData.map(r => r.workerName));
+        
+        const overlapWorkers = [...dayWorkers].filter(w => nightWorkers.has(w));
+        
+        console.log(`\n🔍 DEBUG: Day+Night Overlap Analysis`);
+        console.log(`Total overlap workers: ${overlapWorkers.length}`);
+        
+        // Sample first 3 overlap workers
+        overlapWorkers.slice(0, 3).forEach(workerName => {
+            const workerDayRecords = dayData.filter(r => r.workerName === workerName);
+            const workerNightRecords = nightData.filter(r => r.workerName === workerName);
+            
+            const dayTotalMinutes = workerDayRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+            const nightTotalMinutes = workerNightRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+            
+            console.log(`\n👤 ${workerName}`);
+            console.log(`  Day: ${workerDayRecords.length} records, ${dayTotalMinutes} minutes (${(dayTotalMinutes/60).toFixed(1)} hrs)`);
+            console.log(`  Night: ${workerNightRecords.length} records, ${nightTotalMinutes} minutes (${(nightTotalMinutes/60).toFixed(1)} hrs)`);
+            console.log(`  Ratio: Day ${(dayTotalMinutes/(dayTotalMinutes+nightTotalMinutes)*100).toFixed(1)}% / Night ${(nightTotalMinutes/(dayTotalMinutes+nightTotalMinutes)*100).toFixed(1)}%`);
+        });
+    }
+    
     // Aggregate by worker (detailed: worker+date+shift+process)
     const workerAgg = aggregateByWorker(filteredData);
     
@@ -1769,6 +1850,9 @@ function updateReport() {
     
     // Aggregate by worker only (for Performance Bands and Charts)
     const workerSummary = aggregateByWorkerOnly(workerAgg);
+    
+    // ✅ FIX: Cache workerSummary for Performance Band sorting
+    AppState.workerSummary = workerSummary;
     
     updateKPIs(workerSummary); // ✅ FIXED: Use workerSummary instead of workerAgg
     updatePerformanceBands(workerSummary); // Use worker summary for bands
@@ -1789,10 +1873,8 @@ function aggregateByWorkerOnly(workerAgg) {
     workerAgg.forEach(item => {
         const workerName = item.workerName;
         
-        // ✅ Skip outliers for KPI/Chart calculations
-        if (item.isOutlier) {
-            return;
-        }
+        // ✅ Include ALL records (outliers are real work)
+        // Outliers will be visually marked but included in calculations
         
         if (!byWorker[workerName]) {
             byWorker[workerName] = {
@@ -1860,9 +1942,11 @@ function aggregateByWorkerOnly(workerAgg) {
         const utilizationRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
         const utilizationBand = getUtilizationBand(utilizationRate);
         
-        // Calculate Work Efficiency Rate: assigned standard time / actual time × 100
-        const efficiencyRate = worker.totalMinutesOriginal > 0 
-            ? (worker.assignedStandardTime / worker.totalMinutesOriginal) * 100 
+        // Calculate Work Efficiency Rate: assigned standard time / shift time × 100
+        // Shift-based productivity: How much standard work completed per shift (660 min)
+        const shiftTime = shiftCount * 660; // Total available shift time
+        const efficiencyRate = shiftTime > 0 
+            ? (worker.assignedStandardTime / shiftTime) * 100 
             : 0;
         const efficiencyBand = getEfficiencyBand(efficiencyRate);
         
@@ -1942,6 +2026,7 @@ function updatePivotReport(workerAgg) {
             validCount: item.validCount,
             totalMinutes: item.totalMinutes,
             totalMinutesOriginal: item.totalMinutesOriginal || 0,
+            'Worker S/T': item['Worker S/T'] || 0, // ✅ FIX: Add Worker S/T for Pivot Report
             assignedStandardTime: item.assignedStandardTime || 0,
             workerRate: item['Worker Rate(%)'] || 0,
             workRate: item.workRate,
@@ -1961,7 +2046,7 @@ function updatePivotReport(workerAgg) {
     html += '<th rowspan="2" style="min-width: 200px; text-align: left; vertical-align: middle;">Worker Name</th>';
     allDates.forEach(date => {
         const isEfficiency = AppState.currentMetricType === 'efficiency';
-        const colspan = isEfficiency ? 6 : 3;
+        const colspan = isEfficiency ? 5 : 3; // Changed from 6 to 5
         html += `<th colspan="${colspan}">${date}</th>`;
     });
     html += '</tr>';
@@ -1972,9 +2057,8 @@ function updatePivotReport(workerAgg) {
         if (isEfficiency) {
             html += `<th style="font-size: 0.7rem;">S/T(m)</th>`;
             html += `<th style="font-size: 0.7rem;">Rate(%)</th>`;
-            html += `<th style="font-size: 0.7rem;">Assigned(m)</th>`;
-            html += `<th style="font-size: 0.7rem;">Actual(m)</th>`;
-            html += `<th style="font-size: 0.7rem;">Efficiency</th>`;
+            html += `<th style="font-size: 0.7rem;">Adjusted S/T(m)</th>`;
+            html += `<th style="font-size: 0.7rem;">Efficiency(%)</th>`;
             html += `<th style="font-size: 0.7rem;">WO#</th>`;
         } else {
             html += `<th style="font-size: 0.7rem;">WO Count</th>`;
@@ -2002,7 +2086,7 @@ function updatePivotReport(workerAgg) {
     sortedProcesses.forEach(([processName, processData]) => {
         // Process header row - LEFT ALIGNED
         const isEfficiency = AppState.currentMetricType === 'efficiency';
-        const colsPerDate = isEfficiency ? 6 : 3;
+        const colsPerDate = isEfficiency ? 5 : 3; // Changed from 6 to 5
         html += `<tr><td colspan="${1 + allDates.length * colsPerDate}" class="process-cell" style="text-align: left; padding-left: 1rem; font-weight: 700; font-size: 0.95rem;">${processName}</td></tr>`;
         
         // Worker rows
@@ -2017,23 +2101,29 @@ function updatePivotReport(workerAgg) {
                 
                 if (dateData) {
                     if (isEfficiency) {
-                        // Efficiency Mode: S/T, Rate, Assigned, Actual, Efficiency, WO Count
-                        const actual = dateData.totalMinutesOriginal || 0; // Actual time (Worker Act)
-                        const assigned = dateData.assignedStandardTime || 0; // Assigned = S/T × Rate ÷ 100
-                        const rate = actual > 0 ? (assigned / actual) * 100 : 0; // Rate = Assigned ÷ Actual
-                        const efficiency = dateData.efficiencyRate || 0;
+                        // Efficiency Mode: S/T, Rate, Adjusted S/T, Efficiency, WO Count
+                        const st = dateData['Worker S/T'] || 0; // Standard Time (baseline)
+                        const adjusted = dateData.assignedStandardTime || 0; // Adjusted = S/T × Rate ÷ 100
+                        const rate = st > 0 ? (adjusted / st) * 100 : 0; // Rate = Adjusted ÷ S/T × 100
                         const woCount = dateData.validCount || 0; // Number of work orders
                         
-                        const efficiencyClass = efficiency >= 120 ? 'work-rate-high' :
-                                              efficiency >= 100 ? 'work-rate-normal' :
-                                              efficiency >= 80 ? 'work-rate-low' : 'work-rate-critical';
+                        // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count × 660) × 100
+                        // Count unique shifts for this worker on this date
+                        const shiftsForDate = new Set();
+                        Object.entries(processData.workers[workerName]).forEach(([d, data]) => {
+                            if (d === date && data.workingShift) {
+                                shiftsForDate.add(data.workingShift);
+                            }
+                        });
+                        const shiftCount = shiftsForDate.size || 1;
+                        const shiftTime = shiftCount * 660;
+                        const efficiency = shiftTime > 0 ? (adjusted / shiftTime) * 100 : 0;
                         
-                        // Display: S/T (as Actual), Rate, Assigned, Actual, Efficiency, WO Count
-                        html += `<td>${Math.round(actual)}</td>`; // S/T column shows actual time
-                        html += `<td>${rate.toFixed(0)}%</td>`; // Rate = (Assigned/Actual)×100
-                        html += `<td>${Math.round(assigned)}</td>`; // Assigned
-                        html += `<td>${Math.round(actual)}</td>`; // Actual
-                        html += `<td class="${efficiencyClass}">${efficiency.toFixed(0)}%</td>`; // Efficiency
+                        // Display: S/T, Rate, Adjusted S/T, Efficiency (%), WO Count
+                        html += `<td>${Math.round(st)}</td>`; // S/T column shows standard time
+                        html += `<td>${rate.toFixed(0)}%</td>`; // Rate = (Adjusted/S/T)×100
+                        html += `<td>${Math.round(adjusted)}</td>`; // Adjusted S/T
+                        html += `<td>${efficiency.toFixed(1)}%</td>`; // Daily Efficiency
                         html += `<td>${woCount}</td>`; // WO Count
                     } else {
                         // Utilization Mode: WO Count, Work Time, Utilization
@@ -2046,7 +2136,7 @@ function updatePivotReport(workerAgg) {
                         html += `<td class="${rateClass}">${dateData.workRate.toFixed(0)}%</td>`;
                     }
                 } else {
-                    const emptyCols = isEfficiency ? 6 : 3;
+                    const emptyCols = isEfficiency ? 5 : 3;
                     html += '<td>-</td>'.repeat(emptyCols);
                 }
             });
@@ -2065,20 +2155,17 @@ function updatePivotReport(workerAgg) {
     
     if (isEfficiency) {
         pivotGlossary.innerHTML = `
-            <strong class="text-purple-700">Work Efficiency Metric Explained:</strong><br>
+            <strong class="text-purple-700">Work Efficiency Metric Explained (Shift Productivity):</strong><br>
             • <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
-            • <strong>Rate(%)</strong>: Worker performance multiplier - (Assigned ÷ Actual) × 100%<br>
-            • <strong>Assigned(m)</strong>: Adjusted time based on worker skill = S/T × Rate ÷ 100<br>
-            • <strong>Actual(m)</strong>: Real time the worker spent<br>
-            • <strong>Efficiency</strong>: Overall performance = (Assigned ÷ Actual) × 100%<br>
+            • <strong>Rate(%)</strong>: Worker performance multiplier (portion of task completed by this worker)<br>
+            • <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Rate ÷ 100<br>
+            • <strong>Efficiency(%)</strong>: Daily efficiency = (Adjusted S/T ÷ (Shift Count × 660 min)) × 100%<br>
             • <strong>WO#</strong>: Number of work orders completed<br>
             • <strong>🚫 Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
             <br>
-            <strong class="text-sm">📘 Example Calculation:</strong><br>
+            <strong class="text-sm">📘 Note:</strong><br>
             <span class="text-xs">
-            Worker has S/T=54m, Rate=783%, Assigned=423m (54×783÷100), Actual=660m<br>
-            → Efficiency = 423÷660×100 = 64%<br>
-            This means the worker completed 423 minutes of adjusted work in 660 actual minutes.
+            This table shows daily breakdown of work. Efficiency is calculated per date based on shifts worked that day.
             </span>
         `;
     } else {
@@ -2148,12 +2235,12 @@ function aggregateByWorker(data) {
             const rate = record['Worker Rate(%)'] || 0;
             const assigned = (st * rate / 100);
             
-            // ⚠️ DEBUG: Log when Worker S/T or Rate is 0
-            if (totalRecords <= 5 && (st === 0 || rate === 0)) {
-                console.warn(`⚠️ Record ${totalRecords}: Worker S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}`, {
-                    worker: record.workerName,
+            // ⚠️ DEBUG: Log first few records to check S/T values
+            if (totalRecords <= 3) {
+                console.log(`📊 Record ${totalRecords}: Worker="${record.workerName}", S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}`, {
                     process: record.foDesc3,
-                    allFields: Object.keys(record).filter(k => k.includes('S/T') || k.includes('Rate') || k.includes('Worker'))
+                    date: record.workingDay,
+                    availableFields: Object.keys(record).filter(k => k.includes('S/T') || k.includes('Rate'))
                 });
             }
             
@@ -2174,6 +2261,8 @@ function aggregateByWorker(data) {
         day: item.workingDay,
         process: item.foDesc3,
         'Worker S/T': item['Worker S/T'],
+        'Adjusted S/T': item.assignedStandardTime,
+        'Actual': item.totalMinutesOriginal,
         'Worker Rate(%)': item['Worker Rate(%)'],
         assignedStandardTime: item.assignedStandardTime,
         totalMinutesOriginal: item.totalMinutesOriginal,
@@ -2185,10 +2274,10 @@ function aggregateByWorker(data) {
         // Calculate Utilization Rate
         const utilizationRate = (item.totalMinutes / 660) * 100;
         
-        // Calculate Efficiency Rate
-        const efficiencyRate = item.totalMinutesOriginal > 0 
-            ? (item.assignedStandardTime / item.totalMinutesOriginal) * 100 
-            : 0;
+        // Calculate Efficiency Rate: assigned standard time / shift time × 100
+        // Shift-based productivity measure
+        const shiftTime = 660; // Standard shift time (11 hours)
+        const efficiencyRate = (item.assignedStandardTime / shiftTime) * 100;
         
         // ✅ Mark outliers for visual display (but don't filter them out)
         const outlierThreshold = AppState.outlierThreshold || 1000;
@@ -2239,9 +2328,9 @@ function getUtilizationBand(rate) {
 
 // Get Performance Band for Work Efficiency Rate
 function getEfficiencyBand(rate) {
-    if (rate >= 120) return { label: 'Excellent', color: 'green', bgColor: '#dcfce7', textColor: '#166534' };
-    if (rate >= 100) return { label: 'Normal', color: 'gray', bgColor: '#f3f4f6', textColor: '#374151' };
-    if (rate >= 80) return { label: 'Poor', color: 'orange', bgColor: '#fed7aa', textColor: '#c2410c' };
+    if (rate >= 100) return { label: 'Excellent', color: 'green', bgColor: '#dcfce7', textColor: '#166534' };
+    if (rate >= 80) return { label: 'Normal', color: 'gray', bgColor: '#f3f4f6', textColor: '#374151' };
+    if (rate >= 60) return { label: 'Poor', color: 'orange', bgColor: '#fed7aa', textColor: '#c2410c' };
     return { label: 'Critical', color: 'red', bgColor: '#fecaca', textColor: '#991b1b' };
 }
 
@@ -2274,12 +2363,13 @@ function updateKPIs(workerAgg) {
         secondLabel.textContent = 'Total Adjusted S/T (min)';
         secondValue = workerAgg.reduce((sum, w) => sum + (w.assignedStandardTime || 0), 0);
         
-        // Card 3: Total Actual Time
-        thirdLabel.textContent = 'Total Actual Time (min)';
-        thirdValue = workerAgg.reduce((sum, w) => sum + (w.totalMinutesOriginal || 0), 0);
+        // Card 3: Total Shift Time (total shifts × 660 min)
+        thirdLabel.textContent = 'Total Shift Time (min)';
+        const totalShifts = workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0);
+        thirdValue = totalShifts * 660; // Each shift = 11 hours = 660 minutes
         
-        // Card 4: Average Efficiency Rate = (Total Adjusted S/T / Total Actual) × 100
-        avgRateLabel.textContent = 'Average Efficiency Rate';
+        // Card 4: Average Efficiency Rate = (Total Adjusted S/T / Total Shift Time) × 100
+        avgRateLabel.textContent = 'Avg Efficiency Rate (Shift Productivity)';
         avgRate = thirdValue > 0 ? (secondValue / thirdValue) * 100 : 0;
         
         // Purple theme
@@ -2331,6 +2421,23 @@ function updateKPIs(workerAgg) {
     if (outlierControl) {
         outlierControl.style.display = isEfficiency ? 'block' : 'none';
     }
+    
+    // 🆕 v3.4.0: Show/hide info icon and shift filter warning based on Working Shift filter
+    const infoIcon = document.getElementById('kpiWorkersInfoIcon');
+    const shiftWarning = document.getElementById('shiftFilterWarning');
+    const currentShift = AppState.filters.workingShift;
+    
+    if (infoIcon && shiftWarning) {
+        // Show info icon only when "All" shifts are selected (or empty/default)
+        if (currentShift === 'All' || currentShift === '') {
+            infoIcon.classList.remove('hidden');
+            shiftWarning.classList.add('hidden');
+        } else {
+            // Hide info icon and show warning for Day/Night filters
+            infoIcon.classList.add('hidden');
+            shiftWarning.classList.remove('hidden');
+        }
+    }
 }
 
 // Update performance bands
@@ -2339,6 +2446,38 @@ function updatePerformanceBands(workerAgg) {
     const isEfficiency = AppState.currentMetricType === 'efficiency';
     
     console.log(`📊 updatePerformanceBands - Mode: ${isEfficiency ? 'Efficiency' : 'Utilization'}, Workers: ${workerAgg.length}`);
+    
+    // 🔍 DEBUG: Check for duplicate workers
+    const workerNames = workerAgg.map(w => w.workerName);
+    const uniqueWorkers = new Set(workerNames);
+    console.log(`🔍 WORKER COUNT DEBUG:
+    - Total records in workerAgg: ${workerAgg.length}
+    - Unique worker names: ${uniqueWorkers.size}
+    - Duplicate entries: ${workerAgg.length - uniqueWorkers.size}
+    `);
+    
+    // Check if there are workers appearing on both Day and Night
+    const shiftData = {};
+    workerAgg.forEach(w => {
+        if (!shiftData[w.workerName]) {
+            shiftData[w.workerName] = new Set();
+        }
+        // Extract shifts from worker data
+        if (w.shifts) {
+            w.shifts.forEach(shift => shiftData[w.workerName].add(shift));
+        }
+    });
+    
+    const multiShiftWorkers = Object.entries(shiftData)
+        .filter(([name, shifts]) => shifts.size > 1)
+        .slice(0, 5);
+    
+    if (multiShiftWorkers.length > 0) {
+        console.log(`🔍 Sample workers with multiple shifts:`, multiShiftWorkers.map(([name, shifts]) => ({
+            name,
+            shifts: Array.from(shifts)
+        })));
+    }
     
     // Debug: Show first 3 workers with their bands
     if (workerAgg.length > 0) {
@@ -2363,10 +2502,10 @@ function updatePerformanceBands(workerAgg) {
     
     if (isEfficiency) {
         // Work Efficiency bands
-        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥120%)';
-        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (100-<120%)';
-        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (80-<100%)';
-        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<80%)';
+        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥100%)';
+        normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (80-<100%)';
+        poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (60-<80%)';
+        criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<60%)';
     } else {
         // Time Utilization bands
         excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥80%)';
@@ -2623,6 +2762,8 @@ function updateProcessChart(filteredData) {
 
 // Update performance chart
 function updatePerformanceChart(workerAgg) {
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    
     const bandCounts = {
         'Excellent': 0,
         'Normal': 0,
@@ -2630,9 +2771,15 @@ function updatePerformanceChart(workerAgg) {
         'Critical': 0
     };
     
+    // Count workers by band based on current metric
     workerAgg.forEach(item => {
-        bandCounts[item.performanceBand]++;
+        const band = isEfficiency ? item.efficiencyBand : item.utilizationBand;
+        if (band && band.label) {
+            bandCounts[band.label]++;
+        }
     });
+    
+    console.log(`🍩 Donut chart band counts: Excellent=${bandCounts['Excellent']}, Normal=${bandCounts['Normal']}, Poor=${bandCounts['Poor']}, Critical=${bandCounts['Critical']}`);
     
     const ctx = document.getElementById('performanceChart');
     
@@ -2640,10 +2787,17 @@ function updatePerformanceChart(workerAgg) {
         AppState.charts.performance.destroy();
     }
     
+    // Dynamic labels based on metric type
+    const labels = isEfficiency
+        ? ['Excellent (≥100%)', 'Normal (80-<100%)', 'Poor (60-<80%)', 'At-Risk (<60%)']
+        : ['Excellent (≥80%)', 'Normal (50-<80%)', 'Poor (30-<50%)', 'At-Risk (<30%)'];
+    
+    console.log(`🍩 Donut chart updating: Metric=${AppState.currentMetricType}, Labels=${JSON.stringify(labels)}`);
+    
     AppState.charts.performance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Excellent (≥80%)', 'Normal (50-80%)', 'Poor (30-50%)', 'At-Risk (<30%)'],
+            labels: labels,
             datasets: [{
                 data: [
                     bandCounts['Excellent'],
@@ -2696,13 +2850,10 @@ function updateDataTable(workerAgg) {
             </th>
             <th>Rate (%)</th>
             <th class="cursor-pointer hover:bg-gray-100" onclick="sortDataTable('assigned')">
-                Assigned (min) <i class="fas fa-sort text-xs ml-1"></i>
-            </th>
-            <th class="cursor-pointer hover:bg-gray-100" onclick="sortDataTable('actual')">
-                Actual (min) <i class="fas fa-sort text-xs ml-1"></i>
+                Adjusted S/T (min) <i class="fas fa-sort text-xs ml-1"></i>
             </th>
             <th class="cursor-pointer hover:bg-gray-100" onclick="sortDataTable('efficiencyRate')">
-                Efficiency Rate <i class="fas fa-sort text-xs ml-1"></i>
+                Efficiency (%) <i class="fas fa-sort text-xs ml-1"></i>
             </th>
             <th>Performance Grade</th>
         `;
@@ -2729,7 +2880,7 @@ function updateDataTable(workerAgg) {
     }
     
     if (workerAgg.length === 0) {
-        const colSpan = isEfficiency ? 11 : 9;
+        const colSpan = isEfficiency ? 10 : 9;
         tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center text-gray-500">No data matches the filter criteria</td></tr>`;
         return;
     }
@@ -2762,11 +2913,15 @@ function updateDataTable(workerAgg) {
         const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${rate?.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
         
         if (isEfficiency) {
-            // Efficiency mode: show S/T, Rate, Assigned, Actual, Efficiency Rate
+            // Efficiency mode: show S/T, Rate, Adjusted S/T, Efficiency (%)
             const st = item['Worker S/T'] || 0;
             const workerRate = item['Worker Rate(%)'] || 0;
             const assigned = item.assignedStandardTime || 0;
-            const actual = item.totalMinutesOriginal || 0;
+            
+            // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count × 660) × 100
+            const shiftCount = item.shifts?.size || 1;
+            const shiftTime = shiftCount * 660;
+            const efficiency = shiftTime > 0 ? (assigned / shiftTime) * 100 : 0;
             
             return `
                 <tr ${rowClass}>
@@ -2778,8 +2933,7 @@ function updateDataTable(workerAgg) {
                     <td>${st.toFixed(1)}</td>
                     <td>${workerRate.toFixed(0)}</td>
                     <td>${assigned.toFixed(0)}</td>
-                    <td>${actual.toFixed(0)}</td>
-                    <td><strong>${rate?.toFixed(1) || '0.0'}%</strong></td>
+                    <td><strong>${efficiency.toFixed(1)}%</strong></td>
                     <td><span class="worker-badge ${bandClass}">${bandText}</span></td>
                 </tr>
             `;
@@ -3481,6 +3635,7 @@ async function loadUploadById(uploadId) {
         console.log(`📥 Loading upload #${uploadId}...`);
         showUploadStatus(true);
         updateProgress(20);
+        showLoadingOverlay('Loading data from database...');
         
         // Fetch full data for this upload
         const dataResponse = await fetch(`/api/uploads/${uploadId}`);
@@ -3585,12 +3740,14 @@ async function loadUploadById(uploadId) {
         
         setTimeout(() => {
             showUploadStatus(false);
+            hideLoadingOverlay();
         }, 500);
         
     } catch (error) {
         console.error('❌ Failed to load upload:', error);
         alert('Failed to load upload:\n' + error.message);
         showUploadStatus(false);
+        hideLoadingOverlay();
     }
 }
 
@@ -3600,6 +3757,7 @@ async function loadLastUpload() {
         console.log('📥 Loading last upload from database...');
         showUploadStatus(true);
         updateProgress(20);
+        showLoadingOverlay('Loading last upload...');
         
         // Get list of uploads
         const listResponse = await fetch('/api/uploads');
@@ -3711,12 +3869,14 @@ async function loadLastUpload() {
         
         setTimeout(() => {
             showUploadStatus(false);
+            hideLoadingOverlay();
         }, 1000);
         
     } catch (error) {
         console.error('❌ Failed to load from database:', error);
         alert('Failed to load last upload:\n' + error.message);
         showUploadStatus(false);
+        hideLoadingOverlay();
     }
 }
 
@@ -3736,15 +3896,13 @@ function sortPerformanceBand(bandType, order) {
     
     console.log(`🔄 Sorting ${bandType} band by ${sortKey} (${order})`);
     
+    // ✅ FIX: Filter by correct band based on current metric
     let workers;
-    if (bandType === 'excellent') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Excellent');
-    } else if (bandType === 'normal') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Normal');
-    } else if (bandType === 'poor') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Poor');
-    } else if (bandType === 'critical') {
-        workers = aggregatedData.filter(w => w.performanceBand === 'Critical');
+    const targetBand = bandType.charAt(0).toUpperCase() + bandType.slice(1);
+    if (isEfficiency) {
+        workers = aggregatedData.filter(w => w.efficiencyBand?.label === targetBand);
+    } else {
+        workers = aggregatedData.filter(w => w.utilizationBand?.label === targetBand);
     }
     
     // Sort by the current metric rate
@@ -3810,7 +3968,6 @@ function showWorkerDetail(workerName) {
                 <th class="text-right p-2 font-semibold text-gray-700">Worker Rate<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Adjusted S/T<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
                 <th class="text-right p-2 font-semibold text-gray-700">Actual<br><span class="text-xs font-normal text-gray-500">(min)</span></th>
-                <th class="text-right p-2 font-semibold text-gray-700">Efficiency<br><span class="text-xs font-normal text-gray-500">(%)</span></th>
             </tr>
         `;
     } else {
@@ -3833,17 +3990,19 @@ function showWorkerDetail(workerName) {
     
     let dataForSummary, dataForTable;
     
+    // Get raw individual records for table display
+    const rawDataSource = AppState.filteredData || AppState.processedData;
+    const rawRecords = rawDataSource.filter(r => r.workerName === workerName && !r.rework);
+    
     if (isEfficiency) {
-        // Efficiency: Use aggregated data for both KPI and table
-        dataForSummary = aggregatedRecords.filter(r => !r.isOutlier);
-        dataForTable = aggregatedRecords; // Show ALL (including outliers with red highlight)
+        // Efficiency: Use ALL aggregated data for KPI (including outliers)
+        // Outliers are real work and should be included in calculations
+        dataForSummary = aggregatedRecords; // ✅ Include outliers in KPI
+        dataForTable = rawRecords; // Show individual activity records
     } else {
         // Utilization: Use aggregated data for KPI, raw data for table
         dataForSummary = aggregatedRecords; // For KPI calculation (aggregated)
-        
-        // For table display: use raw individual records to show start/end times
-        const rawDataSource = AppState.filteredData || AppState.processedData;
-        dataForTable = rawDataSource.filter(r => r.workerName === workerName && !r.rework);
+        dataForTable = rawRecords; // Show individual records with start/end times
     }
     
     // Check if we have any records to display
@@ -3857,9 +4016,12 @@ function showWorkerDetail(workerName) {
         console.warn(`⚠️ All ${dataForTable.length} records for ${workerName} are outliers (>${AppState.outlierThreshold}%)`);
     }
     
-    // Count unique shifts (use dataForTable to include outliers)
+    // 🆕 v3.4.1: Count unique shifts from ALL data (not just non-outliers)
+    // For Efficiency: Use aggregatedRecords (includes outliers)
+    // For Utilization: Use raw data (already using dataForTable)
     const uniqueShifts = new Set();
-    dataForTable.forEach(r => {
+    const dataForShiftCount = isEfficiency ? aggregatedRecords : dataForTable;
+    dataForShiftCount.forEach(r => {
         const shiftKey = `${r.workingDay}_${r.workingShift}`;
         uniqueShifts.add(shiftKey);
     });
@@ -3872,20 +4034,20 @@ function showWorkerDetail(workerName) {
         // If all are outliers, use dataForTable for display but show warning
         const dataForKPI = dataForSummary.length > 0 ? dataForSummary : dataForTable;
         const assignedStandardTime = dataForKPI.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
-        const actualTime = dataForKPI.reduce((sum, r) => sum + (r.totalMinutesOriginal || 0), 0);
+        const shiftTime = shiftCount * 660; // Total available shift time
         
-        currentRate = actualTime > 0 ? (assignedStandardTime / actualTime) * 100 : 0;
+        currentRate = shiftTime > 0 ? (assignedStandardTime / shiftTime) * 100 : 0;
         performanceBand = getEfficiencyBand(currentRate);
         totalValue = assignedStandardTime;
         
         console.log(`📊 Worker Detail (Efficiency) for ${workerName}:`, {
             assignedStandardTime: assignedStandardTime.toFixed(1),
-            actualTime: actualTime.toFixed(1),
+            shiftTime: shiftTime,
             shiftCount,
             efficiencyRate: currentRate.toFixed(1) + '%',
             performanceBand: performanceBand.label,
             recordCount: dataForSummary.length,
-            calculation: `${assignedStandardTime.toFixed(1)} / ${actualTime.toFixed(1)} * 100 = ${currentRate.toFixed(1)}%`
+            calculation: `${assignedStandardTime.toFixed(1)} / ${shiftTime} * 100 = ${currentRate.toFixed(1)}%`
         });
     } else {
         // ✅ FIX: Use aggregated totalMinutes from cachedWorkerAgg (already deduped)
@@ -3913,29 +4075,28 @@ function showWorkerDetail(workerName) {
     
     // Update modal KPIs based on metric type
     if (isEfficiency) {
-        // Efficiency Mode: Show Assigned S/T and Actual Time
+        // Efficiency Mode: Show Shifts, Adjusted S/T, Shift Time
         const assignedStandardTime = dataForSummary.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
-        const actualTime = dataForSummary.reduce((sum, r) => sum + (r.totalMinutesOriginal || 0), 0);
+        const shiftTime = shiftCount * 660; // Total available shift time
         const assignedHours = assignedStandardTime / 60;
-        const actualHours = actualTime / 60;
-        const avgAssignedPerRecord = dataForSummary.length > 0 ? assignedHours / dataForSummary.length : 0;
+        const shiftHours = shiftTime / 60;
         
         // Update card labels for Efficiency
-        document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Records';
-        document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Assigned S/T';
-        document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Actual Time';
-        document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Efficiency Rate';
+        document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shifts';
+        document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Adjusted S/T';
+        document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shift Time';
+        document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Efficiency Rate (Shift Productivity)';
         
         // Update values
-        document.getElementById('modalTotalShifts').textContent = dataForSummary.length.toLocaleString();
+        document.getElementById('modalTotalShifts').textContent = shiftCount.toLocaleString();
         document.getElementById('modalTotalShiftTime').textContent = assignedHours.toFixed(1) + ' hr';
-        document.getElementById('modalTotalMinutes').textContent = actualHours.toFixed(1) + ' hr';
+        document.getElementById('modalTotalMinutes').textContent = shiftHours.toFixed(1) + ' hr';
         document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
         
         // Update descriptions
-        document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'activities';
+        document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'shifts';
         document.querySelector('#modalTotalShiftTime').nextElementSibling.textContent = 'standard time';
-        document.querySelector('#modalTotalMinutes').nextElementSibling.textContent = 'actual time';
+        document.querySelector('#modalTotalMinutes').nextElementSibling.textContent = 'available';
         document.querySelector('#modalWorkRate').nextElementSibling.textContent = 'performance';
     } else {
         // Utilization Mode: Show Shifts, Shift Time, Work Time
@@ -3962,7 +4123,8 @@ function showWorkerDetail(workerName) {
         document.querySelector('#modalWorkRate').nextElementSibling.textContent = 'performance';
     }
     
-    document.getElementById('modalRecordCount').textContent = dataForSummary.length.toLocaleString();
+    // Set Total Records count based on table data (individual activity records)
+    document.getElementById('modalRecordCount').textContent = dataForTable.length.toLocaleString();
     
     // ✅ FIX: Remove background color, only use text color
     const bandElement = document.getElementById('modalPerformanceBand');
@@ -3974,15 +4136,15 @@ function showWorkerDetail(workerName) {
     const glossaryDiv = document.getElementById('modalGlossary');
     if (isEfficiency) {
         glossaryDiv.innerHTML = `
-            <strong class="text-purple-700">Work Efficiency Glossary:</strong><br>
+            <strong class="text-purple-700">Work Efficiency Glossary (Shift Productivity):</strong><br>
             • <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
             • <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
             • <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Worker Rate ÷ 100<br>
-            • <strong>Actual(m)</strong>: Actual time spent by this worker<br>
-            • <strong>Efficiency(%)</strong>: Performance ratio = Adjusted S/T ÷ Actual × 100<br>
-            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (excluded from KPI/charts, shown in red for reference)<br>
+            • <strong>Shift Time</strong>: Available shift time (660 minutes = 11 hours)<br>
+            • <strong>Efficiency(%)</strong>: Shift productivity = Adjusted S/T ÷ Shift Time × 100<br>
+            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (shown in red for visual reference, but <strong>included in all calculations</strong>)<br>
             <br>
-            <strong class="text-purple-600">📌 Note:</strong> Multiple workers can share one task (e.g., Worker A: 60%, Worker B: 40%). The overall efficiency shown in KPI is the <strong>total average</strong> across all ${dataForSummary.length} records.
+            <strong class="text-purple-600">📌 Note:</strong> Efficiency (also called "Shift Productivity") measures how much standard work was completed per shift. 100% = completed exactly the standard amount of work in one shift (660 min).
         `;
     } else {
         glossaryDiv.innerHTML = `
@@ -3996,7 +4158,8 @@ function showWorkerDetail(workerName) {
     
     // Render charts based on metric type
     if (isEfficiency) {
-        renderEfficiencyCharts(dataForTable);
+        // ✅ Charts need aggregated data with assignedStandardTime
+        renderEfficiencyCharts(aggregatedRecords);
     } else {
         renderUtilizationCharts(dataForTable);
     }
@@ -4004,6 +4167,7 @@ function showWorkerDetail(workerName) {
     // Render records table based on metric type
     const tableBody = document.getElementById('modalRecordsTable');
     if (isEfficiency) {
+        // ✅ Table shows individual records (rawRecords)
         renderEfficiencyTable(dataForTable, tableBody);
     } else {
         renderUtilizationTable(dataForTable, tableBody);
@@ -4016,6 +4180,16 @@ function showWorkerDetail(workerName) {
 
 // Render Time Utilization charts
 function renderUtilizationCharts(workerRecords) {
+    // Update chart titles for Utilization mode
+    const dailyChartTitle = document.getElementById('modalDailyChartTitle');
+    const hourlyChartTitle = document.getElementById('modalHourlyChartTitle');
+    if (dailyChartTitle) {
+        dailyChartTitle.innerHTML = '<i class="fas fa-calendar-day mr-2"></i>Daily Work Time';
+    }
+    if (hourlyChartTitle) {
+        hourlyChartTitle.innerHTML = '<i class="fas fa-clock mr-2"></i>Hourly Work Distribution';
+    }
+    
     // Group by date for daily chart (show time in minutes)
     const dailyData = {};
     workerRecords.forEach(r => {
@@ -4137,22 +4311,40 @@ function renderUtilizationCharts(workerRecords) {
 
 // Render Work Efficiency charts
 function renderEfficiencyCharts(workerRecords) {
+    // Update chart titles for Efficiency mode
+    const dailyChartTitle = document.getElementById('modalDailyChartTitle');
+    const hourlyChartTitle = document.getElementById('modalHourlyChartTitle');
+    if (dailyChartTitle) {
+        dailyChartTitle.innerHTML = '<i class="fas fa-calendar-day mr-2"></i>Daily Efficiency Rate (Shift Productivity)';
+    }
+    if (hourlyChartTitle) {
+        hourlyChartTitle.innerHTML = '<i class="fas fa-clock mr-2"></i>Hourly Adjusted S/T Distribution';
+    }
+    
     // Group by date for daily chart (show efficiency rate %)
     const dailyData = {};
+    const dailyShifts = {}; // Track unique shifts per date
+    
     workerRecords.forEach(r => {
         const date = r.workingDay || 'Unknown';
         if (!dailyData[date]) {
-            dailyData[date] = { assigned: 0, actual: 0 };
+            dailyData[date] = { assigned: 0 };
+            dailyShifts[date] = new Set();
         }
         // ✅ Use aggregated data fields
         dailyData[date].assigned += r.assignedStandardTime || 0;
-        dailyData[date].actual += r.totalMinutesOriginal || 0;
+        
+        // Track unique shifts per date
+        const shiftKey = `${r.workingDay}_${r.workingShift}`;
+        dailyShifts[date].add(shiftKey);
     });
     
     const dates = Object.keys(dailyData).sort();
     const dailyEfficiency = dates.map(d => {
-        const data = dailyData[d];
-        return data.actual > 0 ? (data.assigned / data.actual) * 100 : 0;
+        const assigned = dailyData[d].assigned;
+        const shiftCount = dailyShifts[d].size;
+        const shiftTime = shiftCount * 660; // Total shift time for the day
+        return shiftTime > 0 ? (assigned / shiftTime) * 100 : 0;
     });
     
     // Destroy existing daily chart
@@ -4172,7 +4364,7 @@ function renderEfficiencyCharts(workerRecords) {
         data: {
             labels: dates,
             datasets: [{
-                label: 'Work Efficiency (%)',
+                label: 'Efficiency (Shift Productivity, %)',
                 data: dailyEfficiency,
                 borderColor: '#8b5cf6',
                 backgroundColor: 'rgba(139, 92, 246, 0.1)',
@@ -4194,7 +4386,7 @@ function renderEfficiencyCharts(workerRecords) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Efficiency (%)' }
+                    title: { display: true, text: 'Shift Productivity (%)' }
                 }
             }
         }
@@ -4263,38 +4455,33 @@ function renderEfficiencyCharts(workerRecords) {
         return;
     }
     
-    // Group by hour
+    // Group by hour - Show Adjusted S/T (min) per hour
     const hourlyData = {};
     rawRecords.forEach(r => {
         const hour = r.startDatetime.getHours();
         if (!hourlyData[hour]) {
-            hourlyData[hour] = { assigned: 0, actual: 0 };
+            hourlyData[hour] = 0;
         }
         // ✅ FIX: Use correct field names Worker S/T and Worker Rate(%)
         const st = r['Worker S/T'] || 0;
         const rate = r['Worker Rate(%)'] || 0;
         const assigned = (st * rate) / 100;
-        const actual = r['Worker Act'] || 0;
         
-        hourlyData[hour].assigned += assigned;
-        hourlyData[hour].actual += actual;
+        hourlyData[hour] += assigned;
     });
     
     // Sort hours
     const hours = Object.keys(hourlyData).map(Number).sort((a, b) => a - b);
-    const hourlyEfficiency = hours.map(h => {
-        const data = hourlyData[h];
-        return data.actual > 0 ? (data.assigned / data.actual) * 100 : 0;
-    });
+    const hourlyAssigned = hours.map(h => hourlyData[h]);
     
-    // Create hourly chart
+    // Create hourly chart - Show Adjusted S/T (min)
     modalCharts.process = new Chart(processCtx, {
         type: 'bar',
         data: {
             labels: hours.map(h => `${h}:00`),
             datasets: [{
-                label: 'Hourly Efficiency (%)',
-                data: hourlyEfficiency,
+                label: 'Adjusted S/T (min)',
+                data: hourlyAssigned,
                 backgroundColor: 'rgba(139, 92, 246, 0.7)',
             }]
         },
@@ -4305,14 +4492,14 @@ function renderEfficiencyCharts(workerRecords) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.parsed.y.toFixed(1)}%`
+                        label: (context) => `${context.parsed.y.toFixed(0)} min`
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Efficiency (%)' }
+                    title: { display: true, text: 'Adjusted S/T (min)' }
                 }
             }
         }
@@ -4366,25 +4553,19 @@ function renderEfficiencyTable(workerRecords, tableBody) {
     tableBody.innerHTML = workerRecords
         .sort((a, b) => (b.workingDay || '').localeCompare(a.workingDay || ''))
         .map(r => {
-            // ✅ Use aggregated data fields
-            const st = r['Worker S/T'] || 0;  // Total S/T (accumulated)
-            const assigned = r.assignedStandardTime || 0;  // Total Adjusted S/T (accumulated)
-            const actual = r.totalMinutesOriginal || 0;  // Total Actual (accumulated)
-            const efficiency = r.efficiencyRate || 0;
-            // Calculate Rate from aggregated data: (Assigned / S/T) × 100
-            const rate = st > 0 ? (assigned / st) * 100 : 0;
+            // Use individual record fields
+            const st = r['Worker S/T'] || 0;
+            const rate = r['Worker Rate(%)'] || 0;
+            const assigned = (st * rate / 100) || 0;  // Adjusted S/T = S/T × Rate ÷ 100
+            const actual = r['Worker Act'] || 0;
             
-            // Check if outlier (should already be filtered, but double-check)
-            const isOutlier = r.isOutlier || false;
+            // Calculate efficiency for this individual record
+            const efficiency = assigned > 0 && actual > 0 ? (assigned / actual) * 100 : 0;
+            
+            // Check if outlier
+            const isOutlier = efficiency > outlierThreshold;
             const rowClass = isOutlier ? 'modal-outlier-row' : 'hover:bg-gray-50';
-            const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Filtered out: Efficiency ${efficiency.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
-            
-            // Color code efficiency
-            const efficiencyClass = efficiency >= 120 ? 'text-green-600 font-bold' :
-                                   efficiency >= 100 ? 'text-blue-600 font-semibold' :
-                                   efficiency >= 80 ? 'text-gray-600' :
-                                   efficiency >= 60 ? 'text-orange-600' :
-                                   'text-red-600 font-bold';
+            const outlierIcon = isOutlier ? `<i class="fas fa-ban text-red-500 mr-1" title="Outlier: Efficiency ${efficiency.toFixed(1)}% (>${outlierThreshold}%)"></i>` : '';
             
             return `
                 <tr class="${rowClass}">
@@ -4395,7 +4576,6 @@ function renderEfficiencyTable(workerRecords, tableBody) {
                     <td class="p-2 text-right text-gray-600">${rate.toFixed(0)}%</td>
                     <td class="p-2 text-right text-gray-900">${Math.round(assigned)}</td>
                     <td class="p-2 text-right text-gray-900">${Math.round(actual)}</td>
-                    <td class="p-2 text-right ${efficiencyClass}">${efficiency.toFixed(1)}%</td>
                 </tr>
             `;
         })
@@ -4410,13 +4590,34 @@ function closeWorkerDetailModal(event) {
     }
 }
 
+// Show loading overlay with custom message
+function showLoadingOverlay(message = 'Processing...') {
+    const overlay = document.getElementById('metricTransitionOverlay');
+    const transitionText = document.getElementById('transitionText');
+    if (overlay && transitionText) {
+        transitionText.textContent = message;
+        overlay.classList.remove('hidden', 'fade-out');
+        overlay.classList.add('fade-in');
+    }
+}
+
+// Hide loading overlay
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('metricTransitionOverlay');
+    if (overlay) {
+        overlay.classList.remove('fade-in');
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('fade-out');
+        }, 300);
+    }
+}
+
 // Toggle between Time Utilization and Work Efficiency metrics
 function toggleMetric() {
     // Show transition overlay
-    const overlay = document.getElementById('metricTransitionOverlay');
-    const transitionText = document.getElementById('transitionText');
-    overlay.classList.remove('hidden');
-    overlay.classList.add('fade-in');
+    showLoadingOverlay('Switching metric...');
     
     // Toggle metric type
     AppState.currentMetricType = AppState.currentMetricType === 'utilization' ? 'efficiency' : 'utilization';
@@ -4494,13 +4695,7 @@ function toggleMetric() {
         
         // Hide overlay after report update
         setTimeout(() => {
-            overlay.classList.remove('fade-in');
-            overlay.classList.add('fade-out');
-            
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                overlay.classList.remove('fade-out');
-            }, 300);
+            hideLoadingOverlay();
             
             // Reset body background after a while (increased duration for visibility)
             setTimeout(() => {
@@ -4514,6 +4709,12 @@ function toggleMetric() {
 
 // Sort data table
 function sortDataTable(column) {
+    // ✅ FIX: Ensure cachedWorkerAgg exists
+    if (!AppState.cachedWorkerAgg || AppState.cachedWorkerAgg.length === 0) {
+        console.warn('⚠️ No cached data available for sorting');
+        return;
+    }
+    
     const sort = AppState.dataTableSort;
     
     // Toggle order if same column, otherwise default to desc
@@ -4525,6 +4726,8 @@ function sortDataTable(column) {
     }
     
     const data = [...AppState.cachedWorkerAgg];
+    
+    console.log(`🔄 Sorting by ${column} (${sort.order})`);
     
     data.sort((a, b) => {
         let valA, valB;
@@ -4545,10 +4748,6 @@ function sortDataTable(column) {
             case 'assigned':
                 valA = a.assignedStandardTime || 0;
                 valB = b.assignedStandardTime || 0;
-                break;
-            case 'actual':
-                valA = a.totalMinutesOriginal || 0;
-                valB = b.totalMinutesOriginal || 0;
                 break;
             case 'efficiencyRate':
                 valA = a.efficiencyRate || 0;
@@ -4593,6 +4792,7 @@ function filterDataTableByWorker(query) {
 window.deleteMapping = deleteMapping;
 window.sortMappingTable = sortMappingTable;
 window.toggleCheckboxDropdown = toggleCheckboxDropdown;
+window.toggleAllCheckboxes = toggleAllCheckboxes;
 window.updateCheckboxDisplay = updateCheckboxDisplay;
 window.updateSingleSelect = updateSingleSelect;
 window.selectAllMonthDates = selectAllMonthDates;

@@ -5,6 +5,25 @@ All notable changes to MES R018 Analysis will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-02-24
+
+### 🎨 Added - Shift Filter Context & Clarifications
+- **Total Workers Tooltip (All Filter)**: Info icon with tooltip explaining workers may appear in both Day and Night shifts due to overtime work
+- **Shift Filter Warning (Day/Night Filter)**: Yellow warning banner explaining that view includes overtime workers from previous shifts
+- **Context-aware UI**: Tooltip/warning visibility automatically adjusts based on Working Shift filter selection
+- **Performance Context**: Clarifies that performance rates may not reflect actual efficiency when viewing Day/Night only filters
+
+### 🎨 Improved - User Guide Visual Enhancements
+- Changed all User Guide section headers to bright blue (text-blue-700) for better visibility
+- Improved visual hierarchy and navigation within manual sections
+
+### 🔍 Technical Details
+- Added `kpiWorkersInfoIcon` element with Font Awesome info-circle icon
+- Added `shiftFilterWarning` element with yellow warning styling
+- Modified `updateKPIs()` function to show/hide elements based on `AppState.filters.workingShift`
+- Info icon visible only when Working Shift = "All"
+- Warning banner visible only when Working Shift = "Day" or "Night"
+
 ## [3.1.0] - 2026-02-21
 
 ### 🔧 Fixed - Critical Database Issues

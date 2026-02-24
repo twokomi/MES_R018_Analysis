@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MES R018 Analysis - Quick Start Guide Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .step-number {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+        .arrow-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #9ca3af;
+        }
+        @media (max-width: 768px) {
+            .arrow-divider {
+                transform: rotate(90deg);
+                margin: 1rem 0;
+            }
+        }
+        .screenshot-placeholder {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            color: white;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .feature-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4">
+                <i class="fas fa-rocket text-white text-2xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">
+                Quick Start Guide
+            </h1>
+            <p class="text-lg text-gray-600">
+                MES R018 Worker Performance Analysis - 3단계로 시작하기
+            </p>
+        </div>
+
+        <!-- 3 Steps Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <!-- Step 1: Upload Data -->
+            <div class="step-card bg-white rounded-xl shadow-lg p-6 border-2 border-blue-100 hover:border-blue-400">
+                <div class="step-number bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                    1
+                </div>
+                <div class="text-center mb-4">
+                    <div class="text-5xl mb-3">📥</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Upload Data</h3>
+                    <p class="text-gray-600 text-sm mb-4">
+                        MES에서 R018 리포트를 다운로드하고 업로드하세요
+                    </p>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">Excel 파일 드래그 앤 드롭</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">시트 이름 자동 감지</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">중복 시간 자동 제거</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">데이터 검증 & 처리</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <i class="fas fa-clock"></i>
+                        <span>소요 시간: ~30초</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="hidden md:flex arrow-divider">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+
+            <!-- Step 2: Save & Load -->
+            <div class="step-card bg-white rounded-xl shadow-lg p-6 border-2 border-purple-100 hover:border-purple-400">
+                <div class="step-number bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                    2
+                </div>
+                <div class="text-center mb-4">
+                    <div class="text-5xl mb-3">💾</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Save & Load</h3>
+                    <p class="text-gray-600 text-sm mb-4">
+                        데이터를 저장하고 언제든 불러오세요
+                    </p>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">Cloudflare D1에 저장</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">저장된 목록 확인</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">카드 클릭으로 로드</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">자동 Report 전환</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <i class="fas fa-clock"></i>
+                        <span>소요 시간: ~10초</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="hidden md:flex arrow-divider">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+
+            <!-- Step 3: Analyze Reports -->
+            <div class="step-card bg-white rounded-xl shadow-lg p-6 border-2 border-green-100 hover:border-green-400">
+                <div class="step-number bg-gradient-to-br from-green-500 to-green-600 text-white">
+                    3
+                </div>
+                <div class="text-center mb-4">
+                    <div class="text-5xl mb-3">📊</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Analyze Reports</h3>
+                    <p class="text-gray-600 text-sm mb-4">
+                        실시간 대시보드로 성과를 분석하세요
+                    </p>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">4개 KPI 카드 확인</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">성과 등급별 분류</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">작업자 상세 모달</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                        <span class="text-gray-700">필터로 세부 분석</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <i class="fas fa-infinity"></i>
+                        <span>실시간 분석</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Steps with Screenshots -->
+        <div class="space-y-12">
+            <!-- Step 1 Details -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-lg">
+                            1
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Upload Data</h2>
+                            <p class="text-blue-100 text-sm">Excel 파일 업로드 및 자동 처리</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-list-check text-blue-600 mr-2"></i>
+                                작업 순서
+                            </h3>
+                            <ol class="space-y-3">
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">MES 시스템에서 R018 리포트 다운로드</p>
+                                        <p class="text-sm text-gray-600">Worker Performance Report (R018)</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">Upload 탭으로 이동</p>
+                                        <p class="text-sm text-gray-600">상단 네비게이션에서 Upload 클릭</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">Excel 파일 업로드</p>
+                                        <p class="text-sm text-gray-600">드래그 앤 드롭 또는 'Select File' 버튼 클릭</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">자동 처리 완료 대기</p>
+                                        <p class="text-sm text-gray-600">진행률 표시 (약 30초 소요)</p>
+                                    </div>
+                                </li>
+                            </ol>
+
+                            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <h4 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-lightbulb"></i>
+                                    자동 처리 기능
+                                </h4>
+                                <ul class="text-sm text-blue-800 space-y-1">
+                                    <li>✓ 시트 이름 자동 감지 (Raw, Sheet1 등)</li>
+                                    <li>✓ 필수 헤더 자동 검증</li>
+                                    <li>✓ 중복 시간 자동 제거 (Overlap removal)</li>
+                                    <li>✓ Rework 데이터 자동 필터링</li>
+                                    <li>✓ 시프트 정보 자동 분류 (Day/Night)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-image text-blue-600 mr-2"></i>
+                                화면 예시
+                            </h3>
+                            <div class="screenshot-placeholder">
+                                <i class="fas fa-cloud-upload-alt text-6xl mb-4 opacity-80"></i>
+                                <p class="text-lg font-semibold">Upload 화면</p>
+                                <p class="text-sm opacity-80">드래그 앤 드롭 영역 + 진행률 표시</p>
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-3">
+                                <div class="bg-gray-100 p-3 rounded-lg text-center">
+                                    <div class="text-3xl mb-2">📁</div>
+                                    <p class="text-xs font-medium text-gray-700">Excel 파일</p>
+                                    <p class="text-xs text-gray-500">.xlsx, .xls</p>
+                                </div>
+                                <div class="bg-gray-100 p-3 rounded-lg text-center">
+                                    <div class="text-3xl mb-2">⚡</div>
+                                    <p class="text-xs font-medium text-gray-700">자동 처리</p>
+                                    <p class="text-xs text-gray-500">~30초</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 Details -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-purple-600 font-bold text-lg">
+                            2
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Save & Load</h2>
+                            <p class="text-purple-100 text-sm">데이터베이스 저장 및 불러오기</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-list-check text-purple-600 mr-2"></i>
+                                작업 순서
+                            </h3>
+                            <ol class="space-y-3">
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">"Save to Database" 버튼 클릭</p>
+                                        <p class="text-sm text-gray-600">업로드 완료 후 우측 상단에 표시</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">저장 완료 확인</p>
+                                        <p class="text-sm text-gray-600">성공 메시지 표시 (약 5-10초)</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">Saved Uploads 목록 확인</p>
+                                        <p class="text-sm text-gray-600">하단에 저장된 파일 카드 표시</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">저장된 데이터 로드</p>
+                                        <p class="text-sm text-gray-600">카드 클릭 → 자동으로 Report 탭 전환</p>
+                                    </div>
+                                </li>
+                            </ol>
+
+                            <div class="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                                <h4 class="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-database"></i>
+                                    데이터베이스 기능
+                                </h4>
+                                <ul class="text-sm text-purple-800 space-y-1">
+                                    <li>✓ Cloudflare D1에 안전하게 저장</li>
+                                    <li>✓ 파일명, 날짜 범위, 작업자 수 자동 기록</li>
+                                    <li>✓ 언제든지 불러오기 가능</li>
+                                    <li>✓ 삭제 버튼으로 관리</li>
+                                    <li>✓ 로드 시 자동으로 Report 탭 전환</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-image text-purple-600 mr-2"></i>
+                                화면 예시
+                            </h3>
+                            <div class="screenshot-placeholder" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);">
+                                <i class="fas fa-database text-6xl mb-4 opacity-80"></i>
+                                <p class="text-lg font-semibold">Saved Uploads 목록</p>
+                                <p class="text-sm opacity-80">저장된 파일 카드 + Load/Delete 버튼</p>
+                            </div>
+                            <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-file-excel text-green-600 text-xl"></i>
+                                        <div>
+                                            <p class="font-semibold text-sm text-gray-900">R018Worker_2026-02-18.xlsx</p>
+                                            <p class="text-xs text-gray-600">150 records • 25 workers</p>
+                                        </div>
+                                    </div>
+                                    <button class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700">
+                                        Load
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500">📅 2026-02-03 ~ 2026-02-10</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 Details -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-lg">
+                            3
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">Analyze Reports</h2>
+                            <p class="text-green-100 text-sm">실시간 대시보드로 성과 분석</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-list-check text-green-600 mr-2"></i>
+                                분석 단계
+                            </h3>
+                            <ol class="space-y-3">
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">1</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">메트릭 모드 선택</p>
+                                        <p class="text-sm text-gray-600">🔵 Utilization / 🟣 Efficiency 토글</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">2</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">4개 KPI 카드 확인</p>
+                                        <p class="text-sm text-gray-600">총 작업자, 시간, 평균 성과율</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">3</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">Performance Bands 확인</p>
+                                        <p class="text-sm text-gray-600">Excellent / Normal / Poor / At-Risk</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">4</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">작업자 카드 클릭</p>
+                                        <p class="text-sm text-gray-600">상세 모달: 차트 + 테이블 + Glossary</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">5</span>
+                                    <div>
+                                        <p class="font-medium text-gray-900">필터 적용</p>
+                                        <p class="text-sm text-gray-600">날짜, 시프트, 프로세스, 작업자별 필터</p>
+                                    </div>
+                                </li>
+                            </ol>
+
+                            <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h4 class="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-chart-line"></i>
+                                    분석 기능
+                                </h4>
+                                <ul class="text-sm text-green-800 space-y-1">
+                                    <li>✓ 두 가지 성과 지표 (Utilization / Efficiency)</li>
+                                    <li>✓ 실시간 KPI 카드 (4개)</li>
+                                    <li>✓ 성과 등급별 작업자 분류</li>
+                                    <li>✓ 작업자별 상세 차트 & 테이블</li>
+                                    <li>✓ 다층 필터링 (날짜, 시프트, 프로세스 등)</li>
+                                    <li>✓ Outlier 자동 필터링 (Efficiency)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-image text-green-600 mr-2"></i>
+                                화면 예시
+                            </h3>
+                            <div class="screenshot-placeholder" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                <i class="fas fa-chart-bar text-6xl mb-4 opacity-80"></i>
+                                <p class="text-lg font-semibold">Report 대시보드</p>
+                                <p class="text-sm opacity-80">KPI 카드 + Performance Bands + 차트</p>
+                            </div>
+                            <div class="mt-4 space-y-3">
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-blue-900">🔵 UTILIZATION MODE</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white p-2 rounded">
+                                            <p class="text-gray-600">Total Workers</p>
+                                            <p class="font-bold text-blue-600">489</p>
+                                        </div>
+                                        <div class="bg-white p-2 rounded">
+                                            <p class="text-gray-600">Avg Rate</p>
+                                            <p class="font-bold text-blue-600">24.3%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-semibold text-purple-900">🟣 EFFICIENCY MODE</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white p-2 rounded">
+                                            <p class="text-gray-600">Total Workers</p>
+                                            <p class="font-bold text-purple-600">489</p>
+                                        </div>
+                                        <div class="bg-white p-2 rounded">
+                                            <p class="text-gray-600">Avg Rate</p>
+                                            <p class="font-bold text-purple-600">106.0%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom CTA -->
+        <div class="mt-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white">
+            <h2 class="text-3xl font-bold mb-4">Ready to Start?</h2>
+            <p class="text-lg mb-6 text-blue-100">
+                3단계로 간단하게 작업자 성과를 분석하세요
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="/" class="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition inline-flex items-center gap-2">
+                    <i class="fas fa-home"></i>
+                    Go to Main App
+                </a>
+                <a href="/#guideTab" class="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400 transition inline-flex items-center gap-2">
+                    <i class="fas fa-book"></i>
+                    View Full User Guide
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            <p>MES R018 Worker Performance Analysis System</p>
+            <p class="mt-1">
+                <span class="px-2 py-1 bg-blue-100 text-blue-600 rounded font-mono text-xs">v3.2.1</span>
+                <span class="mx-2">|</span>
+                <i class="fas fa-server"></i> Cloudflare Pages + D1
+                <span class="mx-2">|</span>
+                <i class="fas fa-bolt"></i> Hono Framework
+            </p>
+        </div>
+    </div>
+</body>
+</html>
