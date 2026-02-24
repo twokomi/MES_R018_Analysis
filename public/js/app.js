@@ -3827,25 +3827,23 @@ function showWorkerDetail(workerName) {
         `;
     }
     
-    // ✅ FIX: Use cachedWorkerAgg (filtered, aggregated data) for Efficiency mode
-    // For Utilization mode, use raw processedData to show individual records
+    // ✅ FIX: Use cachedWorkerAgg for calculations, but different data for table display
+    const cachedWorkerAgg = AppState.cachedWorkerAgg || [];
+    const aggregatedRecords = cachedWorkerAgg.filter(r => r.workerName === workerName);
+    
     let dataForSummary, dataForTable;
     
     if (isEfficiency) {
-        // Efficiency: Use aggregated data
-        const cachedWorkerAgg = AppState.cachedWorkerAgg || [];
-        const allRecords = cachedWorkerAgg.filter(r => r.workerName === workerName);
-        
-        // For KPI calculation: exclude outliers
-        dataForSummary = allRecords.filter(r => !r.isOutlier);
-        
-        // For table display: show ALL records (including outliers with red highlight)
-        dataForTable = allRecords;
+        // Efficiency: Use aggregated data for both KPI and table
+        dataForSummary = aggregatedRecords.filter(r => !r.isOutlier);
+        dataForTable = aggregatedRecords; // Show ALL (including outliers with red highlight)
     } else {
-        // Utilization: Use raw processedData for detailed time records
-        const dataSource = AppState.filteredData || AppState.processedData;
-        dataForSummary = dataSource.filter(r => r.workerName === workerName && !r.rework);
-        dataForTable = dataForSummary; // Same for table
+        // Utilization: Use aggregated data for KPI, raw data for table
+        dataForSummary = aggregatedRecords; // For KPI calculation (aggregated)
+        
+        // For table display: use raw individual records to show start/end times
+        const rawDataSource = AppState.filteredData || AppState.processedData;
+        dataForTable = rawDataSource.filter(r => r.workerName === workerName && !r.rework);
     }
     
     // Check if we have any records to display
@@ -3890,8 +3888,8 @@ function showWorkerDetail(workerName) {
             calculation: `${assignedStandardTime.toFixed(1)} / ${actualTime.toFixed(1)} * 100 = ${currentRate.toFixed(1)}%`
         });
     } else {
-        // ✅ FIX: Use raw data for utilization (to show individual time records)
-        const totalMinutes = dataForSummary.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
+        // ✅ FIX: Use aggregated totalMinutes from cachedWorkerAgg (already deduped)
+        const totalMinutes = dataForSummary.reduce((sum, r) => sum + (r.totalMinutes || 0), 0);
         const availableTime = shiftCount * 660;
         
         currentRate = availableTime > 0 ? (totalMinutes / availableTime) * 100 : 0;
@@ -3905,7 +3903,8 @@ function showWorkerDetail(workerName) {
             utilizationRate: currentRate.toFixed(1) + '%',
             performanceBand: performanceBand.label,
             recordCount: dataForSummary.length,
-            calculation: `${totalValue.toFixed(1)} / ${availableTime} * 100 = ${currentRate.toFixed(1)}%`
+            calculation: `${totalValue.toFixed(1)} / ${availableTime} * 100 = ${currentRate.toFixed(1)}%`,
+            note: 'Using cachedWorkerAgg.totalMinutes (aggregated, overlap-removed)'
         });
     }
     
