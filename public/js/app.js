@@ -454,9 +454,11 @@ function handleFileUpload(file) {
             });
             
             if (shiftCalendarSheetName) {
+                console.log('🔍 [DEBUG] Shift Calendar 시트 발견:', shiftCalendarSheetName);
                 try {
                     const shiftCalendarSheet = workbook.Sheets[shiftCalendarSheetName];
                     const shiftCalendarData = XLSX.utils.sheet_to_json(shiftCalendarSheet, { header: 1, raw: false });
+                    console.log('🔍 [DEBUG] Shift Calendar 데이터 로드됨:', shiftCalendarData.length, '행');
                     
                     if (shiftCalendarData.length > 1) {
                         const shiftHeaders = shiftCalendarData[0];
@@ -484,6 +486,7 @@ function handleFileUpload(file) {
                             });
                             
                             console.log(`✅ ${AppState.shiftCalendar.length}개의 Shift Calendar 항목을 불러왔습니다.`);
+                            console.log('🔍 [DEBUG] First 3 shift calendar entries:', AppState.shiftCalendar.slice(0, 3));
                         }
                     }
                 } catch (err) {
@@ -890,6 +893,36 @@ function mergeOverlappingIntervals(records) {
     return records;
 }
 
+// Process data in chunks to avoid blocking UI (for large datasets)
+async function processDataInChunks(rawData, chunkSize = 1000) {
+    const processed = [];
+    const totalChunks = Math.ceil(rawData.length / chunkSize);
+    
+    console.log(`📦 Processing ${rawData.length} records in ${totalChunks} chunks of ${chunkSize}...`);
+    
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = Math.min(start + chunkSize, rawData.length);
+        const chunk = rawData.slice(start, end);
+        
+        // Process chunk
+        const chunkProcessed = processData(chunk);
+        processed.push(...chunkProcessed);
+        
+        // Update progress
+        const progress = Math.round((i + 1) / totalChunks * 100);
+        console.log(`  Chunk ${i + 1}/${totalChunks} processed (${progress}%)`);
+        
+        // Allow UI to update every 5 chunks
+        if (i % 5 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+    }
+    
+    console.log(`✅ All chunks processed: ${processed.length} records`);
+    return processed;
+}
+
 // Process data (calculate Working Day, Shift, apply mapping)
 function processData(rawData) {
     const processed = [];
@@ -918,9 +951,6 @@ function processData(rawData) {
         // Calculate Working Day and Shift (Day/Night)
         const { workingDay, workingShift } = calculateWorkingDayShift(baseDt);
         
-        // Determine actual Shift (A/B/C) from ShiftCalendar
-        const actualShift = getActualShift(workingDay, workingShift);
-        
         // Determine valid flag
         const validFlag = isValidResult(record.resultCnt) ? 1 : 0;
         
@@ -938,7 +968,6 @@ function processData(rawData) {
             validFlag: validFlag,
             workingDay: workingDay,
             workingShift: workingShift,
-            actualShift: actualShift,
             foDesc2: mapping.foDesc2,
             foDesc3: mapping.foDesc3,
             seq: mapping.seq,
@@ -1053,26 +1082,8 @@ function calculateWorkingDayShift(datetime) {
     };
 }
 
-// Get actual shift (A/B/C) from ShiftCalendar
-function getActualShift(workingDay, workingShift) {
-    if (!AppState.shiftCalendar || AppState.shiftCalendar.length === 0) {
-        return ''; // No shift calendar available
-    }
-    
-    const calendarEntry = AppState.shiftCalendar.find(entry => entry.date === workingDay);
-    
-    if (!calendarEntry) {
-        return ''; // Date not found in calendar
-    }
-    
-    if (workingShift === 'Day') {
-        return calendarEntry.dayShift;
-    } else if (workingShift === 'Night') {
-        return calendarEntry.nightShift;
-    }
-    
-    return '';
-}
+// Note: Shift filtering is now handled directly in getFilteredData()
+// using ShiftCalendar to determine which dates each shift works on
 
 // Check if result should be counted (CHANGED: count ALL records)
 // ✅ Result CNT와 무관하게 모든 레코드를 valid로 처리
@@ -1207,12 +1218,9 @@ function updateWorkingDayOptions(selectedShift) {
                 }
             });
         } else {
-            // Fallback: if no shift calendar, show dates where actualShift matches
-            AppState.processedData.forEach(record => {
-                if (record.actualShift === selectedShift) {
-                    relevantDates.add(record.workingDay);
-                }
-            });
+            // Fallback: if no shift calendar, show all dates (cannot filter by shift)
+            console.warn('⚠️ No shift calendar available - showing all dates');
+            availableDates = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
         }
         
         availableDates = [...relevantDates].sort();
@@ -1760,27 +1768,50 @@ function getFilteredData() {
     console.log('Applied filters:', AppState.filters);
     
     // Filter by shift (A/B/C)
+    // ShiftCalendar shows which dates each shift works on
+    // e.g., "2026-02-09 → Day Shift A" means Shift A works on 2026-02-09 (Day)
     if (AppState.filters.shift) {
-        // DEBUG: Log actualShift distribution
-        const shiftDistribution = {};
-        AppState.processedData.forEach(d => {
-            const shift = d.actualShift || 'undefined';
-            shiftDistribution[shift] = (shiftDistribution[shift] || 0) + 1;
-        });
-        console.log(`🔍 actualShift distribution:`, shiftDistribution);
-        console.log(`🔍 Looking for actualShift === '${AppState.filters.shift}'`);
+        console.log(`🔍 Filtering by Shift ${AppState.filters.shift}`);
         
-        filtered = filtered.filter(d => d.actualShift === AppState.filters.shift);
-        console.log(`After shift filter (${AppState.filters.shift}): ${filtered.length} records`);
-        
-        // DEBUG: Show sample records
-        if (filtered.length === 0) {
-            console.log(`⚠️ No records found! Sample actualShift values:`);
-            console.log(AppState.processedData.slice(0, 5).map(d => ({ 
-                worker: d.workerName, 
-                actualShift: d.actualShift, 
-                type: typeof d.actualShift 
-            })));
+        if (AppState.shiftCalendar && AppState.shiftCalendar.length > 0) {
+            // Find all dates where the selected shift is working
+            const workingDates = new Set();
+            
+            AppState.shiftCalendar.forEach(entry => {
+                if (entry.dayShift === AppState.filters.shift) {
+                    workingDates.add(`${entry.date}|Day`);
+                }
+                if (entry.nightShift === AppState.filters.shift) {
+                    workingDates.add(`${entry.date}|Night`);
+                }
+            });
+            
+            console.log(`📅 Shift ${AppState.filters.shift} works on ${workingDates.size} date+shift combinations`);
+            console.log('Sample working dates:', Array.from(workingDates).slice(0, 10));
+            
+            // DEBUG: Check for records that don't match ShiftCalendar
+            const beforeCount = filtered.length;
+            const unmatchedRecords = filtered.filter(record => {
+                const key = `${record.workingDay}|${record.workingShift}`;
+                return !workingDates.has(key);
+            });
+            
+            if (unmatchedRecords.length > 0) {
+                console.log(`⚠️ Found ${unmatchedRecords.length} records NOT in ShiftCalendar:`);
+                const unmatchedDates = new Set(unmatchedRecords.map(r => `${r.workingDay}|${r.workingShift}`));
+                console.log('Sample unmatched date+shift combinations:', Array.from(unmatchedDates).slice(0, 10));
+            }
+            
+            // Filter records: keep only if worker's date+shift matches shift calendar
+            filtered = filtered.filter(record => {
+                const key = `${record.workingDay}|${record.workingShift}`;
+                return workingDates.has(key);
+            });
+            
+            console.log(`After shift filter (${AppState.filters.shift}): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+        } else {
+            console.warn('⚠️ ShiftCalendar not found or empty - cannot filter by shift');
+            filtered = [];
         }
     }
     
@@ -3666,10 +3697,43 @@ async function loadUploadById(uploadId) {
             throw new Error('Failed to load upload data');
         }
         
-        updateProgress(80);
+        updateProgress(70);
+        
+        // Load raw data with pagination
+        console.log('📄 Loading raw data in batches...');
+        const allRawData = [];
+        let page = 1;
+        let hasMore = true;
+        const limit = 1000; // 한 번에 1000개씩
+        
+        while (hasMore) {
+            const rawDataResponse = await fetch(`/api/uploads/${uploadId}/raw-data?page=${page}&limit=${limit}`);
+            if (!rawDataResponse.ok) {
+                console.warn(`⚠️ Failed to load page ${page}, stopping pagination`);
+                break;
+            }
+            
+            const rawDataResult = await rawDataResponse.json();
+            if (rawDataResult.success && rawDataResult.rawData) {
+                allRawData.push(...rawDataResult.rawData);
+                console.log(`✅ Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
+                
+                hasMore = rawDataResult.pagination.hasMore;
+                page++;
+                
+                // Update progress bar
+                const progress = 70 + Math.floor((allRawData.length / rawDataResult.pagination.total) * 20);
+                updateProgress(progress);
+            } else {
+                hasMore = false;
+            }
+        }
+        
+        console.log(`✅ All raw data loaded: ${allRawData.length} records`);
+        updateProgress(90);
         
         // Restore data to AppState - convert DB format to app format
-        AppState.rawData = (dataResult.rawData || []).map(d => ({
+        AppState.rawData = allRawData.map(d => ({
             workerName: d.worker_name,
             foDesc: d.fo_desc,
             fdDesc: d.fd_desc,
@@ -3716,11 +3780,21 @@ async function loadUploadById(uploadId) {
             return dbMapping;
         });
         
-        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
+        // Load shift calendar from DB, or use default if not available
+        const dbShiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
             date: s.date,
             dayShift: s.day_shift,
             nightShift: s.night_shift
         }));
+        
+        if (dbShiftCalendar.length > 0) {
+            AppState.shiftCalendar = dbShiftCalendar;
+            console.log(`✅ Loaded ${dbShiftCalendar.length} shift calendar entries from DB`);
+        } else {
+            // Use default hardcoded shift calendar if DB doesn't have one
+            loadDefaultShiftCalendar();
+            console.log(`✅ Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
+        }
         
         // Convert datetime strings back to Date objects for rawData
         AppState.rawData = AppState.rawData.map(d => ({
@@ -3736,15 +3810,30 @@ async function loadUploadById(uploadId) {
             console.log(`      Worker S/T: ${r['Worker S/T']}, Worker Rate(%): ${r['Worker Rate(%)']}, Worker Act: ${r['Worker Act']}`);
         });
         
-        // Re-process the data with current mappings
+        // Re-process the data with current mappings (async chunks for large datasets)
         console.log('🔄 Re-processing data with mappings...');
-        AppState.processedData = processData(AppState.rawData);
+        
+        // For large datasets, process in chunks to avoid blocking UI
+        if (AppState.rawData.length > 5000) {
+            console.log(`📦 Large dataset detected (${AppState.rawData.length} records) - processing in chunks...`);
+            AppState.processedData = await processDataInChunks(AppState.rawData);
+        } else {
+            AppState.processedData = processData(AppState.rawData);
+        }
         
         updateProgress(100);
         
-        // Update UI
+        // Update UI asynchronously to avoid blocking
+        await new Promise(resolve => setTimeout(resolve, 100)); // Allow UI to update
+        
         updateMappingTable();
+        
+        await new Promise(resolve => setTimeout(resolve, 100)); // Allow UI to update
+        
         showUploadResult(AppState.processedData);
+        
+        await new Promise(resolve => setTimeout(resolve, 100)); // Allow UI to update
+        
         updateReport();
         
         // Switch to Report tab
@@ -3802,15 +3891,48 @@ async function loadLastUpload() {
             throw new Error(`Failed to fetch upload data: ${dataResponse.status}`);
         }
         
-        updateProgress(80);
+        updateProgress(70);
         const dataResult = await dataResponse.json();
         
         if (!dataResult.success) {
             throw new Error('Failed to load upload data');
         }
         
+        // Load raw data with pagination
+        console.log('📄 Loading raw data in batches...');
+        const allRawData = [];
+        let page = 1;
+        let hasMore = true;
+        const limit = 1000; // 한 번에 1000개씩
+        
+        while (hasMore) {
+            const rawDataResponse = await fetch(`/api/uploads/${lastUpload.id}/raw-data?page=${page}&limit=${limit}`);
+            if (!rawDataResponse.ok) {
+                console.warn(`⚠️ Failed to load page ${page}, stopping pagination`);
+                break;
+            }
+            
+            const rawDataResult = await rawDataResponse.json();
+            if (rawDataResult.success && rawDataResult.rawData) {
+                allRawData.push(...rawDataResult.rawData);
+                console.log(`✅ Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
+                
+                hasMore = rawDataResult.pagination.hasMore;
+                page++;
+                
+                // Update progress bar
+                const progress = 70 + Math.floor((allRawData.length / rawDataResult.pagination.total) * 20);
+                updateProgress(progress);
+            } else {
+                hasMore = false;
+            }
+        }
+        
+        console.log(`✅ All raw data loaded: ${allRawData.length} records`);
+        updateProgress(90);
+        
         // Restore data to AppState - convert DB format to app format
-        AppState.rawData = (dataResult.rawData || []).map(d => ({
+        AppState.rawData = allRawData.map(d => ({
             workerName: d.worker_name,
             foDesc: d.fo_desc,
             fdDesc: d.fd_desc,
@@ -3854,11 +3976,21 @@ async function loadLastUpload() {
             return dbMapping;
         });
         
-        AppState.shiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
+        // Load shift calendar from DB, or use default if not available
+        const dbShiftCalendar2 = (dataResult.shiftCalendar || []).map(s => ({
             date: s.date,
             dayShift: s.day_shift,
             nightShift: s.night_shift
         }));
+        
+        if (dbShiftCalendar2.length > 0) {
+            AppState.shiftCalendar = dbShiftCalendar2;
+            console.log(`✅ Loaded ${dbShiftCalendar2.length} shift calendar entries from DB`);
+        } else {
+            // Use default hardcoded shift calendar if DB doesn't have one
+            loadDefaultShiftCalendar();
+            console.log(`✅ Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
+        }
         
         // Convert datetime strings back to Date objects for rawData
         AppState.rawData = AppState.rawData.map(d => ({
@@ -4896,6 +5028,7 @@ function hideUploadProgressBar() {
 }
 
 let progressPollingInterval = null;
+let estimatedProgress = 0;
 
 function startProgressPolling(uploadId) {
     // Clear existing interval if any
@@ -4903,30 +5036,69 @@ function startProgressPolling(uploadId) {
         clearInterval(progressPollingInterval);
     }
     
-    // Poll every 3 seconds
+    // Reset estimated progress
+    estimatedProgress = 0;
+    
+    // Update progress bar with estimation (faster feedback)
+    const estimationInterval = setInterval(() => {
+        estimatedProgress += 1; // Increase by 1% every 500ms
+        if (estimatedProgress > 95) {
+            estimatedProgress = 95; // Cap at 95% until real completion
+        }
+        
+        updateProgressBar({
+            percentage: estimatedProgress,
+            current: 0,
+            total: 0,
+            status: 'processing',
+            message: 'Saving to database...'
+        });
+    }, 500);
+    
+    // Poll every 5 seconds (less frequent to avoid slow API)
     progressPollingInterval = setInterval(async () => {
         try {
             const response = await fetch(`/api/upload-progress/${uploadId}`);
-            const progress = await response.json();
             
-            if (!progress.success) {
-                console.error('Failed to fetch progress:', progress);
-                clearInterval(progressPollingInterval);
+            // If response takes too long, skip this check
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+            );
+            
+            const progress = await Promise.race([
+                response.json(),
+                timeoutPromise
+            ]).catch(() => null);
+            
+            if (!progress || !progress.success) {
+                // Continue with estimation
                 return;
             }
             
+            // Update with real progress
+            estimatedProgress = progress.percentage || estimatedProgress;
             updateProgressBar(progress);
             
             // Stop polling if completed or error
             if (progress.status === 'completed') {
                 clearInterval(progressPollingInterval);
+                clearInterval(estimationInterval);
+                
+                // Show 100% completion
+                updateProgressBar({
+                    percentage: 100,
+                    current: progress.total,
+                    total: progress.total,
+                    status: 'completed',
+                    message: 'Complete!'
+                });
                 
                 // Show success message
                 setTimeout(() => {
                     hideUploadProgressBar();
                     
                     // Refresh uploads list
-                    loadSavedUploads();
+                    loadUploadsList();
                     
                     // Show success notification
                     const saveStatus = document.getElementById('saveStatus');
@@ -4942,6 +5114,7 @@ function startProgressPolling(uploadId) {
                 
             } else if (progress.status === 'error') {
                 clearInterval(progressPollingInterval);
+                clearInterval(estimationInterval);
                 
                 setTimeout(() => {
                     hideUploadProgressBar();
@@ -4950,10 +5123,10 @@ function startProgressPolling(uploadId) {
             }
             
         } catch (error) {
-            console.error('Error polling progress:', error);
-            clearInterval(progressPollingInterval);
+            // Continue with estimation on error
+            console.warn('Progress polling error (continuing with estimation):', error);
         }
-    }, 3000); // Poll every 3 seconds
+    }, 5000); // Poll every 5 seconds
 }
 
 

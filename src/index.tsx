@@ -65,24 +65,43 @@ app.post('/api/upload', async (c) => {
       try {
         // Raw 데이터 저장 (processedData 사용)
         if (processedData && processedData.length > 0) {
-          const batchSize = processedData.length < 10000 ? 100 : 25
+          // D1 Batch API를 사용하여 효율적으로 저장 (최대 50개씩)
+          const batchSize = 50
           
           console.log(`💾 Background insert started: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches`)
           
           for (let i = 0; i < processedData.length; i += batchSize) {
             const batch = processedData.slice(i, i + batchSize)
-            const values = batch.map((d: any) => {
-              const escape = (str: any) => String(str || '').replace(/'/g, "''")
-              const foDescValue = d.foDesc2 || d.foDesc || ''
-              const workerST = d['Worker S/T'] || 0
-              const workerRatePct = d['Worker Rate(%)'] || 0
-              return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0}, ${workerST}, ${workerRatePct})`
-            }).join(',')
             
-            await env.DB.prepare(`
-              INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
-              VALUES ${values}
-            `).run()
+            // D1 Batch API: 여러 쿼리를 하나의 트랜잭션으로 실행
+            const statements = batch.map((record: any) => {
+              const foDescValue = record.foDesc2 || record.foDesc || ''
+              const workerST = record['Worker S/T'] || 0
+              const workerRatePct = record['Worker Rate(%)'] || 0
+              
+              return env.DB.prepare(`
+                INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).bind(
+                uploadId,
+                record.workerName || '',
+                foDescValue,
+                record.fdDesc || '',
+                record.startDatetime || '',
+                record.endDatetime || '',
+                record.workerActMins || record.workerAct || 0,
+                record.resultCnt || '',
+                record.workingDay || '',
+                record.workingShift || '',
+                record.actualShift || '',
+                record.workRate || 0,
+                workerST,
+                workerRatePct
+              )
+            })
+            
+            // D1 batch() 실행
+            await env.DB.batch(statements)
             
             // 진행 상황 업데이트
             const progress = uploadProgress.get(uploadId.toString())
@@ -90,7 +109,7 @@ app.post('/api/upload', async (c) => {
               progress.current = i + batch.length
             }
             
-            if ((i / batchSize) % 10 === 0) {
+            if ((i / batchSize) % 20 === 0) {
               console.log(`  📊 Progress: ${i + batch.length} / ${processedData.length} records`)
             }
           }
@@ -217,7 +236,7 @@ app.get('/api/uploads', async (c) => {
   }
 })
 
-// API: 특정 업로드 데이터 조회
+// API: 특정 업로드 데이터 조회 (메타데이터만, raw_data 제외)
 app.get('/api/uploads/:id', async (c) => {
   try {
     const { env } = c
@@ -232,11 +251,6 @@ app.get('/api/uploads/:id', async (c) => {
       return c.json({ success: false, error: 'Upload not found' }, 404)
     }
     
-    // Raw 데이터
-    const { results: rawData } = await env.DB.prepare(`
-      SELECT * FROM raw_data WHERE upload_id = ?
-    `).bind(uploadId).all()
-    
     // 공정 매핑
     const { results: processMapping } = await env.DB.prepare(`
       SELECT * FROM process_mapping WHERE upload_id = ?
@@ -250,11 +264,54 @@ app.get('/api/uploads/:id', async (c) => {
     return c.json({
       success: true,
       upload,
-      rawData,
+      rawData: [], // 빈 배열로 반환 (별도 API로 요청)
       processMapping,
       shiftCalendar
     })
   } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// API: 특정 업로드의 raw_data를 페이지네이션으로 조회
+app.get('/api/uploads/:id/raw-data', async (c) => {
+  try {
+    const { env } = c
+    const uploadId = c.req.param('id')
+    const page = parseInt(c.req.query('page') || '1')
+    const limit = parseInt(c.req.query('limit') || '1000')
+    const offset = (page - 1) * limit
+    
+    console.log(`📄 Loading raw_data for upload #${uploadId}, page ${page}, limit ${limit}`)
+    
+    // 전체 레코드 수
+    const countResult = await env.DB.prepare(`
+      SELECT COUNT(*) as total FROM raw_data WHERE upload_id = ?
+    `).bind(uploadId).first()
+    
+    // 페이지네이션된 데이터
+    const { results: rawData } = await env.DB.prepare(`
+      SELECT * FROM raw_data WHERE upload_id = ? LIMIT ? OFFSET ?
+    `).bind(uploadId, limit, offset).all()
+    
+    const total = countResult?.total || 0
+    const totalPages = Math.ceil(total / limit)
+    
+    console.log(`✅ Loaded ${rawData.length} records (page ${page}/${totalPages})`)
+    
+    return c.json({
+      success: true,
+      rawData,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages
+      }
+    })
+  } catch (error: any) {
+    console.error('Raw data load error:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
