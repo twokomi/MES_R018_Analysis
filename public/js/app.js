@@ -3431,6 +3431,9 @@ async function saveToDatabase() {
     }
     
     try {
+        // Show loading overlay
+        showLoadingOverlay('Saving to database...');
+        
         // Disable button and show loading
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
@@ -3474,6 +3477,9 @@ async function saveToDatabase() {
             console.log(`📊 Upload ID: ${result.uploadId}`);
             console.log(`📈 Stats:`, result.stats);
             
+            // Hide loading overlay
+            hideLoadingOverlay();
+            
             // Show success status
             saveStatus.classList.remove('hidden');
             saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved';
@@ -3494,6 +3500,10 @@ async function saveToDatabase() {
         }
     } catch (error) {
         console.error('❌ Failed to save to database:', error);
+        
+        // Hide loading overlay
+        hideLoadingOverlay();
+        
         alert('Failed to save to database:\n' + error.message);
         
         // Reset button
@@ -4810,4 +4820,8 @@ window.closeWorkerDetailModal = closeWorkerDetailModal;
 window.filterWorkerList = filterWorkerList;
 window.toggleMetric = toggleMetric;
 window.sortDataTable = sortDataTable; // ✅ NEW
+
+W
+
+/ ✅ NEW
 
