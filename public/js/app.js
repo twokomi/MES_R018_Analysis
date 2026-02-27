@@ -4819,9 +4819,5 @@ window.showWorkerDetail = showWorkerDetail;
 window.closeWorkerDetailModal = closeWorkerDetailModal;
 window.filterWorkerList = filterWorkerList;
 window.toggleMetric = toggleMetric;
-window.sortDataTable = sortDataTable; // ✅ NEW
-
-W
-
-/ ✅ NEW
+window.sortDataTable = sortDataTable;
 
