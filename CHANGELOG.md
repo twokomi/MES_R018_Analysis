@@ -5,6 +5,22 @@ All notable changes to MES R018 Analysis will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-02-27
+
+### 🐛 Fixed - Worker Detail Modal Data Sync
+- **Modal KPI Calculation**: Fixed Worker Detail modal using stale cached data not reflecting current filter state
+- **Issue**: Modal Total Work Time included filtered-out records, causing mismatch with table Adjusted sum
+- **Solution**: Modal now aggregates current filtered data directly instead of using cached aggregation
+- **Impact**: Modal KPIs now always match table data and reflect active filters accurately
+
+## [3.5.0] - 2026-02-27
+
+### 🔧 Fixed - Result CNT Logic
+- **Work Time Calculation**: Changed to count all work time regardless of Result CNT value
+- **Previous Issue**: Only records with Result CNT = 'X' were counted, causing some workers to show 0% utilization
+- **Solution**: Removed Result CNT validation check, now includes all records with actual work time
+- **Impact**: All workers with valid work time now display correct utilization and efficiency rates
+
 ## [3.4.0] - 2026-02-24
 
 ### 🎨 Added - Shift Filter Context & Clarifications
