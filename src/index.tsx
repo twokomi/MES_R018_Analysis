@@ -7,10 +7,19 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// 업로드 진행 상황 추적 (메모리)
+const uploadProgress = new Map<string, {
+  current: number;
+  total: number;
+  startTime: number;
+  status: 'processing' | 'completed' | 'error';
+  error?: string;
+}>();
+
 // CORS 설정
 app.use('/api/*', cors())
 
-// API: 엑셀 데이터 저장
+// API: 엑셀 데이터 저장 (백그라운드)
 app.post('/api/upload', async (c) => {
   try {
     const { env } = c
@@ -39,88 +48,140 @@ app.post('/api/upload', async (c) => {
       processedData?.[processedData.length - 1]?.workingDay || null
     ).run()
     
-    const uploadId = uploadResult.meta.last_row_id
+    const uploadId = uploadResult.meta.last_row_id as number
     
-    // Raw 데이터 저장 (processedData 사용)
-    if (processedData && processedData.length > 0) {
-      // 🔧 Dynamic batch size based on dataset size
-      // Small datasets (<10K): batch 100 (fast, ~10 seconds)
-      // Large datasets (>10K): batch 25 (safer, ~60 seconds)
-      const batchSize = processedData.length < 10000 ? 100 : 25
-      
-      console.log(`💾 Starting batch insert: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches (batch size: ${batchSize})`)
-      
-      for (let i = 0; i < processedData.length; i += batchSize) {
-        const batch = processedData.slice(i, i + batchSize)
-        const values = batch.map((d: any) => {
-          // SQL injection 방지를 위해 문자열 escape
-          const escape = (str: any) => String(str || '').replace(/'/g, "''")
-          // foDesc2, foDesc3 저장 (process mapping 결과)
-          const foDescValue = d.foDesc2 || d.foDesc || ''
-          const workerST = d['Worker S/T'] || 0
-          const workerRatePct = d['Worker Rate(%)'] || 0
-          return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0}, ${workerST}, ${workerRatePct})`
-        }).join(',')
+    // 진행 상황 초기화
+    uploadProgress.set(uploadId.toString(), {
+      current: 0,
+      total: processedData?.length || 0,
+      startTime: Date.now(),
+      status: 'processing'
+    })
+    
+    // 🚀 즉시 응답 반환 (백그라운드 처리)
+    // 실제 데이터 저장은 비동기로 진행
+    Promise.resolve().then(async () => {
+      try {
+        // Raw 데이터 저장 (processedData 사용)
+        if (processedData && processedData.length > 0) {
+          const batchSize = processedData.length < 10000 ? 100 : 25
+          
+          console.log(`💾 Background insert started: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches`)
+          
+          for (let i = 0; i < processedData.length; i += batchSize) {
+            const batch = processedData.slice(i, i + batchSize)
+            const values = batch.map((d: any) => {
+              const escape = (str: any) => String(str || '').replace(/'/g, "''")
+              const foDescValue = d.foDesc2 || d.foDesc || ''
+              const workerST = d['Worker S/T'] || 0
+              const workerRatePct = d['Worker Rate(%)'] || 0
+              return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0}, ${workerST}, ${workerRatePct})`
+            }).join(',')
+            
+            await env.DB.prepare(`
+              INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
+              VALUES ${values}
+            `).run()
+            
+            // 진행 상황 업데이트
+            const progress = uploadProgress.get(uploadId.toString())
+            if (progress) {
+              progress.current = i + batch.length
+            }
+            
+            if ((i / batchSize) % 10 === 0) {
+              console.log(`  📊 Progress: ${i + batch.length} / ${processedData.length} records`)
+            }
+          }
+        }
         
-        await env.DB.prepare(`
-          INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
-          VALUES ${values}
-        `).run()
+        // 공정 매핑 저장
+        if (processMapping && processMapping.length > 0) {
+          for (const mapping of processMapping) {
+            await env.DB.prepare(`
+              INSERT INTO process_mapping (upload_id, fd_desc, fo_desc, fo_desc_2, fo_desc_3, seq)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `).bind(
+              uploadId,
+              mapping.fdDesc || null,
+              mapping.foDesc || mapping.fdDesc || null,
+              mapping.foDesc2 || null,
+              mapping.foDesc3 || null,
+              mapping.seq || null
+            ).run()
+          }
+        }
         
-        // Log progress every 10 batches
-        if ((i / batchSize) % 10 === 0) {
-          console.log(`  📊 Progress: ${i + batch.length} / ${processedData.length} records (${Math.round((i + batch.length) / processedData.length * 100)}%)`)
+        // Shift Calendar 저장
+        if (shiftCalendar && shiftCalendar.length > 0) {
+          for (const shift of shiftCalendar) {
+            await env.DB.prepare(`
+              INSERT INTO shift_calendar (upload_id, date, day_shift, night_shift)
+              VALUES (?, ?, ?, ?)
+            `).bind(
+              uploadId,
+              shift.date || null,
+              shift.dayShift || null,
+              shift.nightShift || null
+            ).run()
+          }
+        }
+        
+        // 완료 처리
+        const progress = uploadProgress.get(uploadId.toString())
+        if (progress) {
+          progress.status = 'completed'
+        }
+        console.log(`✅ Background insert completed: ${processedData?.length || 0} records`)
+        
+      } catch (error: any) {
+        console.error('Background upload error:', error)
+        const progress = uploadProgress.get(uploadId.toString())
+        if (progress) {
+          progress.status = 'error'
+          progress.error = error.message
         }
       }
-      
-      console.log(`✅ Batch insert completed: ${processedData.length} records`)
-    }
-    
-    // 공정 매핑 저장
-    if (processMapping && processMapping.length > 0) {
-      for (const mapping of processMapping) {
-        await env.DB.prepare(`
-          INSERT INTO process_mapping (upload_id, fd_desc, fo_desc, fo_desc_2, fo_desc_3, seq)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).bind(
-          uploadId,
-          mapping.fdDesc || null,
-          mapping.foDesc || mapping.fdDesc || null,
-          mapping.foDesc2 || null,
-          mapping.foDesc3 || null,
-          mapping.seq || null
-        ).run()
-      }
-    }
-    
-    // Shift Calendar 저장
-    if (shiftCalendar && shiftCalendar.length > 0) {
-      for (const shift of shiftCalendar) {
-        await env.DB.prepare(`
-          INSERT INTO shift_calendar (upload_id, date, day_shift, night_shift)
-          VALUES (?, ?, ?, ?)
-        `).bind(
-          uploadId,
-          shift.date || null,
-          shift.dayShift || null,
-          shift.nightShift || null
-        ).run()
-      }
-    }
+    })
     
     return c.json({ 
       success: true, 
       uploadId,
-      message: 'Data saved successfully',
-      stats: {
-        totalRecords: processedData?.length || 0,
-        uniqueWorkers: new Set(processedData?.map((d: any) => d.workerName)).size || 0
-      }
+      message: 'Upload started in background',
+      totalRecords: processedData?.length || 0
     })
   } catch (error: any) {
     console.error('Upload error:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
+})
+
+// API: 업로드 진행 상황 조회
+app.get('/api/upload-progress/:id', (c) => {
+  const uploadId = c.req.param('id')
+  const progress = uploadProgress.get(uploadId)
+  
+  if (!progress) {
+    return c.json({ 
+      success: false, 
+      status: 'not_found',
+      message: 'Upload not found' 
+    }, 404)
+  }
+  
+  const elapsed = Math.floor((Date.now() - progress.startTime) / 1000)
+  const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
+  
+  return c.json({
+    success: true,
+    uploadId,
+    status: progress.status,
+    current: progress.current,
+    total: progress.total,
+    percentage,
+    elapsed,
+    error: progress.error
+  })
 })
 
 // API: 업로드 목록 조회

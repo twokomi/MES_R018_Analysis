@@ -3432,21 +3432,14 @@ async function saveToDatabase() {
     
     try {
         // Show loading overlay
-        showLoadingOverlay('Saving to database...');
+        showLoadingOverlay('💾 Starting upload...');
         
         // Disable button and show loading
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
         saveStatus.classList.add('hidden');
         
         console.log('💾 Saving data to database...');
-        console.log('📊 Data to save:', {
-            filename: AppState.currentFileName,
-            fileSize: AppState.currentFileSize,
-            processedDataCount: AppState.processedData.length,
-            processMappingCount: AppState.processMapping.length,
-            shiftCalendarCount: AppState.shiftCalendar.length
-        });
         
         const payload = {
             filename: AppState.currentFileName || 'Unknown',
@@ -3473,14 +3466,35 @@ async function saveToDatabase() {
         const result = await response.json();
         
         if (result.success) {
-            console.log('✅ Data saved successfully!', result);
-            console.log(`📊 Upload ID: ${result.uploadId}`);
-            console.log(`📈 Stats:`, result.stats);
+            console.log('✅ Upload started in background!', result);
             
             // Hide loading overlay
             hideLoadingOverlay();
             
-            // Show success status
+            // Show progress bar
+            showUploadProgressBar(result.uploadId, result.totalRecords);
+            
+            // Start polling for progress
+            startProgressPolling(result.uploadId);
+            
+            // Re-enable button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
+            
+        } else {
+            throw new Error(result.error || 'Failed to start upload');
+        }
+        
+    } catch (error) {
+        console.error('❌ Failed to save to database:', error);
+        hideLoadingOverlay();
+        alert('Failed to save to database:\n' + error.message);
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
+    }
+}
             saveStatus.classList.remove('hidden');
             saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved';
             saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
@@ -4820,4 +4834,137 @@ window.closeWorkerDetailModal = closeWorkerDetailModal;
 window.filterWorkerList = filterWorkerList;
 window.toggleMetric = toggleMetric;
 window.sortDataTable = sortDataTable;
+
+// 📊 Background Upload Progress Functions
+function showUploadProgressBar(uploadId, totalRecords) {
+    // Remove existing progress bar if any
+    const existingBar = document.getElementById('upload-progress-bar');
+    if (existingBar) {
+        existingBar.remove();
+    }
+    
+    const bar = document.createElement('div');
+    bar.id = 'upload-progress-bar';
+    bar.className = 'fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 z-50 shadow-lg';
+    bar.innerHTML = `
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-cloud-upload-alt fa-spin"></i>
+                    <span class="font-semibold">Saving to database...</span>
+                    <span id="progress-text" class="text-blue-100">${totalRecords.toLocaleString()} records</span>
+                </div>
+                <div class="text-sm text-blue-100">
+                    <i class="far fa-clock mr-1"></i>
+                    <span id="elapsed-time">0s</span>
+                </div>
+            </div>
+            <div class="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div id="progress-bar-fill" class="h-full bg-white transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="mt-2 text-xs text-blue-100" id="progress-status">
+                Starting...
+            </div>
+        </div>
+    `;
+    document.body.prepend(bar);
+}
+
+function updateProgressBar(progress) {
+    const progressText = document.getElementById('progress-text');
+    const elapsedTime = document.getElementById('elapsed-time');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const progressStatus = document.getElementById('progress-status');
+    
+    if (!progressText) return;
+    
+    const percentage = progress.percentage || 0;
+    const elapsed = progress.elapsed || 0;
+    const current = progress.current || 0;
+    const total = progress.total || 0;
+    
+    progressText.textContent = `${current.toLocaleString()} / ${total.toLocaleString()} records (${percentage}%)`;
+    elapsedTime.textContent = `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`;
+    progressBarFill.style.width = `${percentage}%`;
+    
+    if (progress.status === 'processing') {
+        progressStatus.textContent = `Processing... ${percentage}% complete`;
+    } else if (progress.status === 'completed') {
+        progressStatus.textContent = '✅ Upload completed successfully!';
+    } else if (progress.status === 'error') {
+        progressStatus.textContent = `❌ Error: ${progress.error || 'Unknown error'}`;
+    }
+}
+
+function hideUploadProgressBar() {
+    const bar = document.getElementById('upload-progress-bar');
+    if (bar) {
+        // Fade out animation
+        bar.style.transition = 'opacity 0.5s';
+        bar.style.opacity = '0';
+        setTimeout(() => bar.remove(), 500);
+    }
+}
+
+let progressPollingInterval = null;
+
+function startProgressPolling(uploadId) {
+    // Clear existing interval if any
+    if (progressPollingInterval) {
+        clearInterval(progressPollingInterval);
+    }
+    
+    // Poll every 3 seconds
+    progressPollingInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/upload-progress/${uploadId}`);
+            const progress = await response.json();
+            
+            if (!progress.success) {
+                console.error('Failed to fetch progress:', progress);
+                clearInterval(progressPollingInterval);
+                return;
+            }
+            
+            updateProgressBar(progress);
+            
+            // Stop polling if completed or error
+            if (progress.status === 'completed') {
+                clearInterval(progressPollingInterval);
+                
+                // Show success message
+                setTimeout(() => {
+                    hideUploadProgressBar();
+                    
+                    // Refresh uploads list
+                    loadSavedUploads();
+                    
+                    // Show success notification
+                    const saveStatus = document.getElementById('saveStatus');
+                    if (saveStatus) {
+                        saveStatus.classList.remove('hidden');
+                        saveStatus.classList.add('bg-green-100', 'border-green-400', 'text-green-700');
+                        saveStatus.innerHTML = `
+                            <strong>Success!</strong> Data saved to database.
+                            <button onclick="this.parentElement.classList.add('hidden')" class="float-right">×</button>
+                        `;
+                    }
+                }, 2000);
+                
+            } else if (progress.status === 'error') {
+                clearInterval(progressPollingInterval);
+                
+                setTimeout(() => {
+                    hideUploadProgressBar();
+                    alert(`Upload failed: ${progress.error}`);
+                }, 2000);
+            }
+            
+        } catch (error) {
+            console.error('Error polling progress:', error);
+            clearInterval(progressPollingInterval);
+        }
+    }, 3000); // Poll every 3 seconds
+}
+
 
