@@ -43,8 +43,12 @@ app.post('/api/upload', async (c) => {
     
     // Raw 데이터 저장 (processedData 사용)
     if (processedData && processedData.length > 0) {
-      const batchSize = 100
-      console.log(`💾 Starting batch insert: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches`)
+      // 🔧 Dynamic batch size based on dataset size
+      // Small datasets (<10K): batch 100 (fast, ~10 seconds)
+      // Large datasets (>10K): batch 25 (safer, ~60 seconds)
+      const batchSize = processedData.length < 10000 ? 100 : 25
+      
+      console.log(`💾 Starting batch insert: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches (batch size: ${batchSize})`)
       
       for (let i = 0; i < processedData.length; i += batchSize) {
         const batch = processedData.slice(i, i + batchSize)
@@ -63,8 +67,8 @@ app.post('/api/upload', async (c) => {
           VALUES ${values}
         `).run()
         
-        // Log progress every 5 batches
-        if ((i / batchSize) % 5 === 0) {
+        // Log progress every 10 batches
+        if ((i / batchSize) % 10 === 0) {
           console.log(`  📊 Progress: ${i + batch.length} / ${processedData.length} records (${Math.round((i + batch.length) / processedData.length * 100)}%)`)
         }
       }
