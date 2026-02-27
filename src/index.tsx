@@ -60,7 +60,8 @@ app.post('/api/upload', async (c) => {
     
     // 🚀 즉시 응답 반환 (백그라운드 처리)
     // 실제 데이터 저장은 비동기로 진행
-    Promise.resolve().then(async () => {
+    // CRITICAL: Cloudflare Workers requires waitUntil() for background tasks
+    c.executionCtx.waitUntil((async () => {
       try {
         // Raw 데이터 저장 (processedData 사용)
         if (processedData && processedData.length > 0) {
@@ -142,7 +143,7 @@ app.post('/api/upload', async (c) => {
           progress.error = error.message
         }
       }
-    })
+    })())
     
     return c.json({ 
       success: true, 
