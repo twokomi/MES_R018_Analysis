@@ -43,42 +43,33 @@ app.post('/api/upload', async (c) => {
     
     // Raw 데이터 저장 (processedData 사용)
     if (processedData && processedData.length > 0) {
-      // 🔧 CRITICAL FIX: Use individual INSERTs to prevent D1 hash index errors
-      // Batch INSERTs cause "HashIndex inconsistency" with large datasets
-      // Individual INSERTs are slower but 100% reliable
+      const batchSize = 100
+      console.log(`💾 Starting batch insert: ${processedData.length} records, ${Math.ceil(processedData.length / batchSize)} batches`)
       
-      console.log(`💾 Starting individual insert: ${processedData.length} records`)
-      
-      for (let i = 0; i < processedData.length; i++) {
-        const d = processedData[i]
+      for (let i = 0; i < processedData.length; i += batchSize) {
+        const batch = processedData.slice(i, i + batchSize)
+        const values = batch.map((d: any) => {
+          // SQL injection 방지를 위해 문자열 escape
+          const escape = (str: any) => String(str || '').replace(/'/g, "''")
+          // foDesc2, foDesc3 저장 (process mapping 결과)
+          const foDescValue = d.foDesc2 || d.foDesc || ''
+          const workerST = d['Worker S/T'] || 0
+          const workerRatePct = d['Worker Rate(%)'] || 0
+          return `(${uploadId}, '${escape(d.workerName)}', '${escape(foDescValue)}', '${escape(d.fdDesc)}', '${escape(d.startDatetime)}', '${escape(d.endDatetime)}', ${d.workerActMins || d.workerAct || 0}, '${escape(d.resultCnt)}', '${escape(d.workingDay)}', '${escape(d.workingShift)}', '${escape(d.actualShift)}', ${d.workRate || 0}, ${workerST}, ${workerRatePct})`
+        }).join(',')
         
         await env.DB.prepare(`
           INSERT INTO raw_data (upload_id, worker_name, fo_desc, fd_desc, start_datetime, end_datetime, worker_act, result_cnt, working_day, working_shift, actual_shift, work_rate, worker_st, worker_rate_pct)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          uploadId,
-          d.workerName || null,
-          d.foDesc2 || d.foDesc || null,
-          d.fdDesc || null,
-          d.startDatetime || null,
-          d.endDatetime || null,
-          d.workerActMins || d.workerAct || 0,
-          d.resultCnt || null,
-          d.workingDay || null,
-          d.workingShift || null,
-          d.actualShift || null,
-          d.workRate || 0,
-          d['Worker S/T'] || 0,
-          d['Worker Rate(%)'] || 0
-        ).run()
+          VALUES ${values}
+        `).run()
         
-        // Log progress every 1000 records
-        if ((i + 1) % 1000 === 0) {
-          console.log(`  📊 Progress: ${i + 1} / ${processedData.length} records (${Math.round((i + 1) / processedData.length * 100)}%)`)
+        // Log progress every 5 batches
+        if ((i / batchSize) % 5 === 0) {
+          console.log(`  📊 Progress: ${i + batch.length} / ${processedData.length} records (${Math.round((i + batch.length) / processedData.length * 100)}%)`)
         }
       }
       
-      console.log(`✅ Individual insert completed: ${processedData.length} records`)
+      console.log(`✅ Batch insert completed: ${processedData.length} records`)
     }
     
     // 공정 매핑 저장
