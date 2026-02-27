@@ -3495,36 +3495,6 @@ async function saveToDatabase() {
         saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
     }
 }
-            saveStatus.classList.remove('hidden');
-            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved';
-            saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            saveBtn.classList.add('bg-green-600');
-            
-            // Refresh uploads list
-            loadUploadsList();
-            
-            setTimeout(() => {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
-                saveBtn.classList.remove('bg-green-600');
-                saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            }, 3000);
-        } else {
-            throw new Error(result.error || 'Save failed');
-        }
-    } catch (error) {
-        console.error('❌ Failed to save to database:', error);
-        
-        // Hide loading overlay
-        hideLoadingOverlay();
-        
-        alert('Failed to save to database:\n' + error.message);
-        
-        // Reset button
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-database mr-2"></i>Save to Database';
-    }
-}
 
 // Load uploads list
 async function loadUploadsList() {
