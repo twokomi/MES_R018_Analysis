@@ -5075,8 +5075,10 @@ function startProgressPolling(uploadId) {
                 return;
             }
             
-            // Update with real progress
-            estimatedProgress = progress.percentage || estimatedProgress;
+            // Update with real progress (only if higher than estimation)
+            if (progress.percentage > estimatedProgress) {
+                estimatedProgress = progress.percentage;
+            }
             updateProgressBar(progress);
             
             // Stop polling if completed or error
