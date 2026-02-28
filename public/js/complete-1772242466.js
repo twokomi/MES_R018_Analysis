@@ -5001,9 +5001,8 @@ function updateProgressBar(progress) {
     
     const percentage = progress.percentage || 0;
     const elapsed = progress.elapsed || 0;
-    const current = progress.current || 0;
-    const total = progress.total || 0;
     
+    // Always show "Uploading... X%" format
     progressText.textContent = `Uploading... ${Math.round(percentage)}%`;
     elapsedTime.textContent = `${Math.floor(elapsed / 60)}m ${elapsed % 60}s elapsed`;
     progressBarFill.style.width = `${percentage}%`;
