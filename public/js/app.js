@@ -3482,7 +3482,7 @@ async function saveToDatabase() {
     
     try {
         // Show loading overlay
-        showLoadingOverlay('💾 Starting upload...');
+        showLoadingOverlay('Starting upload...');
         
         // Disable button and show loading
         saveBtn.disabled = true;
