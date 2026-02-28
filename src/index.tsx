@@ -35,17 +35,20 @@ app.post('/api/upload', async (c) => {
       shiftCalendarCount: shiftCalendar?.length
     })
     
-    // 업로드 기록 생성
+    // 업로드 기록 생성 (진행 상태 포함)
     const uploadResult = await env.DB.prepare(`
-      INSERT INTO excel_uploads (filename, file_size, total_records, unique_workers, date_range_start, date_range_end)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO excel_uploads (filename, file_size, total_records, unique_workers, date_range_start, date_range_end, upload_status, progress_current, progress_total)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       filename,
       fileSize,
       processedData?.length || 0,
       new Set(processedData?.map((d: any) => d.workerName)).size || 0,
       processedData?.[0]?.workingDay || null,
-      processedData?.[processedData.length - 1]?.workingDay || null
+      processedData?.[processedData.length - 1]?.workingDay || null,
+      'processing',
+      0,
+      processedData?.length || 0
     ).run()
     
     const uploadId = uploadResult.meta.last_row_id as number
@@ -103,7 +106,14 @@ app.post('/api/upload', async (c) => {
             // D1 batch() 실행
             await env.DB.batch(statements)
             
-            // 진행 상황 업데이트
+            // 진행 상황 업데이트 (DB에 저장)
+            await env.DB.prepare(`
+              UPDATE excel_uploads 
+              SET progress_current = ?
+              WHERE id = ?
+            `).bind(i + batch.length, uploadId).run()
+            
+            // 메모리 Map도 업데이트 (optional, for legacy support)
             const progress = uploadProgress.get(uploadId.toString())
             if (progress) {
               progress.current = i + batch.length
@@ -147,7 +157,14 @@ app.post('/api/upload', async (c) => {
           }
         }
         
-        // 완료 처리
+        // 완료 처리 (DB에 저장)
+        await env.DB.prepare(`
+          UPDATE excel_uploads 
+          SET upload_status = 'completed', progress_current = progress_total
+          WHERE id = ?
+        `).bind(uploadId).run()
+        
+        // 메모리 Map도 업데이트 (optional)
         const progress = uploadProgress.get(uploadId.toString())
         if (progress) {
           progress.status = 'completed'
@@ -176,32 +193,45 @@ app.post('/api/upload', async (c) => {
   }
 })
 
-// API: 업로드 진행 상황 조회
-app.get('/api/upload-progress/:id', (c) => {
-  const uploadId = c.req.param('id')
-  const progress = uploadProgress.get(uploadId)
-  
-  if (!progress) {
-    return c.json({ 
-      success: false, 
-      status: 'not_found',
-      message: 'Upload not found' 
-    }, 404)
+// API: 업로드 진행 상황 조회 (DB에서 읽기)
+app.get('/api/upload-progress/:id', async (c) => {
+  try {
+    const { env } = c
+    const uploadId = c.req.param('id')
+    
+    // DB에서 업로드 정보 조회
+    const result = await env.DB.prepare(`
+      SELECT upload_status, progress_current, progress_total, upload_date, error_message
+      FROM excel_uploads
+      WHERE id = ?
+    `).bind(uploadId).first()
+    
+    if (!result) {
+      return c.json({ 
+        success: false, 
+        status: 'not_found',
+        message: 'Upload not found' 
+      }, 404)
+    }
+    
+    const elapsed = Math.floor((Date.now() - new Date(result.upload_date as string).getTime()) / 1000)
+    const percentage = (result.progress_total as number) > 0 
+      ? Math.round(((result.progress_current as number) / (result.progress_total as number)) * 100) 
+      : 0
+    
+    return c.json({
+      success: true,
+      uploadId,
+      status: result.upload_status,
+      current: result.progress_current,
+      total: result.progress_total,
+      percentage,
+      elapsed,
+      error: result.error_message
+    })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
   }
-  
-  const elapsed = Math.floor((Date.now() - progress.startTime) / 1000)
-  const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
-  
-  return c.json({
-    success: true,
-    uploadId,
-    status: progress.status,
-    current: progress.current,
-    total: progress.total,
-    percentage,
-    elapsed,
-    error: progress.error
-  })
 })
 
 // API: 업로드 목록 조회
