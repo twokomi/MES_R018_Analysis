@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { serveStatic } from 'hono/cloudflare-workers'
 
 type Bindings = {
   DB: D1Database;
@@ -19,9 +18,6 @@ const uploadProgress = new Map<string, {
 
 // CORS 설정
 app.use('/api/*', cors())
-
-// Serve static files (favicon, images, etc.)
-app.use('/*', serveStatic({ root: './public' }))
 
 // API: 엑셀 데이터 저장 (백그라운드)
 app.post('/api/upload', async (c) => {
@@ -245,6 +241,7 @@ app.get('/api/uploads', async (c) => {
     
     // Check if DB is available (local dev without D1 binding)
     if (!env.DB) {
+      console.log('DB binding not available, returning empty uploads list')
       return c.json({ 
         success: true, 
         uploads: [],
@@ -259,14 +256,16 @@ app.get('/api/uploads', async (c) => {
       LIMIT 50
     `).all()
     
-    return c.json({ success: true, uploads: results })
+    return c.json({ success: true, uploads: results || [] })
   } catch (error: any) {
     console.error('Error fetching uploads:', error)
+    // Return empty array instead of 500 error
     return c.json({ 
-      success: false, 
+      success: true,
+      uploads: [],
       error: error.message,
       message: 'Database error. Please use Excel file upload instead.'
-    }, 500)
+    })
   }
 })
 
@@ -524,8 +523,5 @@ app.delete('/api/process-mapping/:id', async (c) => {
     return c.json({ success: false, error: error.message }, 500)
   }
 })
-
-// Serve index.html for root path
-app.get('/', serveStatic({ path: 'index.html', root: './public' }))
 
 export default app
