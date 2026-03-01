@@ -1362,15 +1362,15 @@ function updateFilterOptions() {
     const checkedProcesses = Array.from(document.querySelectorAll('.process-checkbox:checked')).map(cb => cb.value);
     const checkedWorkers = Array.from(document.querySelectorAll('.worker-checkbox:checked')).map(cb => cb.value);
     
-    // Category (FO Desc 2) - Sort by category order
-    const uniqueCategories = [...new Set(data.map(d => d.foDesc2))]
-        .filter(c => c)
+    // Category (FO Desc 2) - Use all categories from CATEGORY_ORDER
+    const uniqueCategories = Object.keys(CATEGORY_ORDER)
+        .filter(c => c !== 'Other') // Exclude 'Other' from filter
         .sort((a, b) => {
             const orderA = CATEGORY_ORDER[a] || 999;
             const orderB = CATEGORY_ORDER[b] || 999;
             return orderA - orderB;
         });
-    console.log(`📂 Found ${uniqueCategories.length} unique categories (sorted by order):`, uniqueCategories);
+    console.log(`📂 Showing ${uniqueCategories.length} categories (from CATEGORY_ORDER):`, uniqueCategories);
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
