@@ -5688,3 +5688,518 @@ function updateDashboardShift(data) {
     });
 }
 
+// ========== Dashboard State ==========
+const DashboardState = {
+  currentKPI: 'util',
+  currentShiftMode: 'daynight',
+  charts: {}
+};
+
+// ========== Main Dashboard Refresh ==========
+function refreshExecutiveDashboard() {
+  if (!AppState.processedData || AppState.processedData.length === 0) {
+    console.warn('⚠️ No data for dashboard');
+    return;
+  }
+  
+  console.log('🎯 Refreshing Executive Dashboard...');
+  const data = AppState.processedData;
+  
+  // 1. Flight Deck
+  updateFlightDeck(data);
+  // 2. Focus Queue
+  updateFocusQueue(data);
+  // 3. Trend
+  refreshTrendChart();
+  // 4. Contribution
+  refreshContributionChart();
+  // 5. Shift
+  refreshShiftChart();
+  // 6. Health Matrix
+  refreshHealthMatrix(data);
+  
+  console.log('✅ Dashboard refreshed');
+}
+
+// ========== 1. Flight Deck ==========
+function updateFlightDeck(data) {
+  const workers = new Set(data.map(r => r.workerName)).size;
+  const records = data.length;
+  
+  let totalUtil = 0, countUtil = 0, totalEff = 0, countEff = 0;
+  data.forEach(r => {
+    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
+      totalUtil += r.utilizationRate;
+      countUtil++;
+    }
+    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
+      totalEff += r.efficiencyRate;
+      countEff++;
+    }
+  });
+  
+  const avgUtil = countUtil > 0 ? (totalUtil / countUtil).toFixed(1) : 0;
+  const avgEff = countEff > 0 ? (totalEff / countEff).toFixed(1) : 0;
+  
+  document.getElementById('flightWorkers').textContent = workers;
+  document.getElementById('flightUtil').textContent = avgUtil + '%';
+  document.getElementById('flightEff').textContent = avgEff + '%';
+  document.getElementById('flightRecords').textContent = records.toLocaleString();
+  
+  // WoW change (simplified)
+  document.getElementById('flightWorkersChange').textContent = 'WoW: -';
+  document.getElementById('flightUtilChange').textContent = 'WoW: -';
+  document.getElementById('flightEffChange').textContent = 'WoW: -';
+  document.getElementById('flightRecordsChange').textContent = 'WoW: -';
+  
+  // Sparklines (simplified - just show trend)
+  drawSparkline('sparkWorkers', [workers, workers, workers, workers, workers, workers, workers]);
+  drawSparkline('sparkUtil', [avgUtil, avgUtil, avgUtil, avgUtil, avgUtil, avgUtil, avgUtil]);
+  drawSparkline('sparkEff', [avgEff, avgEff, avgEff, avgEff, avgEff, avgEff, avgEff]);
+  drawSparkline('sparkRecords', [records, records, records, records, records, records, records]);
+}
+
+function drawSparkline(canvasId, data) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  
+  if (DashboardState.charts[canvasId]) {
+    DashboardState.charts[canvasId].destroy();
+  }
+  
+  DashboardState.charts[canvasId] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: ['', '', '', '', '', '', ''],
+      datasets: [{
+        data: data,
+        borderColor: '#3b82f6',
+        borderWidth: 1.5,
+        tension: 0.3,
+        pointRadius: 0,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    }
+  });
+}
+
+// ========== 2. Focus Queue ==========
+function updateFocusQueue(data) {
+  const warnings = generateWarnings(data);
+  const container = document.getElementById('focusQueueContainer');
+  
+  if (warnings.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm">✅ No warnings detected. All systems normal.</p>';
+    document.getElementById('showAllWarnings').classList.add('hidden');
+    return;
+  }
+  
+  const top3 = warnings.slice(0, 3);
+  container.innerHTML = top3.map(w => `
+    <div class="border-l-4 ${w.color} bg-${w.bgColor} p-3 mb-3 rounded">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <p class="text-sm font-bold text-gray-800">${w.icon} ${w.severity} | ${w.title}</p>
+          <p class="text-xs text-gray-600 mt-1">Evidence: ${w.evidence}</p>
+          <p class="text-xs text-gray-500 mt-1">Confidence: ${w.confidence} (n=${w.sampleSize})</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  
+  if (warnings.length > 3) {
+    document.getElementById('showAllWarnings').classList.remove('hidden');
+  }
+}
+
+function generateWarnings(data) {
+  const warnings = [];
+  
+  // Rule 1: Low Utilization
+  let totalUtil = 0, countUtil = 0;
+  data.forEach(r => {
+    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
+      totalUtil += r.utilizationRate;
+      countUtil++;
+    }
+  });
+  const avgUtil = countUtil > 0 ? totalUtil / countUtil : 0;
+  
+  if (avgUtil < 50 && countUtil >= 100) {
+    warnings.push({
+      severity: 'CRITICAL',
+      icon: '🔴',
+      color: 'border-red-500',
+      bgColor: 'red-50',
+      title: 'Low Overall Utilization',
+      evidence: `Average ${avgUtil.toFixed(1)}% (threshold: 50%)`,
+      confidence: 'High',
+      sampleSize: countUtil
+    });
+  }
+  
+  // Rule 2: Low Efficiency
+  let totalEff = 0, countEff = 0;
+  data.forEach(r => {
+    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
+      totalEff += r.efficiencyRate;
+      countEff++;
+    }
+  });
+  const avgEff = countEff > 0 ? totalEff / countEff : 0;
+  
+  if (avgEff < 50 && countEff >= 100) {
+    warnings.push({
+      severity: 'CRITICAL',
+      icon: '🔴',
+      color: 'border-red-500',
+      bgColor: 'red-50',
+      title: 'Low Overall Efficiency',
+      evidence: `Average ${avgEff.toFixed(1)}% (threshold: 50%)`,
+      confidence: 'High',
+      sampleSize: countEff
+    });
+  }
+  
+  return warnings.sort((a, b) => {
+    const severityOrder = { CRITICAL: 3, WARNING: 2, INFO: 1 };
+    return (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+  });
+}
+
+// ========== 3. KPI Trend Intelligence ==========
+function refreshTrendChart() {
+  const period = document.getElementById('trendPeriod').value;
+  const kpi = document.getElementById('trendKPI').value;
+  const data = AppState.processedData || [];
+  
+  const aggregated = aggregateByPeriod(data, period, kpi);
+  
+  if (DashboardState.charts.trend) {
+    DashboardState.charts.trend.destroy();
+  }
+  
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  DashboardState.charts.trend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: aggregated.labels,
+      datasets: [{
+        label: kpi === 'util' ? 'Utilization %' : 'Efficiency %',
+        data: aggregated.values,
+        borderColor: kpi === 'util' ? '#10b981' : '#a855f7',
+        backgroundColor: kpi === 'util' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(168, 85, 247, 0.1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top' }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Rate (%)' }
+        }
+      }
+    }
+  });
+}
+
+function aggregateByPeriod(data, period, kpi) {
+  const grouped = {};
+  
+  data.forEach(r => {
+    const key = period === 'daily' ? r.workingDay : getWeekKey(r.workingDay);
+    if (!grouped[key]) grouped[key] = { sum: 0, count: 0 };
+    
+    const rate = kpi === 'util' ? r.utilizationRate : r.efficiencyRate;
+    if (rate >= 0 && rate <= 1000) {
+      grouped[key].sum += rate;
+      grouped[key].count++;
+    }
+  });
+  
+  const labels = Object.keys(grouped).sort();
+  const values = labels.map(l => grouped[l].count > 0 ? grouped[l].sum / grouped[l].count : 0);
+  
+  return { labels, values };
+}
+
+function getWeekKey(date) {
+  const d = new Date(date);
+  const week = Math.ceil((d - new Date(d.getFullYear(), 0, 1)) / 604800000);
+  return `Week ${week}`;
+}
+
+// ========== 4. What Changed & Why ==========
+function refreshContributionChart() {
+  const period = document.getElementById('contributionPeriod').value;
+  const kpi = document.getElementById('contributionKPI').value;
+  const data = AppState.processedData || [];
+  
+  // Simplified: show current distribution by FO Desc 2
+  const groups = {};
+  data.forEach(r => {
+    const cat = r.foDesc2 || 'Unknown';
+    if (!groups[cat]) groups[cat] = { sum: 0, count: 0 };
+    
+    const rate = kpi === 'util' ? r.utilizationRate : r.efficiencyRate;
+    if (rate >= 0 && rate <= 1000) {
+      groups[cat].sum += rate;
+      groups[cat].count++;
+    }
+  });
+  
+  const categories = Object.keys(groups).sort();
+  const values = categories.map(c => groups[c].count > 0 ? groups[c].sum / groups[c].count : 0);
+  
+  document.getElementById('contributionOverall').textContent = 'Current Distribution';
+  
+  if (DashboardState.charts.contribution) {
+    DashboardState.charts.contribution.destroy();
+  }
+  
+  const ctx = document.getElementById('contributionChart').getContext('2d');
+  DashboardState.charts.contribution = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: categories,
+      datasets: [{
+        label: kpi === 'util' ? 'Utilization %' : 'Efficiency %',
+        data: values,
+        backgroundColor: '#6366f1'
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100
+        }
+      }
+    }
+  });
+}
+
+// ========== 5. Shift Comparison ==========
+function switchShiftMode(mode) {
+  DashboardState.currentShiftMode = mode;
+  
+  const btnDN = document.getElementById('shiftModeDayNight');
+  const btnABC = document.getElementById('shiftModeABC');
+  
+  if (mode === 'daynight') {
+    btnDN.className = 'px-3 py-1 text-sm bg-indigo-600 text-white rounded-lg';
+    btnABC.className = 'px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded-lg';
+  } else {
+    btnDN.className = 'px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded-lg';
+    btnABC.className = 'px-3 py-1 text-sm bg-indigo-600 text-white rounded-lg';
+  }
+  
+  refreshShiftChart();
+}
+
+function refreshShiftChart() {
+  const mode = DashboardState.currentShiftMode;
+  const kpi = document.getElementById('shiftKPI').value;
+  const data = AppState.processedData || [];
+  
+  let labels, values;
+  
+  if (mode === 'daynight') {
+    const dayData = data.filter(r => r.workingShift === 'Day');
+    const nightData = data.filter(r => r.workingShift === 'Night');
+    
+    labels = ['Day', 'Night'];
+    values = [calcAvg(dayData, kpi), calcAvg(nightData, kpi)];
+  } else {
+    const aData = data.filter(r => r.shift === 'A');
+    const bData = data.filter(r => r.shift === 'B');
+    const cData = data.filter(r => r.shift === 'C');
+    
+    labels = ['A Shift', 'B Shift', 'C Shift'];
+    values = [calcAvg(aData, kpi), calcAvg(bData, kpi), calcAvg(cData, kpi)];
+  }
+  
+  if (DashboardState.charts.shift) {
+    DashboardState.charts.shift.destroy();
+  }
+  
+  const ctx = document.getElementById('shiftChart').getContext('2d');
+  DashboardState.charts.shift = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: kpi === 'util' ? 'Utilization %' : 'Efficiency %',
+        data: values,
+        backgroundColor: mode === 'daynight' 
+          ? ['#fbbf24', '#6366f1']
+          : ['#ef4444', '#10b981', '#3b82f6']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100
+        }
+      }
+    }
+  });
+}
+
+function calcAvg(data, kpi) {
+  let sum = 0, count = 0;
+  data.forEach(r => {
+    const rate = kpi === 'util' ? r.utilizationRate : r.efficiencyRate;
+    if (rate >= 0 && rate <= 1000) {
+      sum += rate;
+      count++;
+    }
+  });
+  return count > 0 ? sum / count : 0;
+}
+
+// ========== 6. Process Health Matrix ==========
+function refreshHealthMatrix(data) {
+  const groups = {};
+  
+  data.forEach(r => {
+    const cat = r.foDesc2 || 'Unknown';
+    if (!groups[cat]) groups[cat] = { util: [], eff: [] };
+    
+    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
+      groups[cat].util.push(r.utilizationRate);
+    }
+    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
+      groups[cat].eff.push(r.efficiencyRate);
+    }
+  });
+  
+  const points = Object.keys(groups).map(cat => {
+    const utilAvg = groups[cat].util.length > 0 
+      ? groups[cat].util.reduce((a,b) => a+b, 0) / groups[cat].util.length 
+      : 0;
+    const effAvg = groups[cat].eff.length > 0 
+      ? groups[cat].eff.reduce((a,b) => a+b, 0) / groups[cat].eff.length 
+      : 0;
+    
+    return {
+      x: utilAvg,
+      y: effAvg,
+      r: Math.sqrt(groups[cat].util.length + groups[cat].eff.length) / 5,
+      label: cat
+    };
+  });
+  
+  if (DashboardState.charts.matrix) {
+    DashboardState.charts.matrix.destroy();
+  }
+  
+  const ctx = document.getElementById('healthMatrixChart').getContext('2d');
+  DashboardState.charts.matrix = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: [{
+        label: 'Process Health',
+        data: points,
+        backgroundColor: points.map(p => {
+          if (p.x >= 50 && p.y >= 50) return 'rgba(34, 197, 94, 0.6)'; // Green
+          if (p.x >= 50 && p.y < 50) return 'rgba(239, 68, 68, 0.6)'; // Red
+          if (p.x < 50 && p.y >= 50) return 'rgba(59, 130, 246, 0.6)'; // Blue
+          return 'rgba(156, 163, 175, 0.6)'; // Gray
+        })
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Utilization %' }
+        },
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Efficiency %' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const p = points[ctx.dataIndex];
+              return `${p.label}: Util ${p.x.toFixed(1)}%, Eff ${p.y.toFixed(1)}%`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ========== Utility Functions ==========
+function toggleOutlierScanner() {
+  const scanner = document.getElementById('outlierScanner');
+  scanner.classList.toggle('hidden');
+}
+
+function filterDashboardByKPI(kpi) {
+  DashboardState.currentKPI = kpi;
+  // TODO: Filter all charts by selected KPI
+  console.log(`Filtered by KPI: ${kpi}`);
+}
+
+// ========== Initialization ==========
+function initExecutiveDashboard() {
+  console.log('✅ Executive Dashboard initialized');
+  
+  // Populate hierarchy dropdown
+  if (AppState.processedData && AppState.processedData.length > 0) {
+    const hierarchies = [...new Set(AppState.processedData.map(r => r.foDesc2).filter(Boolean))].sort();
+    const select = document.getElementById('trendHierarchy');
+    select.innerHTML = '<option value="all">All Processes</option>' + 
+      hierarchies.map(h => `<option value="${h}">${h}</option>`).join('');
+  }
+}
+
+console.log('✅ Executive Dashboard functions loaded');
+
+// Hook: Call Executive Dashboard refresh when tab is shown
+(function() {
+  const originalShowTab = window.showTab || function(){};
+  window.showTab = function(tabName) {
+    originalShowTab(tabName);
+    if (tabName === 'dashboard' && AppState.processedData && AppState.processedData.length > 0) {
+      setTimeout(() => {
+        refreshExecutiveDashboard();
+        initExecutiveDashboard();
+      }, 100);
+    }
+  };
+})();

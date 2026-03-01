@@ -782,162 +782,214 @@
 
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content hidden">
-            <!-- Filters -->
+            
+            <!-- 1. Performance Flight Deck -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-gauge-high text-blue-600 mr-2"></i>
+                    Performance Flight Deck
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Card 1: Total Workers -->
+                    <div class="card bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('workers')">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600 font-medium mb-1">👥 Total Workers</p>
+                                <p class="text-4xl font-bold text-blue-600" id="flightWorkers">-</p>
+                                <p class="text-xs text-gray-500 mt-1" id="flightWorkersChange">-</p>
+                            </div>
+                            <div class="w-16 h-12">
+                                <canvas id="sparkWorkers"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 2: Avg Utilization -->
+                    <div class="card bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('util')">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600 font-medium mb-1">⏱️ Avg Utilization</p>
+                                <p class="text-4xl font-bold text-green-600" id="flightUtil">-</p>
+                                <p class="text-xs text-gray-500 mt-1" id="flightUtilChange">-</p>
+                            </div>
+                            <div class="w-16 h-12">
+                                <canvas id="sparkUtil"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 3: Avg Efficiency -->
+                    <div class="card bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('eff')">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600 font-medium mb-1">⚡ Avg Efficiency</p>
+                                <p class="text-4xl font-bold text-purple-600" id="flightEff">-</p>
+                                <p class="text-xs text-gray-500 mt-1" id="flightEffChange">-</p>
+                            </div>
+                            <div class="w-16 h-12">
+                                <canvas id="sparkEff"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 4: Total Records -->
+                    <div class="card bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600 font-medium mb-1">📊 Total Records</p>
+                                <p class="text-4xl font-bold text-gray-700" id="flightRecords">-</p>
+                                <p class="text-xs text-gray-500 mt-1" id="flightRecordsChange">-</p>
+                            </div>
+                            <div class="w-16 h-12">
+                                <canvas id="sparkRecords"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Focus Queue -->
             <div class="card mb-6">
-                <h3 class="text-lg font-bold mb-4">
-                    <i class="fas fa-filter text-blue-600 mr-2"></i>
-                    Dashboard Filters
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-exclamation-triangle text-orange-600 mr-2"></i>
+                    🚨 Focus Queue (Manager Action Inbox)
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
-                        <select id="dashPeriodFilter" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md">
-                            <option value="all">All Dates</option>
-                            <option value="last7">Last 7 Days</option>
-                            <option value="last14">Last 14 Days</option>
-                            <option value="last30">Last 30 Days</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Working Shift</label>
-                        <select id="dashWorkingShiftFilter" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md">
-                            <option value="">All</option>
-                            <option value="Day">Day</option>
-                            <option value="Night">Night</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Category (FO Desc 2)</label>
-                        <select id="dashCategoryFilter" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md">
-                            <option value="">All</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Process (FO Desc 3)</label>
-                        <select id="dashProcessFilter" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-md">
-                            <option value="">All</option>
-                        </select>
-                    </div>
+                <div id="focusQueueContainer">
+                    <p class="text-gray-500 text-sm">No warnings detected. All systems normal.</p>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="applyDashboardFilters()" class="btn btn-primary">
-                        <i class="fas fa-check mr-2"></i>
-                        Apply Filters
-                    </button>
-                    <button onclick="resetDashboardFilters()" class="btn btn-secondary">
-                        <i class="fas fa-undo mr-2"></i>
-                        Reset
-                    </button>
-                </div>
+                <button id="showAllWarnings" class="mt-3 text-sm text-blue-600 hover:underline hidden" onclick="toggleOutlierScanner()">
+                    Show All Warnings ▼
+                </button>
             </div>
 
-            <!-- KPI Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Total Workers</p>
-                            <p class="text-3xl font-bold text-gray-800" id="dashKpiWorkers">-</p>
-                        </div>
-                        <i class="fas fa-users text-4xl text-blue-500"></i>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Avg Utilization</p>
-                            <p class="text-3xl font-bold text-blue-600" id="dashKpiUtil">-</p>
-                        </div>
-                        <i class="fas fa-clock text-4xl text-blue-500"></i>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Avg Efficiency</p>
-                            <p class="text-3xl font-bold text-purple-600" id="dashKpiEff">-</p>
-                        </div>
-                        <i class="fas fa-chart-line text-4xl text-purple-500"></i>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Total Records</p>
-                            <p class="text-3xl font-bold text-gray-800" id="dashKpiRecords">-</p>
-                        </div>
-                        <i class="fas fa-database text-4xl text-gray-500"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Trend Analysis -->
+            <!-- 3. KPI Trend Intelligence -->
             <div class="card mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">
                         <i class="fas fa-chart-line text-blue-600 mr-2"></i>
-                        Trend Analysis
+                        📈 KPI Trend Intelligence
                     </h3>
                     <div class="flex gap-2">
-                        <button id="trendUtilBtn" class="px-4 py-2 rounded-lg font-medium transition-all bg-blue-600 text-white" onclick="switchDashTrend('util')">
-                            Utilization
-                        </button>
-                        <button id="trendEffBtn" class="px-4 py-2 rounded-lg font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" onclick="switchDashTrend('eff')">
-                            Efficiency
-                        </button>
+                        <select id="trendPeriod" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshTrendChart()">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                        <select id="trendKPI" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshTrendChart()">
+                            <option value="util">Utilization</option>
+                            <option value="eff">Efficiency</option>
+                        </select>
+                        <select id="trendHierarchy" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshTrendChart()">
+                            <option value="all">All Processes</option>
+                        </select>
                     </div>
                 </div>
-                <canvas id="dashTrendChart" style="height: 300px;"></canvas>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Click data point to open Period Detail Modal
+                </p>
             </div>
 
-            <!-- Top/Bottom Workers & Process Analysis -->
+            <!-- 4. What Changed & Why + 5. Shift Comparison -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- Top 10 Workers -->
+                <!-- What Changed & Why -->
                 <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-trophy text-yellow-500 mr-2"></i>
-                        Top 10 Workers
-                    </h3>
-                    <div id="dashTopWorkers" class="space-y-2" style="max-height: 400px; overflow-y: auto;">
-                        <p class="text-sm text-gray-500 italic">No data available</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-arrows-turn-to-dots text-indigo-600 mr-2"></i>
+                            🔄 What Changed & Why
+                        </h3>
+                        <div class="flex gap-2">
+                            <select id="contributionPeriod" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshContributionChart()">
+                                <option value="wow">Week-over-Week</option>
+                                <option value="dod">Day-over-Day</option>
+                            </select>
+                            <select id="contributionKPI" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshContributionChart()">
+                                <option value="util">Utilization</option>
+                                <option value="eff">Efficiency</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">
+                        Overall Change: <span id="contributionOverall" class="font-bold">-</span>
+                    </p>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="contributionChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Bottom 10 Workers -->
+                <!-- Shift Comparison -->
                 <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
-                        Bottom 10 Workers
-                    </h3>
-                    <div id="dashBottomWorkers" class="space-y-2" style="max-height: 400px; overflow-y: auto;">
-                        <p class="text-sm text-gray-500 italic">No data available</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>
+                            🌓 Shift Comparison
+                        </h3>
+                        <div class="flex gap-2">
+                            <button id="shiftModeDayNight" class="px-3 py-1 text-sm bg-indigo-600 text-white rounded-lg" onclick="switchShiftMode('daynight')">
+                                Day vs Night
+                            </button>
+                            <button id="shiftModeABC" class="px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded-lg" onclick="switchShiftMode('abc')">
+                                A vs B vs C
+                            </button>
+                        </div>
+                    </div>
+                    <select id="shiftKPI" class="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg mb-3" onchange="refreshShiftChart()">
+                        <option value="util">Utilization</option>
+                        <option value="eff">Efficiency</option>
+                    </select>
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="shiftChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- Process & Shift Analysis -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- Process Analysis -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-industry text-blue-600 mr-2"></i>
-                        Process Analysis
-                    </h3>
-                    <canvas id="dashProcessChart"></canvas>
-                </div>
-
-                <!-- Shift Analysis -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-clock text-orange-600 mr-2"></i>
-                        Shift Analysis
-                    </h3>
-                    <canvas id="dashShiftChart"></canvas>
+            <!-- 6. Process Health Matrix -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-grip text-teal-600 mr-2"></i>
+                    📊 Process Health Matrix
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">
+                    Quadrant view: Utilization × Efficiency by FO Desc 2 (Category)
+                </p>
+                <div style="height: 400px; position: relative;">
+                    <canvas id="healthMatrixChart"></canvas>
                 </div>
             </div>
+
+            <!-- 7. Outlier Scanner (Collapsible) -->
+            <div class="card mb-6 hidden" id="outlierScanner">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-magnifying-glass-chart text-red-600 mr-2"></i>
+                    🎲 Outlier Scanner
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Type</th>
+                                <th class="px-4 py-2 text-left">Name</th>
+                                <th class="px-4 py-2 text-left">KPI</th>
+                                <th class="px-4 py-2 text-right">Value</th>
+                                <th class="px-4 py-2 text-right">Expected</th>
+                                <th class="px-4 py-2 text-right">Sample (n)</th>
+                                <th class="px-4 py-2 text-center">Confidence</th>
+                                <th class="px-4 py-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="outlierTableBody">
+                            <tr>
+                                <td colspan="8" class="px-4 py-3 text-center text-gray-500">No outliers detected</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
         </div>
-
-
         <div id="reportTab" class="tab-content hidden">
             <!-- Filters -->
             <div class="card">
