@@ -398,4 +398,127 @@ app.delete('/api/uploads/:id', async (c) => {
   }
 })
 
+// API: Process Mapping 조회 (특정 업로드)
+app.get('/api/uploads/:id/process-mapping', async (c) => {
+  try {
+    const { env } = c
+    const uploadId = c.req.param('id')
+    
+    const { results: mappings } = await env.DB.prepare(`
+      SELECT * FROM process_mapping 
+      WHERE upload_id = ? 
+      ORDER BY fo_desc_2, seq
+    `).bind(uploadId).all()
+    
+    return c.json({
+      success: true,
+      mappings
+    })
+  } catch (error: any) {
+    console.error('Process mapping load error:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// API: 모든 Process Mapping 조회 (최신 업로드 기준)
+app.get('/api/process-mapping', async (c) => {
+  try {
+    const { env } = c
+    
+    // 최신 업로드 ID 가져오기
+    const latestUpload = await env.DB.prepare(`
+      SELECT id FROM excel_uploads 
+      ORDER BY upload_date DESC 
+      LIMIT 1
+    `).first()
+    
+    if (!latestUpload) {
+      return c.json({
+        success: true,
+        mappings: [],
+        message: 'No uploads found'
+      })
+    }
+    
+    const { results: mappings } = await env.DB.prepare(`
+      SELECT * FROM process_mapping 
+      WHERE upload_id = ? 
+      ORDER BY fo_desc_2, seq
+    `).bind(latestUpload.id).all()
+    
+    return c.json({
+      success: true,
+      uploadId: latestUpload.id,
+      mappings
+    })
+  } catch (error: any) {
+    console.error('Process mapping load error:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// API: Process Mapping 추가/수정
+app.post('/api/process-mapping', async (c) => {
+  try {
+    const { env } = c
+    const { uploadId, fd_desc, fo_desc, fo_desc_2, fo_desc_3, seq } = await c.req.json()
+    
+    // 기존 매핑 확인
+    const existing = await env.DB.prepare(`
+      SELECT id FROM process_mapping 
+      WHERE upload_id = ? AND fd_desc = ? AND fo_desc = ?
+    `).bind(uploadId, fd_desc, fo_desc).first()
+    
+    if (existing) {
+      // 수정
+      await env.DB.prepare(`
+        UPDATE process_mapping 
+        SET fo_desc_2 = ?, fo_desc_3 = ?, seq = ?
+        WHERE id = ?
+      `).bind(fo_desc_2, fo_desc_3, seq, existing.id).run()
+      
+      return c.json({
+        success: true,
+        message: 'Mapping updated',
+        id: existing.id
+      })
+    } else {
+      // 추가
+      const result = await env.DB.prepare(`
+        INSERT INTO process_mapping (upload_id, fd_desc, fo_desc, fo_desc_2, fo_desc_3, seq)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(uploadId, fd_desc, fo_desc, fo_desc_2, fo_desc_3, seq).run()
+      
+      return c.json({
+        success: true,
+        message: 'Mapping added',
+        id: result.meta.last_row_id
+      })
+    }
+  } catch (error: any) {
+    console.error('Process mapping save error:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// API: Process Mapping 삭제
+app.delete('/api/process-mapping/:id', async (c) => {
+  try {
+    const { env } = c
+    const mappingId = c.req.param('id')
+    
+    await env.DB.prepare(`
+      DELETE FROM process_mapping WHERE id = ?
+    `).bind(mappingId).run()
+    
+    return c.json({
+      success: true,
+      message: 'Mapping deleted'
+    })
+  } catch (error: any) {
+    console.error('Process mapping delete error:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 export default app

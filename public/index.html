@@ -680,6 +680,9 @@
                 <button class="tab-btn tab-active px-6 py-3 font-medium" data-tab="upload">
                     <i class="fas fa-file-upload mr-2"></i>Data Upload
                 </button>
+                <button class="tab-btn px-6 py-3 font-medium" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                </button>
                 <button class="tab-btn px-6 py-3 font-medium" data-tab="report">
                     <i class="fas fa-chart-bar mr-2"></i>Report
                 </button>
@@ -774,6 +777,111 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content hidden">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- Total Workers -->
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Workers</p>
+                            <p class="text-3xl font-bold text-gray-800" id="dashTotalWorkers">-</p>
+                        </div>
+                        <i class="fas fa-users text-4xl text-blue-500"></i>
+                    </div>
+                </div>
+                
+                <!-- Avg Utilization -->
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Avg Utilization</p>
+                            <p class="text-3xl font-bold text-blue-600" id="dashAvgUtil">-</p>
+                        </div>
+                        <i class="fas fa-clock text-4xl text-blue-500"></i>
+                    </div>
+                </div>
+                
+                <!-- Avg Efficiency -->
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Avg Efficiency</p>
+                            <p class="text-3xl font-bold text-purple-600" id="dashAvgEff">-</p>
+                        </div>
+                        <i class="fas fa-chart-line text-4xl text-purple-500"></i>
+                    </div>
+                </div>
+                
+                <!-- Total Records -->
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Records</p>
+                            <p class="text-3xl font-bold text-gray-800" id="dashTotalRecords">-</p>
+                        </div>
+                        <i class="fas fa-database text-4xl text-gray-500"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Distribution -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Utilization Distribution -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
+                        Utilization Distribution
+                    </h3>
+                    <canvas id="dashUtilDistChart"></canvas>
+                </div>
+                
+                <!-- Efficiency Distribution -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-chart-bar text-purple-600 mr-2"></i>
+                        Efficiency Distribution
+                    </h3>
+                    <canvas id="dashEffDistChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Top/Bottom Performers -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Top Performers -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                        Top 10 Performers (Utilization)
+                    </h3>
+                    <div id="dashTopPerformers" class="space-y-2">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Bottom Performers -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        Bottom 10 Performers (Utilization)
+                    </h3>
+                    <div id="dashBottomPerformers" class="space-y-2">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Process-wise Performance -->
+            <div class="card">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-industry text-blue-600 mr-2"></i>
+                    Process-wise Average Performance
+                </h3>
+                <canvas id="dashProcessChart"></canvas>
             </div>
         </div>
 
