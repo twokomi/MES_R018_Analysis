@@ -3876,27 +3876,24 @@ async function loadUploadById(uploadId) {
             seq: m.seq
         }));
         
-        // Merge with default mappings to fill in missing seq values
-        loadDefaultProcessMapping();
-        const defaultMappings = AppState.processMapping;
-        AppState.processMapping = (dataResult.processMapping || []).map(m => {
-            const dbMapping = {
-                fdDesc: m.fd_desc,
-                foDesc2: m.fo_desc_2,
-                foDesc3: m.fo_desc_3,
-                seq: m.seq
-            };
-            // If seq is null/undefined, try to find it from default mappings
-            if (dbMapping.seq === null || dbMapping.seq === undefined) {
-                const defaultMatch = defaultMappings.find(dm => 
-                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
-                );
-                if (defaultMatch) {
-                    dbMapping.seq = defaultMatch.seq;
-                }
-            }
-            return dbMapping;
-        });
+        // Load process mapping from DB or use default hardcoded mappings
+        if (!dataResult.processMapping || dataResult.processMapping.length === 0) {
+            // No mappings in DB, use default hardcoded mappings
+            console.log('ℹ️ No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
+            AppState.processMapping = [];
+            Object.keys(DEFAULT_PROCESS_MAPPING).forEach(fdDesc => {
+                const mapping = DEFAULT_PROCESS_MAPPING[fdDesc];
+                AppState.processMapping.push({
+                    fdDesc: fdDesc,
+                    foDesc2: mapping.foDesc2,
+                    foDesc3: mapping.foDesc3,
+                    seq: mapping.seq || 999
+                });
+            });
+            console.log(`✅ Loaded ${AppState.processMapping.length} default process mappings`);
+        } else {
+            console.log(`✅ Loaded ${AppState.processMapping.length} process mappings from database`);
+        }
         
         // Load shift calendar from DB, or use default if not available
         const dbShiftCalendar = (dataResult.shiftCalendar || []).map(s => ({
@@ -4072,27 +4069,24 @@ async function loadLastUpload() {
             seq: m.seq
         }));
         
-        // Merge with default mappings to fill in missing seq values
-        loadDefaultProcessMapping();
-        const defaultMappings = AppState.processMapping;
-        AppState.processMapping = (dataResult.processMapping || []).map(m => {
-            const dbMapping = {
-                fdDesc: m.fd_desc,
-                foDesc2: m.fo_desc_2,
-                foDesc3: m.fo_desc_3,
-                seq: m.seq
-            };
-            // If seq is null/undefined, try to find it from default mappings
-            if (dbMapping.seq === null || dbMapping.seq === undefined) {
-                const defaultMatch = defaultMappings.find(dm => 
-                    dm.foDesc3 === dbMapping.foDesc3 && dm.foDesc2 === dbMapping.foDesc2
-                );
-                if (defaultMatch) {
-                    dbMapping.seq = defaultMatch.seq;
-                }
-            }
-            return dbMapping;
-        });
+        // Load process mapping from DB or use default hardcoded mappings
+        if (!dataResult.processMapping || dataResult.processMapping.length === 0) {
+            // No mappings in DB, use default hardcoded mappings
+            console.log('ℹ️ No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
+            AppState.processMapping = [];
+            Object.keys(DEFAULT_PROCESS_MAPPING).forEach(fdDesc => {
+                const mapping = DEFAULT_PROCESS_MAPPING[fdDesc];
+                AppState.processMapping.push({
+                    fdDesc: fdDesc,
+                    foDesc2: mapping.foDesc2,
+                    foDesc3: mapping.foDesc3,
+                    seq: mapping.seq || 999
+                });
+            });
+            console.log(`✅ Loaded ${AppState.processMapping.length} default process mappings`);
+        } else {
+            console.log(`✅ Loaded ${AppState.processMapping.length} process mappings from database`);
+        }
         
         // Load shift calendar from DB, or use default if not available
         const dbShiftCalendar2 = (dataResult.shiftCalendar || []).map(s => ({
