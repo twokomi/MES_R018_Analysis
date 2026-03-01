@@ -782,106 +782,101 @@
 
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content hidden">
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <!-- Total Workers -->
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Total Workers</p>
-                            <p class="text-3xl font-bold text-gray-800" id="dashTotalWorkers">-</p>
-                        </div>
-                        <i class="fas fa-users text-4xl text-blue-500"></i>
-                    </div>
-                </div>
-                
-                <!-- Avg Utilization -->
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Avg Utilization</p>
-                            <p class="text-3xl font-bold text-blue-600" id="dashAvgUtil">-</p>
-                        </div>
-                        <i class="fas fa-clock text-4xl text-blue-500"></i>
-                    </div>
-                </div>
-                
-                <!-- Avg Efficiency -->
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Avg Efficiency</p>
-                            <p class="text-3xl font-bold text-purple-600" id="dashAvgEff">-</p>
-                        </div>
-                        <i class="fas fa-chart-line text-4xl text-purple-500"></i>
-                    </div>
-                </div>
-                
-                <!-- Total Records -->
-                <div class="card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Total Records</p>
-                            <p class="text-3xl font-bold text-gray-800" id="dashTotalRecords">-</p>
-                        </div>
-                        <i class="fas fa-database text-4xl text-gray-500"></i>
-                    </div>
-                </div>
+            <!-- Dashboard Header -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                    Shopfloor Performance Dashboard
+                </h2>
+                <p class="text-sm text-gray-600">Real-time insights and trend analysis for production efficiency</p>
             </div>
-            
-            <!-- Performance Distribution -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- Utilization Distribution -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
-                        Utilization Distribution
-                    </h3>
-                    <canvas id="dashUtilDistChart"></canvas>
-                </div>
-                
-                <!-- Efficiency Distribution -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-chart-bar text-purple-600 mr-2"></i>
-                        Efficiency Distribution
-                    </h3>
-                    <canvas id="dashEffDistChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- Top/Bottom Performers -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- Top Performers -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-trophy text-yellow-500 mr-2"></i>
-                        Top 10 Performers (Utilization)
-                    </h3>
-                    <div id="dashTopPerformers" class="space-y-2">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-                
-                <!-- Bottom Performers -->
-                <div class="card">
-                    <h3 class="text-lg font-bold mb-4">
-                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
-                        Bottom 10 Performers (Utilization)
-                    </h3>
-                    <div id="dashBottomPerformers" class="space-y-2">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Process-wise Performance -->
-            <div class="card">
-                <h3 class="text-lg font-bold mb-4">
-                    <i class="fas fa-industry text-blue-600 mr-2"></i>
-                    Process-wise Average Performance
+
+            <!-- AI Insights & Warnings Section -->
+            <div class="card mb-6" style="border-left: 4px solid #f59e0b;">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-robot mr-2 text-yellow-600"></i>
+                    AI Insights & Warnings
                 </h3>
-                <canvas id="dashProcessChart"></canvas>
+                <div id="aiInsightsContainer">
+                    <p class="text-sm text-gray-500 italic">No active warnings. All metrics within normal ranges.</p>
+                </div>
+            </div>
+
+            <!-- KPI Trend Overview Section -->
+            <div class="card mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-chart-area mr-2 text-blue-600"></i>
+                        KPI Trend Overview
+                    </h3>
+                    <div class="flex gap-2">
+                        <button id="trendToggleDaily" class="px-4 py-2 rounded-lg font-medium transition-all bg-blue-600 text-white" onclick="switchTrendView('daily')">
+                            <i class="fas fa-calendar-day mr-1"></i>Daily
+                        </button>
+                        <button id="trendToggleWeekly" class="px-4 py-2 rounded-lg font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300" onclick="switchTrendView('weekly')">
+                            <i class="fas fa-calendar-week mr-1"></i>Weekly
+                        </button>
+                    </div>
+                </div>
+                <div id="kpiTrendChart" class="chart-container cursor-pointer" style="height: 300px;" title="Click to drill down by process hierarchy">
+                    <p class="text-sm text-gray-500 text-center py-12">Select filters and apply to view trends</p>
+                </div>
+            </div>
+
+            <!-- Process Performance Ranking Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">
+                        <i class="fas fa-medal mr-2 text-green-600"></i>
+                        Top 5 Processes
+                    </h3>
+                    <div id="topProcessesTable" class="overflow-auto" style="max-height: 400px;">
+                        <p class="text-sm text-gray-500 italic">No data available</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">
+                        <i class="fas fa-exclamation-circle mr-2 text-red-600"></i>
+                        Bottom 5 Processes
+                    </h3>
+                    <div id="bottomProcessesTable" class="overflow-auto" style="max-height: 400px;">
+                        <p class="text-sm text-gray-500 italic">No data available</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shift Comparison Section -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">
+                    <i class="fas fa-sun mr-2 text-orange-500"></i>
+                    <i class="fas fa-moon mr-2 text-indigo-500"></i>
+                    Shift Comparison (Day vs Night)
+                </h3>
+                <div id="shiftComparisonChart" class="chart-container cursor-pointer" style="height: 300px;" title="Click to view detailed shift analysis">
+                    <p class="text-sm text-gray-500 text-center py-12">Select filters and apply to view shift comparison</p>
+                </div>
+            </div>
+
+            <!-- Distribution & Outliers Section -->
+            <div class="card mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-histogram mr-2 text-purple-600"></i>
+                    Distribution & Outliers
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Utilization Rate Distribution</h4>
+                        <div id="utilizationDistChart" class="chart-container cursor-pointer" style="height: 250px;" title="Click to view workers in this range">
+                            <p class="text-xs text-gray-500 text-center py-8">No data</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Efficiency Rate Distribution</h4>
+                        <div id="efficiencyDistChart" class="chart-container cursor-pointer" style="height: 250px;" title="Click to view workers in this range">
+                            <p class="text-xs text-gray-500 text-center py-8">No data</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -2418,6 +2413,105 @@
                         <strong>Key Insight:</strong> Use both metrics together! Utilization shows time investment, 
                         while Efficiency shows work output. High Utilization + High Efficiency = Top performer.
                     </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Drill-Down Modal -->
+    <div id="processDrillDownModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold">
+                    <i class="fas fa-industry mr-2"></i>
+                    <span id="processModalTitle">Process Analysis</span>
+                </h3>
+                <button onclick="closeProcessModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+                <!-- Process Trend Chart -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3">
+                        <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                        Performance Trend
+                    </h4>
+                    <canvas id="processModalTrendChart" style="height: 250px;"></canvas>
+                </div>
+                
+                <!-- Process Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-pie-chart mr-2 text-purple-600"></i>
+                            Sub-Process Breakdown
+                        </h4>
+                        <canvas id="processModalBreakdownChart"></canvas>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-users mr-2 text-green-600"></i>
+                            Top Workers
+                        </h4>
+                        <div id="processModalTopWorkers" class="space-y-2">
+                            <!-- Will be populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shift Drill-Down Modal -->
+    <div id="shiftDrillDownModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-600 to-indigo-600 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="shiftModalTitle">Shift Analysis</span>
+                </h3>
+                <button onclick="closeShiftModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+                <!-- Hourly Distribution -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3">
+                        <i class="fas fa-clock mr-2 text-orange-600"></i>
+                        Hourly Performance Distribution
+                    </h4>
+                    <canvas id="shiftModalHourlyChart" style="height: 250px;"></canvas>
+                </div>
+                
+                <!-- Process Mix -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3">
+                        <i class="fas fa-th mr-2 text-indigo-600"></i>
+                        Process Mix
+                    </h4>
+                    <canvas id="shiftModalProcessMixChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribution Drill-Down Modal -->
+    <div id="distributionDrillDownModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold">
+                    <i class="fas fa-users mr-2"></i>
+                    <span id="distributionModalTitle">Workers in Range</span>
+                </h3>
+                <button onclick="closeDistributionModal()" class="text-white hover:text-gray-200 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 80px);">
+                <div id="distributionModalContent">
+                    <!-- Will be populated with worker list -->
                 </div>
             </div>
         </div>
