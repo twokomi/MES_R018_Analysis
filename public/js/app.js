@@ -476,8 +476,13 @@ function switchTab(tabName) {
     
     // Initialize Dashboard when switching to dashboard tab
     if (tabName === 'dashboard') {
-        if (typeof initDashboard === 'function') {
-            initDashboard();
+        if (typeof refreshExecutiveDashboard === 'function' && AppState.processedData && AppState.processedData.length > 0) {
+            setTimeout(() => {
+                refreshExecutiveDashboard();
+                if (typeof initExecutiveDashboard === 'function') {
+                    initExecutiveDashboard();
+                }
+            }, 100);
         }
     }
 }
@@ -734,6 +739,16 @@ function handleFileUpload(file) {
             
             // Update report
             updateReport();
+            
+            // Refresh Executive Dashboard if data exists
+            if (typeof refreshExecutiveDashboard === 'function' && AppState.processedData && AppState.processedData.length > 0) {
+                setTimeout(() => {
+                    refreshExecutiveDashboard();
+                    if (typeof initExecutiveDashboard === 'function') {
+                        initExecutiveDashboard();
+                    }
+                }, 500);
+            }
             
             // Store filename and size for later database save
             AppState.currentFileName = file.name;
