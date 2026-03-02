@@ -1676,12 +1676,16 @@
                                     <p class="text-sm text-gray-600 ml-6">Compare 7/14/30 day periods to see which processes contributed to performance changes</p>
                                 </li>
                                 <li>
-                                    <strong>Shift Comparison</strong>
+                                    <strong>Shift Comparison (OLD)</strong>
                                     <p class="text-sm text-gray-600 ml-6">Compare Day vs Night shift performance visually</p>
                                 </li>
                                 <li>
-                                    <strong>Process Health Matrix</strong>
-                                    <p class="text-sm text-gray-600 ml-6">4-quadrant bubble chart showing process utilization vs efficiency with colored zones</p>
+                                    <strong>Shift Performance Comparison (NEW in v4.3.0)</strong>
+                                    <p class="text-sm text-gray-600 ml-6">Table view comparing Shift A/B/C/D performance across BT/WT/IM groups</p>
+                                    <p class="text-xs text-blue-600 ml-6">• 3 Groups: BT (Process/Complete/QC), WT (WT/WT QC), IM (IM/IM QC)</p>
+                                    <p class="text-xs text-blue-600 ml-6">• Collapsible/expandable tables with period selector (7d/14d/30d/all)</p>
+                                    <p class="text-xs text-blue-600 ml-6">• Columns: Workers, Shift Time, Work Time, Utilization (%), Standard Time, Efficiency (%)</p>
+                                    <p class="text-xs text-blue-600 ml-6">• Color-coded: Blue/Purple (≥50%), Orange (<50%)</p>
                                 </li>
                             </ul>
                         </section>
@@ -1769,11 +1773,38 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 4.3.0 -->
+                    <div class="border-l-4 border-blue-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 4.3.0</h3>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="text-xs text-gray-500">2026-03-02</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-blue-700 mb-2">
+                                    <i class="fas fa-table mr-2"></i>Shift Performance Comparison Table Added
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Replaced</strong>: Process Health Matrix (bubble chart) removed</li>
+                                    <li><strong>New Table</strong>: 3 collapsible groups (BT, WT, IM) comparing Shift A/B/C/D performance</li>
+                                    <li><strong>BT Group</strong>: BT Process, BT Complete, BT QC - Shift A/B/C/D</li>
+                                    <li><strong>WT Group</strong>: WT, WT QC - Shift A/B/C/D</li>
+                                    <li><strong>IM Group</strong>: IM, IM QC - Shift A/B/C</li>
+                                    <li><strong>Period Selector</strong>: Last 7/14/30 days (default), All data with real-time date range display</li>
+                                    <li><strong>Columns</strong>: Workers, Shift Time (hrs), Work Time (hrs), Utilization (%), Standard Time (hrs), Efficiency (%)</li>
+                                    <li><strong>Formatting</strong>: Thousand separators (commas), 1 decimal place, color-coded (Blue/Purple ≥50%, Orange <50%)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Version 4.2.0 -->
                     <div class="border-l-4 border-orange-600 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 4.2.0</h3>
-                            <span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">Latest</span>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Previous</span>
                             <span class="text-xs text-gray-500">2026-03-02</span>
                         </div>
                         
@@ -1810,7 +1841,7 @@
                     <div class="border-l-4 border-green-600 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 4.1.0</h3>
-                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Previous</span>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Older</span>
                             <span class="text-xs text-gray-500">2026-03-02</span>
                         </div>
                         
