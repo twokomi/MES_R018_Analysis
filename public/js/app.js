@@ -5599,35 +5599,37 @@ function updateFlightDeck(data) {
   
   console.log(`Aggregated ${workerStats.size} workers from ${data.length} records`);
   
-  // Calculate average utilization and efficiency
-  let totalUtil = 0, totalEff = 0, countWorkers = 0;
+  // Calculate totals (CORRECTED: Use Total/Total method like Report page)
+  let totalWorkTime = 0;
+  let totalAssignedST = 0;
+  let totalShiftCount = 0;
+  let countWorkers = 0;
   
   workerStats.forEach((stats, workerName) => {
     const shiftCount = stats.shiftCount.size;
     if (shiftCount === 0) return;
     
-    // Utilization = Total Work Time / (660 min/shift * shift count) * 100
-    const utilizationRate = (stats.totalMinutes / (660 * shiftCount)) * 100;
-    
-    // Efficiency = Assigned S/T / Total Work Time * 100
-    const shiftTime = shiftCount * 660;
-    const efficiencyRate = stats.totalMinutes > 0 
-      ? (stats.assignedStandardTime / stats.totalMinutes) * 100 
-      : 0;
-    
-    totalUtil += utilizationRate;
-    totalEff += efficiencyRate;
+    totalWorkTime += stats.totalMinutes;
+    totalAssignedST += stats.assignedStandardTime;
+    totalShiftCount += shiftCount;
     countWorkers++;
     
     if (countWorkers <= 3) {
-      console.log(`Worker: ${workerName}, Util: ${utilizationRate.toFixed(1)}%, Eff: ${efficiencyRate.toFixed(1)}%`);
+      const util = (stats.totalMinutes / (660 * shiftCount)) * 100;
+      console.log(`Worker: ${workerName}, Shift Count: ${shiftCount}, Work Time: ${stats.totalMinutes}, Assigned ST: ${stats.assignedStandardTime}, Util: ${util.toFixed(1)}%`);
     }
   });
   
-  const avgUtil = countWorkers > 0 ? (totalUtil / countWorkers).toFixed(1) : 0;
-  const avgEff = countWorkers > 0 ? (totalEff / countWorkers).toFixed(1) : 0;
+  // Calculate averages using Total/Total method (same as Report page)
+  const totalShiftTime = totalShiftCount * 660;
+  const avgUtil = totalShiftTime > 0 ? ((totalWorkTime / totalShiftTime) * 100).toFixed(1) : 0;
+  const avgEff = totalShiftTime > 0 ? ((totalAssignedST / totalShiftTime) * 100).toFixed(1) : 0;
   
-  console.log(`Final KPIs: Workers=${countWorkers}, Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
+  console.log(`Final KPIs (Total/Total method):`);
+  console.log(`  Workers=${countWorkers}`);
+  console.log(`  Total Shift Count=${totalShiftCount}, Total Shift Time=${totalShiftTime} min`);
+  console.log(`  Total Work Time=${totalWorkTime} min, Avg Util=${avgUtil}%`);
+  console.log(`  Total Assigned S/T=${totalAssignedST} min, Avg Eff=${avgEff}%`);
   
   document.getElementById('flightWorkers').textContent = countWorkers;
   document.getElementById('flightUtil').textContent = avgUtil + '%';
@@ -6961,7 +6963,7 @@ function openAIInsightModal() {
   const mean = avgRate;
   const variance = rates.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / rates.length;
   const stdDev = Math.sqrt(variance);
-  const outliers = workerAgg.filter(w => Math.abs((w[metric] || 0) - mean) > 2 * stdDev);
+  const outliers = workers.filter(w => Math.abs((w[metric] || 0) - mean) > 2 * stdDev);
   
   if (outliers.length > 0) {
     anomalies.push(`<li class="flex items-start gap-2">
@@ -6972,7 +6974,7 @@ function openAIInsightModal() {
   
   // Check for process-specific issues
   const processes = {};
-  workerAgg.forEach(w => {
+  workers.forEach(w => {
     const proc = w.foDesc2 || 'Unknown';
     if (!processes[proc]) processes[proc] = [];
     processes[proc].push(w[metric] || 0);
