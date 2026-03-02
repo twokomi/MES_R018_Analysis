@@ -2143,6 +2143,13 @@ function updateReport() {
     
     const filteredData = getFilteredData();
     
+    // Show Report sections when data is available
+    if (filteredData.length > 0) {
+        document.getElementById('performanceBands')?.classList.remove('hidden');
+        document.getElementById('reportCharts')?.classList.remove('hidden');
+        document.getElementById('reportTable')?.classList.remove('hidden');
+    }
+    
     // Store filtered data in AppState for use in Worker Detail modal
     AppState.filteredData = filteredData;
     
