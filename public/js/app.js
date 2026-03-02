@@ -477,6 +477,11 @@ function switchTab(tabName) {
     
     // Initialize Dashboard when switching to dashboard tab
     if (tabName === 'dashboard') {
+        console.log('🔍 Switching to Dashboard tab');
+        console.log('  AppState.processedData exists:', !!AppState.processedData);
+        console.log('  AppState.processedData.length:', AppState.processedData ? AppState.processedData.length : 0);
+        console.log('  AppState.rawData.length:', AppState.rawData ? AppState.rawData.length : 0);
+        
         if (typeof refreshExecutiveDashboard === 'function' && AppState.processedData && AppState.processedData.length > 0) {
             setTimeout(() => {
                 refreshExecutiveDashboard();
@@ -484,6 +489,9 @@ function switchTab(tabName) {
                     initExecutiveDashboard();
                 }
             }, 100);
+        } else {
+            console.warn('⚠️ Cannot refresh dashboard: No processed data available');
+            console.log('  Possible fix: Run updateReport() first or check data loading');
         }
     }
 }
@@ -4464,6 +4472,17 @@ async function loadLastUpload() {
         updateMappingTable();
         showUploadResult(AppState.processedData);
         updateReport();
+        
+        // Refresh Executive Dashboard if data exists
+        if (typeof refreshExecutiveDashboard === 'function' && AppState.processedData && AppState.processedData.length > 0) {
+            console.log('📊 Refreshing Dashboard after DB load...');
+            setTimeout(() => {
+                refreshExecutiveDashboard();
+                if (typeof initExecutiveDashboard === 'function') {
+                    initExecutiveDashboard();
+                }
+            }, 500);
+        }
         
         console.log(' Data loaded successfully!');
         console.log(` Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
