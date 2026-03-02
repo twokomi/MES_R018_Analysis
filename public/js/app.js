@@ -7194,6 +7194,9 @@ function closeProcessDetailModal() {
 }
 
 // AI Insight Modal functions
+// AI Modal state (independent from main dashboard)
+let aiModalMetricType = null; // null means use main dashboard's metric, otherwise 'utilization' or 'efficiency'
+
 function openAIInsightModal() {
   const modal = document.getElementById('aiInsightModal');
   if (!modal) return;
@@ -7205,6 +7208,22 @@ function openAIInsightModal() {
     alert('No data available for AI analysis. Please upload an Excel file first.');
     return;
   }
+  
+  // Initialize AI modal metric type from main dashboard
+  if (aiModalMetricType === null) {
+    aiModalMetricType = AppState.currentMetricType || 'utilization';
+  }
+  
+  // Show modal first
+  modal.classList.remove('hidden');
+  
+  // Update content
+  updateAIInsightContent();
+}
+
+function updateAIInsightContent() {
+  const aggregated = AppState.aggregatedData || [];
+  if (aggregated.length === 0) return;
   
   // Group by worker to calculate metrics
   const workerMap = {};
@@ -7229,7 +7248,18 @@ function openAIInsightModal() {
     efficiencyRate: w.totalEff / w.count
   }));
   
-  const isEfficiency = AppState.currentMetricType === 'efficiency';
+  const isEfficiency = aiModalMetricType === 'efficiency';
+  
+  // Update toggle button states
+  const utilBtn = document.getElementById('aiModalUtilBtn');
+  const effBtn = document.getElementById('aiModalEffBtn');
+  if (isEfficiency) {
+    utilBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 text-white hover:bg-white hover:bg-opacity-20';
+    effBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 bg-white text-purple-700 shadow-md';
+  } else {
+    utilBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 bg-white text-purple-700 shadow-md';
+    effBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 text-white hover:bg-white hover:bg-opacity-20';
+  }
   
   // Calculate statistics
   const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
@@ -7370,14 +7400,18 @@ function openAIInsightModal() {
   </li>`);
   
   document.getElementById('aiRecommendations').innerHTML = recommendations.join('');
-  
-  // Show modal
-  modal.classList.remove('hidden');
+}
+
+function switchAIModalMetric(metricType) {
+  aiModalMetricType = metricType;
+  updateAIInsightContent();
 }
 
 function closeAIInsightModal() {
   const modal = document.getElementById('aiInsightModal');
   if (modal) modal.classList.add('hidden');
+  // Reset to null so it uses main dashboard metric next time
+  aiModalMetricType = null;
 }
 
 // Glossary Modal functions
