@@ -7177,6 +7177,15 @@ function updateAIInsightContent() {
   const topThreshold = isEfficiency ? 80 : 50;  // Eff ≥80%, Util ≥50%
   const riskThreshold = isEfficiency ? 50 : 30;  // Eff <50%, Util <30%
   
+  // Debug: sample 10 records
+  const samples = aggregated.slice(0, 10).map(r => ({
+    worker: r.workerName,
+    util: r.utilizationRate?.toFixed(1),
+    eff: r.efficiencyRate?.toFixed(1),
+    metric: r[metric]?.toFixed(1)
+  }));
+  console.log('📊 Sample records:', samples);
+  
   aggregated.forEach(r => {
     const rate = r[metric] || 0;
     if (rate >= topThreshold) {
@@ -7237,20 +7246,38 @@ function updateAIInsightContent() {
     <span>Average ${isEfficiency ? 'efficiency' : 'utilization'} rate across all workers is <strong>${avgRate.toFixed(1)}%</strong>.</span>
   </li>`);
   
-  // Find best and worst performers
-  const sorted = [...workers].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+  // Find best and worst performers from aggregated data
+  const workerRatesMap = {};
+  aggregated.forEach(r => {
+    const name = r.workerName;
+    if (!workerRatesMap[name]) {
+      workerRatesMap[name] = [];
+    }
+    workerRatesMap[name].push(r[metric] || 0);
+  });
+  
+  const workerAvgRates = Object.entries(workerRatesMap).map(([name, rates]) => ({
+    name,
+    avgRate: rates.reduce((a, b) => a + b, 0) / rates.length
+  }));
+  
+  const sorted = workerAvgRates.sort((a, b) => b.avgRate - a.avgRate);
   const best = sorted[0];
   const worst = sorted[sorted.length - 1];
   
-  keyFindings.push(`<li class="flex items-start gap-2">
-    <i class="fas fa-star text-purple-500 mt-1"></i>
-    <span>Best performer: <strong>${best.workerName}</strong> (${(best[metric] || 0).toFixed(1)}%)</span>
-  </li>`);
+  if (best) {
+    keyFindings.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-star text-purple-500 mt-1"></i>
+      <span>Best performer: <strong>${best.name}</strong> (${best.avgRate.toFixed(1)}%)</span>
+    </li>`);
+  }
   
-  keyFindings.push(`<li class="flex items-start gap-2">
-    <i class="fas fa-flag text-red-500 mt-1"></i>
-    <span>Needs most support: <strong>${worst.workerName}</strong> (${(worst[metric] || 0).toFixed(1)}%)</span>
-  </li>`);
+  if (worst) {
+    keyFindings.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-flag text-red-500 mt-1"></i>
+      <span>Needs most support: <strong>${worst.name}</strong> (${worst.avgRate.toFixed(1)}%)</span>
+    </li>`);
+  }
   
   document.getElementById('aiKeyFindings').innerHTML = keyFindings.join('');
   
