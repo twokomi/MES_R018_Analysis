@@ -4466,6 +4466,10 @@ async function loadLastUpload() {
         console.log(' Re-processing data with mappings...');
         AppState.processedData = processData(AppState.rawData);
         
+        // Aggregate data for dashboard (CRITICAL: needed for dashboard charts)
+        AppState.aggregatedData = aggregateDataForDashboard(AppState.processedData);
+        console.log(` Aggregated ${AppState.aggregatedData ? AppState.aggregatedData.length : 0} entries for dashboard`);
+        
         updateProgress(100);
         
         // Update UI
