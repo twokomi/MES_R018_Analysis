@@ -7154,14 +7154,17 @@ function openAIInsightModal() {
 }
 
 function updateAIInsightContent() {
-  // Use the EXACT same data as Report tab
-  const aggregated = getFilteredData();
+  // Use the EXACT same aggregated data as Report tab
+  const aggregated = getFilteredData(); // This is AppState.aggregatedData (worker-day-shift level)
   if (aggregated.length === 0) return;
   
   const isEfficiency = aiModalMetricType === 'efficiency';
   
   // ===== USE EXACT SAME CALCULATION AS REPORT TAB (line 2700-2799) =====
-  // Group by worker to calculate totals (same as Report tab logic)
+  // Data is ALREADY aggregated at worker-day-shift level
+  // Each record has: workerName, totalMinutes, assignedStandardTime, shiftCount
+  
+  // Group by worker to sum across all their shifts
   const workerTotals = {};
   aggregated.forEach(r => {
     const key = r.workerName;
@@ -7169,17 +7172,16 @@ function updateAIInsightContent() {
       workerTotals[key] = {
         totalWorkTime: 0,
         totalAssignedST: 0,
-        shifts: new Set()
+        totalShifts: 0
       };
     }
+    // Sum across all worker-day-shift records for this worker
     workerTotals[key].totalWorkTime += (r.totalMinutes || 0);
     workerTotals[key].totalAssignedST += (r.assignedStandardTime || 0);
-    if (r.workingDay && r.workingShift) {
-      workerTotals[key].shifts.add(`${r.workingDay}_${r.workingShift}`);
-    }
+    workerTotals[key].totalShifts += (r.shiftCount || 0);
   });
   
-  // Calculate totals across all workers
+  // Calculate totals across ALL workers (same as Report KPI calculation)
   let totalWorkTime = 0;
   let totalAdjustedST = 0;
   let totalShifts = 0;
@@ -7187,19 +7189,19 @@ function updateAIInsightContent() {
   Object.values(workerTotals).forEach(worker => {
     totalWorkTime += worker.totalWorkTime;
     totalAdjustedST += worker.totalAssignedST;
-    totalShifts += worker.shifts.size;
+    totalShifts += worker.totalShifts;
   });
   
   const totalShiftTime = totalShifts * 660; // Each shift = 11 hours = 660 minutes
   
-  // Calculate OVERALL average rate using Report's method
+  // Calculate OVERALL average rate using Report's exact formula
   const avgRate = isEfficiency
     ? (totalShiftTime > 0 ? (totalAdjustedST / totalShiftTime) * 100 : 0)
     : (totalShiftTime > 0 ? (totalWorkTime / totalShiftTime) * 100 : 0);
   
   // Calculate PER-WORKER average rates for classification
   const workerAvgRates = Object.entries(workerTotals).map(([name, totals]) => {
-    const workerShiftTime = totals.shifts.size * 660;
+    const workerShiftTime = totals.totalShifts * 660;
     const workerRate = isEfficiency
       ? (workerShiftTime > 0 ? (totals.totalAssignedST / workerShiftTime) * 100 : 0)
       : (workerShiftTime > 0 ? (totals.totalWorkTime / workerShiftTime) * 100 : 0);
