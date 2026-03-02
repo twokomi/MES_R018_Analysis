@@ -1,5 +1,5 @@
 // MES Individual Performance Report Application
-// Last Updated: 2026-03-02 - Added W/O Count to Performance Bands
+// Last Updated: 2026-03-02 - Excel Export Function Complete Fix (v4.3.3)
 // Main application logic
 // Version: 3.0.0 - Two Metric System (Time Utilization & Work Efficiency)
 
@@ -5667,10 +5667,12 @@ function refreshExecutiveDashboard() {
   refreshTrendChart();
   // 4. Contribution
   refreshContributionChart();
-  // 5. Shift
-  refreshShiftChart();
+  // 5. Shift Chart - REMOVED (replaced by Export panel)
+  // refreshShiftChart();
   // 6. Shift Performance Comparison (NEW - replaces Health Matrix)
   refreshShiftComparison();
+  // 7. Export Panel Stats
+  updateExportStats();
   
   console.log('Dashboard refreshed');
 }
@@ -7632,3 +7634,490 @@ console.log(' Executive Dashboard functions loaded');
     }
   };
 })();
+
+// ========== Excel Export Functions ==========
+// Export to Excel function - must be globally accessible
+window.exportToExcel = function() {
+  console.log('🔄 Starting Excel export...');
+  console.log('📊 AppState check:', {
+    aggregatedData: AppState.aggregatedData?.length || 0,
+    workerSummary: AppState.workerSummary?.length || 0,
+    cachedWorkerAgg: AppState.cachedWorkerAgg?.length || 0
+  });
+  
+  if (!AppState.aggregatedData || AppState.aggregatedData.length === 0) {
+    alert('No data available to export. Please upload an Excel file first.');
+    return;
+  }
+  
+  try {
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // 1. KPI Summary Sheet
+    console.log('📄 Creating KPI Summary Sheet...');
+    const kpiSheet = createKPISummarySheet();
+    XLSX.utils.book_append_sheet(wb, kpiSheet, 'KPI Summary');
+    console.log('✅ KPI Summary Sheet created');
+    
+    // 2. Worker Performance Sheet
+    console.log('📄 Creating Worker Performance Sheet...');
+    const workerSheet = createWorkerPerformanceSheet();
+    XLSX.utils.book_append_sheet(wb, workerSheet, 'Worker Performance');
+    console.log('✅ Worker Performance Sheet created');
+    
+    // 3. Shift Comparison Sheet
+    console.log('📄 Creating Shift Comparison Sheet...');
+    const shiftSheet = createShiftComparisonSheet();
+    XLSX.utils.book_append_sheet(wb, shiftSheet, 'Shift Comparison');
+    console.log('✅ Shift Comparison Sheet created');
+    
+    // 4. Performance Bands Sheet
+    console.log('📄 Creating Performance Bands Sheet...');
+    const bandSheet = createPerformanceBandsSheet();
+    XLSX.utils.book_append_sheet(wb, bandSheet, 'Performance Bands');
+    console.log('✅ Performance Bands Sheet created');
+    
+    // 5. Raw Data Sheet (optional - limited to 10000 rows for performance)
+    console.log('📄 Creating Raw Data Sheet...');
+    const rawSheet = createRawDataSheet();
+    XLSX.utils.book_append_sheet(wb, rawSheet, 'Raw Data');
+    console.log('✅ Raw Data Sheet created');
+    
+    // Generate filename with date
+    const dateRange = getDataDateRange();
+    const filename = `MES_Report_${dateRange.start.replace(/\//g, '')}_${dateRange.end.replace(/\//g, '')}.xlsx`;
+    
+    // Write file
+    XLSX.writeFile(wb, filename);
+    console.log(`✅ Excel exported: ${filename}`);
+    
+  } catch (error) {
+    console.error('❌ Excel export error:', error);
+    alert('Failed to export Excel file. Please try again.');
+  }
+};
+
+function createKPISummarySheet() {
+  const workers = AppState.workerSummary || [];
+  
+  const data = [
+    ['MES R018 Performance Analysis Report'],
+    [],
+    ['Report Generated:', new Date().toLocaleString()],
+    ['Data Period:', `${getDataDateRange().start} ~ ${getDataDateRange().end}`],
+    ['Metric Mode:', AppState.currentMetricType === 'efficiency' ? 'Efficiency' : 'Utilization'],
+    [],
+    ['KEY PERFORMANCE INDICATORS'],
+    [],
+    ['Metric', 'Value', 'Unit'],
+    ['Total Workers', workers.length, 'workers'],
+    ['Total Shifts', workers.reduce((sum, w) => sum + (w.shiftCount || 0), 0), 'shifts'],
+    ['Total Shift Time', (workers.reduce((sum, w) => sum + ((w.shiftCount || 0) * 660), 0) / 60).toFixed(1), 'hours'],
+    ['Total Work Time', (workers.reduce((sum, w) => sum + (w.totalMinutes || 0), 0) / 60).toFixed(1), 'hours'],
+    ['Average Utilization Rate', (workers.reduce((sum, w) => sum + (w.utilizationRate || 0), 0) / (workers.length || 1)).toFixed(1), '%'],
+    ['Average Efficiency Rate', (workers.reduce((sum, w) => sum + (w.efficiencyRate || 0), 0) / (workers.length || 1)).toFixed(1), '%'],
+    [],
+    ['PERFORMANCE BAND DISTRIBUTION'],
+    [],
+    ['Band', 'Worker Count', 'Percentage'],
+  ];
+  
+  // Add performance bands
+  const bands = calculatePerformanceBands();
+  data.push(['Excellent (≥80%)', bands.excellent, ((bands.excellent / bands.total) * 100).toFixed(1) + '%']);
+  data.push(['Normal (50-80%)', bands.normal, ((bands.normal / bands.total) * 100).toFixed(1) + '%']);
+  data.push(['Poor (30-50%)', bands.poor, ((bands.poor / bands.total) * 100).toFixed(1) + '%']);
+  data.push(['Critical (<30%)', bands.critical, ((bands.critical / bands.total) * 100).toFixed(1) + '%']);
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  // Set column widths
+  ws['!cols'] = [
+    { width: 30 },
+    { width: 15 },
+    { width: 15 }
+  ];
+  
+  return ws;
+}
+
+function createWorkerPerformanceSheet() {
+  // Use workerSummary (same data as displayed in Report tab)
+  const workers = AppState.workerSummary || [];
+  const metricType = AppState.currentMetricType || 'utilization';
+  const dateRange = getDataDateRange();
+  
+  // Sort by performance
+  const sortedWorkers = [...workers].sort((a, b) => {
+    const aRate = metricType === 'efficiency' ? (a.efficiencyRate || 0) : (a.utilizationRate || 0);
+    const bRate = metricType === 'efficiency' ? (b.efficiencyRate || 0) : (b.utilizationRate || 0);
+    return bRate - aRate;
+  });
+  
+  const data = [
+    ['WORKER PERFORMANCE REPORT'],
+    [],
+    ['Data Period:', `${dateRange.start} ~ ${dateRange.end}`],
+    ['Metric Mode:', metricType === 'efficiency' ? 'Efficiency Rate' : 'Utilization Rate'],
+    ['Total Workers:', workers.length],
+    [],
+    [
+      'Rank',
+      'Worker Name',
+      'Process',
+      'Shift Count',
+      'Shift Time (hrs)',
+      'Work Time (hrs)',
+      'Utilization Rate (%)',
+      'Standard Time (hrs)',
+      'Efficiency Rate (%)',
+      'W/O Count',
+      'Performance Band'
+    ]
+  ];
+  
+  sortedWorkers.forEach((worker, index) => {
+    const band = metricType === 'efficiency' ? worker.efficiencyBand : worker.utilizationBand;
+    data.push([
+      index + 1,
+      worker.workerName || 'Unknown',
+      worker.foDesc3 || 'N/A',
+      worker.shiftCount || 0,
+      ((worker.shiftCount || 0) * 660 / 60).toFixed(1), // Shift time = shift count × 660 min
+      ((worker.totalMinutes || 0) / 60).toFixed(1),
+      (worker.utilizationRate || 0).toFixed(1),
+      ((worker.assignedStandardTime || 0) / 60).toFixed(1),
+      (worker.efficiencyRate || 0).toFixed(1),
+      worker.woCount || 0,
+      band?.label || 'N/A'
+    ]);
+  });
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  // Set column widths
+  ws['!cols'] = [
+    { width: 6 },   // Rank
+    { width: 25 },  // Worker Name
+    { width: 20 },  // Process
+    { width: 12 },  // Shift Count
+    { width: 15 },  // Shift Time
+    { width: 15 },  // Work Time
+    { width: 18 },  // Utilization
+    { width: 17 },  // Standard Time
+    { width: 17 },  // Efficiency
+    { width: 12 },  // W/O Count
+    { width: 18 }   // Band
+  ];
+  
+  return ws;
+}
+
+function createShiftComparisonSheet() {
+  const aggregated = AppState.aggregatedData || [];
+  const dateRange = getDataDateRange();
+  
+  const processGroups = {
+    bt: ['BT Process', 'BT Complete', 'BT QC', 'DS'],
+    wt: ['WT', 'WT QC'],
+    im: ['IM', 'IM QC']
+  };
+  
+  const data = [
+    ['SHIFT PERFORMANCE COMPARISON'],
+    [],
+    ['Data Period:', `${dateRange.start} ~ ${dateRange.end}`],
+    [],
+    ['Process Group', 'Shift', 'Workers', 'Shift Time (hrs)', 'Work Time (hrs)', 'Utilization (%)', 'Standard Time (hrs)', 'Efficiency (%)'],
+  ];
+  
+  // Calculate metrics for each group
+  Object.entries(processGroups).forEach(([groupName, processes]) => {
+    const groupData = aggregated.filter(r => processes.includes(r.foDesc2));
+    
+    // Group by shift
+    const shifts = {};
+    groupData.forEach(r => {
+      const shift = r.actualShift || 'Unknown';
+      if (!shifts[shift]) {
+        shifts[shift] = {
+          workers: new Set(),
+          shiftTime: 0,
+          workTime: 0,
+          standardTime: 0
+        };
+      }
+      shifts[shift].workers.add(r.workerName);
+      shifts[shift].shiftTime += (r.shiftCount || 1) * 660; // minutes
+      shifts[shift].workTime += r.totalActualMins || 0;
+      shifts[shift].standardTime += r.totalStandardTime || 0;
+    });
+    
+    // Add to data
+    Object.entries(shifts).sort().forEach(([shift, metrics]) => {
+      const util = metrics.shiftTime > 0 ? (metrics.workTime / metrics.shiftTime * 100) : 0;
+      const eff = metrics.shiftTime > 0 ? (metrics.standardTime / metrics.shiftTime * 100) : 0;
+      
+      data.push([
+        groupName.toUpperCase(),
+        `Shift ${shift}`,
+        metrics.workers.size,
+        (metrics.shiftTime / 60).toFixed(1),
+        (metrics.workTime / 60).toFixed(1),
+        util.toFixed(1),
+        (metrics.standardTime / 60).toFixed(1),
+        eff.toFixed(1)
+      ]);
+    });
+    
+    // Add blank row between groups
+    data.push([]);
+  });
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  ws['!cols'] = [
+    { width: 15 },  // Group
+    { width: 12 },  // Shift
+    { width: 10 },  // Workers
+    { width: 16 },  // Shift Time
+    { width: 16 },  // Work Time
+    { width: 15 },  // Utilization
+    { width: 17 },  // Standard Time
+    { width: 15 }   // Efficiency
+  ];
+  
+  return ws;
+}
+
+function createPerformanceBandsSheet() {
+  console.log('🔍 === createPerformanceBandsSheet START ===');
+  console.log('🔍 AppState.workerSummary:', AppState.workerSummary?.length || 0);
+  console.log('🔍 AppState.cachedWorkerAgg:', AppState.cachedWorkerAgg?.length || 0);
+  
+  // Use workerSummary (same data as displayed in Performance Bands on screen)
+  const workers = AppState.workerSummary || [];
+  
+  console.log('🔍 Workers loaded:', workers.length);
+  
+  if (workers.length === 0) {
+    console.error('❌ No workers found in workerSummary!');
+    // Fallback to empty sheet
+    const data = [
+      ['PERFORMANCE BANDS DETAIL'],
+      [],
+      ['Error:', 'No worker data available']
+    ];
+    return XLSX.utils.aoa_to_sheet(data);
+  }
+  
+  const dateRange = getDataDateRange();
+  
+  // DEBUG: Log first 3 workers to verify data structure
+  console.log('🔍 First 3 workers:', workers.slice(0, 3).map(w => ({
+    name: w.workerName,
+    shiftCount: w.shiftCount,
+    utilizationRate: w.utilizationRate,
+    efficiencyRate: w.efficiencyRate,
+    woCount: w.woCount,
+    totalMinutes: w.totalMinutes,
+    foDesc3: w.foDesc3
+  })));
+  
+  // Workers are already aggregated at the worker level
+  // Filter by Utilization bands (consistent with Report tab)
+  const bands = {
+    excellent: workers.filter(w => (w.utilizationRate || 0) >= 80).sort((a, b) => b.utilizationRate - a.utilizationRate),
+    normal: workers.filter(w => (w.utilizationRate || 0) >= 50 && (w.utilizationRate || 0) < 80).sort((a, b) => b.utilizationRate - a.utilizationRate),
+    poor: workers.filter(w => (w.utilizationRate || 0) >= 30 && (w.utilizationRate || 0) < 50).sort((a, b) => b.utilizationRate - a.utilizationRate),
+    critical: workers.filter(w => (w.utilizationRate || 0) < 30).sort((a, b) => b.utilizationRate - a.utilizationRate)
+  };
+  
+  console.log('📊 Performance Bands count:', {
+    excellent: bands.excellent.length,
+    normal: bands.normal.length,
+    poor: bands.poor.length,
+    critical: bands.critical.length,
+    criticalSample: bands.critical.slice(0, 3).map(w => ({
+      name: w.workerName,
+      shiftCount: w.shiftCount,
+      util: w.utilizationRate?.toFixed(1)
+    }))
+  });
+  
+  const data = [
+    ['PERFORMANCE BANDS DETAIL'],
+    [],
+    ['Data Period:', `${dateRange.start} ~ ${dateRange.end}`],
+    ['Note:', 'Each worker appears once with aggregated performance across the entire period'],
+    [],
+    ['EXCELLENT PERFORMERS (≥80%)'],
+    ['Worker Name', 'Process', 'Shift Count', 'Utilization (%)', 'Efficiency (%)', 'W/O Count'],
+    ...bands.excellent.map(w => [
+      w.workerName,
+      w.foDesc3 || 'N/A',
+      w.shiftCount || 0,
+      (w.utilizationRate || 0).toFixed(1),
+      (w.efficiencyRate || 0).toFixed(1),
+      w.woCount || 0
+    ]),
+    [],
+    ['NORMAL PERFORMERS (50-80%)'],
+    ['Worker Name', 'Process', 'Shift Count', 'Utilization (%)', 'Efficiency (%)', 'W/O Count'],
+    ...bands.normal.map(w => [
+      w.workerName,
+      w.foDesc3 || 'N/A',
+      w.shiftCount || 0,
+      (w.utilizationRate || 0).toFixed(1),
+      (w.efficiencyRate || 0).toFixed(1),
+      w.woCount || 0
+    ]),
+    [],
+    ['POOR PERFORMERS (30-50%)'],
+    ['Worker Name', 'Process', 'Shift Count', 'Utilization (%)', 'Efficiency (%)', 'W/O Count'],
+    ...bands.poor.map(w => [
+      w.workerName,
+      w.foDesc3 || 'N/A',
+      w.shiftCount || 0,
+      (w.utilizationRate || 0).toFixed(1),
+      (w.efficiencyRate || 0).toFixed(1),
+      w.woCount || 0
+    ]),
+    [],
+    ['CRITICAL PERFORMERS (<30%)'],
+    ['Worker Name', 'Process', 'Shift Count', 'Utilization (%)', 'Efficiency (%)', 'W/O Count'],
+    ...bands.critical.map(w => [
+      w.workerName,
+      w.foDesc3 || 'N/A',
+      w.shiftCount || 0,
+      (w.utilizationRate || 0).toFixed(1),
+      (w.efficiencyRate || 0).toFixed(1),
+      w.woCount || 0
+    ])
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  ws['!cols'] = [
+    { width: 25 },  // Worker Name
+    { width: 20 },  // Process
+    { width: 12 },  // Shift Count
+    { width: 15 },  // Utilization
+    { width: 15 },  // Efficiency
+    { width: 12 }   // W/O Count
+  ];
+  
+  return ws;
+}
+
+function createRawDataSheet() {
+  const rawData = AppState.processedData || [];
+  const limitedData = rawData.slice(0, 10000); // Limit to 10k rows for performance
+  const dateRange = getDataDateRange();
+  
+  const data = [
+    ['RAW DATA EXTRACT (Limited to 10,000 rows)'],
+    [],
+    ['Data Period:', `${dateRange.start} ~ ${dateRange.end}`],
+    ['Total Records:', rawData.length],
+    ['Exported Records:', limitedData.length],
+    [],
+    [
+      'Row',
+      'Worker Name',
+      'Process (FD)',
+      'Category (FO)',
+      'Working Day',
+      'Shift',
+      'Start Time',
+      'End Time',
+      'Work Time (min)',
+      'Standard Time (min)',
+      'Worker Rate (%)',
+      'Result Count',
+      'Rework'
+    ],
+    ...limitedData.map((r, i) => [
+      i + 1,
+      r.workerName || '',
+      r.fdDesc || '',
+      r.foDesc2 || '',
+      r.workingDay || '',
+      r.actualShift || '',
+      r.startDateTime || '',
+      r.endDateTime || '',
+      (r.workerActMins || 0).toFixed(1),
+      (r.workerST || 0).toFixed(1),
+      (r.workerRate || 0).toFixed(1),
+      r.resultCnt || 0,
+      r.rework ? 'Yes' : 'No'
+    ])
+  ];
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  ws['!cols'] = [
+    { width: 6 },   // Row
+    { width: 25 },  // Worker
+    { width: 20 },  // FD
+    { width: 15 },  // FO
+    { width: 12 },  // Date
+    { width: 8 },   // Shift
+    { width: 18 },  // Start
+    { width: 18 },  // End
+    { width: 13 },  // Work Time
+    { width: 15 },  // Std Time
+    { width: 14 },  // Rate
+    { width: 12 },  // Result
+    { width: 10 }   // Rework
+  ];
+  
+  return ws;
+}
+
+function calculatePerformanceBands() {
+  const workers = AppState.workerSummary || [];
+  return {
+    excellent: workers.filter(w => (w.utilizationRate || 0) >= 80).length,
+    normal: workers.filter(w => (w.utilizationRate || 0) >= 50 && (w.utilizationRate || 0) < 80).length,
+    poor: workers.filter(w => (w.utilizationRate || 0) >= 30 && (w.utilizationRate || 0) < 50).length,
+    critical: workers.filter(w => (w.utilizationRate || 0) < 30).length,
+    total: workers.length
+  };
+}
+
+function getDataDateRange() {
+  const dates = AppState.aggregatedData?.map(r => r.workingDay).filter(Boolean).sort() || [];
+  return {
+    start: dates[0] || 'N/A',
+    end: dates[dates.length - 1] || 'N/A'
+  };
+}
+
+function updateExportStats() {
+  const workers = AppState.cachedWorkerAgg || [];
+  const aggregated = AppState.aggregatedData || [];
+  const rawData = AppState.processedData || [];
+  
+  // Calculate unique workers from aggregated data
+  const uniqueWorkers = new Set(aggregated.map(r => r.workerName).filter(Boolean));
+  const workerCount = uniqueWorkers.size;
+  
+  // Calculate total shifts
+  const shiftCount = aggregated.length; // Each row = 1 worker-day-shift
+  
+  // Calculate record count
+  const recordCount = rawData.length;
+  
+  // Update DOM elements
+  const workerEl = document.getElementById('exportWorkerCount');
+  const shiftEl = document.getElementById('exportShiftCount');
+  const recordEl = document.getElementById('exportRecordCount');
+  
+  if (workerEl) workerEl.textContent = workerCount.toLocaleString();
+  if (shiftEl) shiftEl.textContent = shiftCount.toLocaleString();
+  if (recordEl) recordEl.textContent = recordCount > 10000 ? '10,000+' : recordCount.toLocaleString();
+}
+
+console.log('📊 Excel export functions loaded');

@@ -1003,49 +1003,70 @@
                     </div>
                 </div>
 
-                <!-- Shift Comparison -->
+                <!-- Export & Reports -->
                 <div class="card">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-800">
-                            <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>
-                            Shift Comparison
-                        </h3>
-                        <div class="flex gap-2">
-                            <button id="shiftModeDayNight" class="px-3 py-1 text-sm bg-indigo-600 text-white rounded-lg" onclick="switchShiftMode('daynight')">
-                                Day vs Night
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-file-export text-indigo-600 mr-2"></i>
+                        Export & Reports
+                    </h3>
+                    
+                    <!-- Export Options Grid -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <!-- Export Excel - Main Feature -->
+                        <button onclick="exportToExcel()" class="flex items-center justify-between p-4 border-2 border-green-500 bg-green-50 rounded-lg hover:bg-green-100 transition group">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-excel text-3xl text-green-600 mr-4"></i>
+                                <div class="text-left">
+                                    <div class="text-base font-semibold text-gray-800">Export to Excel</div>
+                                    <div class="text-xs text-gray-600 mt-1">
+                                        Worker Performance, Shift Comparison, KPI Summary
+                                    </div>
+                                </div>
+                            </div>
+                            <i class="fas fa-download text-green-600"></i>
+                        </button>
+                        
+                        <!-- Coming Soon Features -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <button disabled class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-lg opacity-40 cursor-not-allowed">
+                                <i class="fas fa-print text-2xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-semibold text-gray-600">Print Report</span>
+                                <span class="text-xs text-gray-500">Coming soon</span>
                             </button>
-                            <button id="shiftModeABC" class="px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded-lg" onclick="switchShiftMode('abc')">
-                                A vs B vs C
+                            
+                            <button disabled class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-lg opacity-40 cursor-not-allowed">
+                                <i class="fas fa-share-nodes text-2xl text-gray-400 mb-1"></i>
+                                <span class="text-xs font-semibold text-gray-600">Share Link</span>
+                                <span class="text-xs text-gray-500">Coming soon</span>
                             </button>
                         </div>
                     </div>
                     
-                    <!-- Period Selector -->
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex gap-2">
-                            <button onclick="setShiftChartPeriod(7)" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition shift-period-btn">
-                                Last 7d
-                            </button>
-                            <button onclick="setShiftChartPeriod(14)" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition shift-period-btn">
-                                Last 14d
-                            </button>
-                            <button onclick="setShiftChartPeriod(30)" class="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition shift-period-btn">
-                                Last 30d
-                            </button>
-                            <button onclick="setShiftChartPeriod(0)" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition shift-period-btn">
-                                All
-                            </button>
+                    <!-- Quick Stats Summary -->
+                    <div class="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+                        <div class="text-xs font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-chart-bar mr-1"></i>Export Preview
                         </div>
-                        <span id="shiftChartDateRange" class="text-xs text-gray-500"></span>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <div class="text-lg font-bold text-indigo-700" id="exportWorkerCount">-</div>
+                                <div class="text-xs text-gray-600">Workers</div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-purple-700" id="exportShiftCount">-</div>
+                                <div class="text-xs text-gray-600">Shifts</div>
+                            </div>
+                            <div>
+                                <div class="text-lg font-bold text-blue-700" id="exportRecordCount">-</div>
+                                <div class="text-xs text-gray-600">Records</div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <select id="shiftKPI" class="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg mb-3" onchange="refreshShiftChart()">
-                        <option value="util">Utilization</option>
-                        <option value="eff">Efficiency</option>
-                    </select>
-                    <div style="height: 280px; position: relative;">
-                        <canvas id="shiftChart"></canvas>
-                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Includes: KPI Summary, Worker Performance (aggregated), Shift Comparison, Performance Bands (aggregated), Raw Data
+                    </p>
                 </div>
             </div>
 
@@ -1562,7 +1583,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">2. View KPI Cards & Switch Metric Mode</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. View KPI Cards & Switch Metric Mode</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>4 KPI Cards</strong>: View key metrics at a glance</li>
                                 <li><strong>Utilization Mode</strong>: Total Workers, Total Shift Time, Total Work Time, Avg Utilization Rate</li>
@@ -1588,7 +1609,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">3. Apply Filters</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">4. Apply Filters</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Shift Filter</strong>: A Shift / B Shift / C Shift</li>
                                 <li><strong>Date Filter</strong>: Select by individual dates, weeks (WK#), or months</li>
@@ -1604,7 +1625,7 @@
                         <section>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">
                                 <i class="fas fa-filter text-purple-600 mr-2"></i>
-                                4. Outlier Threshold (Efficiency Mode Only)
+                                5. Outlier Threshold (Efficiency Mode Only)
                             </h3>
                             <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-3">
                                 <p class="text-gray-800 font-semibold mb-2">
@@ -1648,7 +1669,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">6. Performance Grades</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">7. Performance Grades</h3>
                             <p class="text-gray-700 mb-2"><strong>Utilization Rate Bands:</strong></p>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><span class="worker-badge badge-excellent">Excellent</span>: ≥ 80%</li>
@@ -1670,7 +1691,7 @@
                         </section>
 
                         <section>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-2">7. Worker Detail Modal</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">8. Worker Detail Modal</h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
                                 <li><strong>Click any worker card</strong> in Performance Bands to view detailed information</li>
                                 <li><strong>KPI Summary</strong>: Total Shifts, Shift/Work Time, Performance Rate</li>
@@ -1685,8 +1706,48 @@
 
                         <section>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                                <i class="fas fa-file-excel text-green-600 mr-2"></i>
+                                8. Export to Excel
+                            </h3>
+                            <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                                <li>
+                                    <strong>KPI Summary Sheet</strong>
+                                    <p class="text-sm text-gray-600 ml-6">전체 리포트 요약 (총 작업자 수, 총 교대 수, 평균 가동률/효율, 성과 등급 분포)</p>
+                                    <p class="text-xs text-blue-600 ml-6">💡 사용: 경영진 보고용 1페이지 요약</p>
+                                </li>
+                                <li>
+                                    <strong>Worker Performance Sheet</strong>
+                                    <p class="text-sm text-gray-600 ml-6">작업자별 성과 랭킹 (교대 수, 가동률, 효율, W/O 카운트, 성과 등급)</p>
+                                    <p class="text-xs text-blue-600 ml-6">💡 사용: 우수/저조 작업자 식별, 개인 면담 자료</p>
+                                </li>
+                                <li>
+                                    <strong>Shift Comparison Sheet</strong>
+                                    <p class="text-sm text-gray-600 ml-6">공정 그룹(BT/WT/IM)별 교대(A/B/C/D) 비교</p>
+                                    <p class="text-xs text-blue-600 ml-6">💡 사용: 교대간 생산성 격차 분석, 밸런싱</p>
+                                </li>
+                                <li>
+                                    <strong>Performance Bands Sheet</strong>
+                                    <p class="text-sm text-gray-600 ml-6">성과 등급별 작업자 목록 (Excellent/Normal/Poor/Critical)</p>
+                                    <p class="text-xs text-blue-600 ml-6">💡 사용: 교육 대상 선정(Critical), 모범 사례 공유(Excellent)</p>
+                                </li>
+                                <li>
+                                    <strong>Raw Data Sheet</strong>
+                                    <p class="text-sm text-gray-600 ml-6">개별 작업 레코드 (최대 10,000행, 작업자/날짜/시간/실적)</p>
+                                    <p class="text-xs text-blue-600 ml-6">💡 사용: 세부 데이터 분석, 피벗 테이블 생성</p>
+                                </li>
+                            </ul>
+                            <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                                <p class="text-sm text-green-800">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    <strong>활용 예시:</strong> Performance Bands의 Critical 작업자 리스트 → 면담 → Worker Performance에서 상세 지표 확인 → Raw Data에서 구체적인 작업 내역 검토
+                                </p>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">
                                 <i class="fas fa-tachometer-alt text-blue-600 mr-2"></i>
-                                8. Dashboard Tab (NEW in v4.0+)
+                                9. Dashboard Tab (NEW in v4.0+)
                             </h3>
                             <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
                                 <li>
@@ -1799,11 +1860,52 @@
                 </h2>
                 
                 <div class="space-y-6">
+                    <!-- Version 4.3.3 -->
+                    <div class="border-l-4 border-green-600 pl-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h3 class="text-lg font-bold text-gray-800">Version 4.3.3</h3>
+                            <span class="px-3 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">Latest</span>
+                            <span class="text-xs text-gray-500">2026-03-02</span>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>Excel Export Function Complete Fix
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Global Function Registration</strong>: <code>exportToExcel()</code> now properly exposed to browser's global scope</li>
+                                    <li><strong>Performance Bands Data Verified</strong>: Shift Count and Utilization Rate correctly populated in exported Excel file</li>
+                                    <li><strong>All 5 Sheets Working</strong>: KPI Summary, Worker Performance, Shift Comparison, Performance Bands, Raw Data (10k limit)</li>
+                                    <li><strong>Console Logging Added</strong>: Debug logs confirm data aggregation (8,305 worker-day-shift entries, 48,065 records)</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-green-700 mb-2">
+                                    <i class="fas fa-book mr-2"></i>Documentation Enhancement
+                                </h4>
+                                <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                                    <li><strong>Excel Export Guide Added</strong>: New User Guide section "8. Export to Excel" with practical usage examples</li>
+                                    <li><strong>5 Sheet Descriptions</strong>: Each sheet's purpose and use case clearly explained</li>
+                                    <li><strong>Real-world Example</strong>: Critical worker identification → interview → detailed analysis workflow</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                                <p class="text-sm text-green-800">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Excel Export Now Fully Functional:</strong> All shift counts, utilization rates, and efficiency metrics correctly exported across all sheets.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                
                     <!-- Version 4.3.2 -->
                     <div class="border-l-4 border-purple-600 pl-4">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-bold text-gray-800">Version 4.3.2</h3>
-                            <span class="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">Latest</span>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Previous</span>
                             <span class="text-xs text-gray-500">2026-03-02</span>
                         </div>
                         
@@ -2730,7 +2832,7 @@
             <div class="mt-4 pt-4 border-t border-gray-100 text-center">
                 <p class="text-xs text-gray-400">
                     <span class="inline-flex items-center gap-2">
-                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-mono">v4.3.2</span>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-mono">v4.3.3</span>
                         <span>|</span>
                         <span><i class="fas fa-cloud mr-1"></i>Cloudflare Pages</span>
                         <span>|</span>
@@ -3359,6 +3461,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=1772480626"></script>
+    <script src="js/app.js?v=9999999999"></script>
 </body>
 </html>

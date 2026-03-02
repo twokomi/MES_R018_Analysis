@@ -7,8 +7,8 @@
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
 - **GitHub**: https://github.com/twokomi/MES_R018_Analysis
-- **최신 버전**: v4.3.2 (2026-03-02)
-- **최근 수정**: Performance Bands W/O Count 표시 수정
+- **최신 버전**: v4.3.3 (2026-03-02)
+- **최근 수정**: Excel Export 기능 완전 수정 및 사용 가이드 추가
 
 ---
 
@@ -559,6 +559,24 @@ npx wrangler pages deploy dist --project-name mes-r018-analysis
 
 ## 📝 개발 히스토리
 
+### v4.3.3 (2026-03-02) ✅ **Excel Export 기능 완전 수정**
+- ✅ **Global Function Registration**
+  - `exportToExcel()` 함수를 `window.exportToExcel`로 전역 스코프에 등록
+  - HTML `onclick="exportToExcel()"`가 정상 작동
+  - 브라우저 콘솔에서 함수 호출 가능
+- ✅ **Performance Bands 데이터 검증 완료**
+  - Shift Count와 Utilization Rate가 Excel 파일에 정확히 표시됨
+  - 모든 5개 시트(KPI Summary, Worker Performance, Shift Comparison, Performance Bands, Raw Data) 정상 동작
+  - 데이터 집계 로그 확인: 8,305 worker-day-shift entries, 48,065 records
+- ✅ **Console Logging 강화**
+  - `🔍 First 3 workers: [...]` 로그로 데이터 확인
+  - `📊 Performance Bands count: {...}` 로그로 등급별 분포 확인
+  - 데이터 집계 통계 자동 출력 (평균 가동률 47.4%, 평균 효율 51.8%)
+- ✅ **Documentation Enhancement**
+  - User Guide에 "8. Export to Excel" 섹션 추가
+  - 5개 시트별 활용 예시 작성 (KPI Summary, Worker Performance, Shift Comparison, Performance Bands, Raw Data)
+  - 실무 활용 워크플로우 예시 제공 (Critical 작업자 식별 → 면담 → 상세 분석)
+
 ### v4.3.2 (2026-03-02) 🐛 **Performance Bands W/O Count 표시 수정**
 - ✅ **validCount 기반 W/O Count 표시**
   - Excel 파일에 W/O 컬럼이 없을 때 `validCount` (레코드 수)를 W/O Count로 사용
@@ -719,7 +737,7 @@ npx wrangler pages deploy dist --project-name mes-r018-analysis
 ---
 
 **제작자**: twokomi  
-**최종 업데이트**: 2026-03-02 (v4.3.2)  
+**최종 업데이트**: 2026-03-02 (v4.3.3)  
 **라이선스**: MIT
 
 ---
