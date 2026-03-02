@@ -7199,10 +7199,11 @@ function updateAIInsightContent() {
   const atRiskWorkersCount = atRiskWorkersSet.size;
   
   console.log(`📊 AI Modal Stats (${isEfficiency ? 'Efficiency' : 'Utilization'}):
-    - Total records: ${aggregated.length}
+    - Total unique workers: ${workerAvgRates.length}
     - Top Performers (≥${topThreshold}%): ${topPerformersCount} unique workers
     - At-Risk (<${riskThreshold}%): ${atRiskWorkersCount} unique workers
     - Sample top workers:`, Array.from(topPerformersSet).slice(0, 3));
+  console.log('🔍 Worker average rates sample:', workerAvgRates.slice(0, 5).map(w => `${w.name}: ${w.avgRate.toFixed(1)}%`));
   
   // Update toggle button states
   const utilBtn = document.getElementById('aiModalUtilBtn');
@@ -7215,8 +7216,9 @@ function updateAIInsightContent() {
     effBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 text-white hover:bg-white hover:bg-opacity-20';
   }
   
-  // Use Report page's average rate
-  const avgRate = reportAvgRate;
+  // CRITICAL FIX: Calculate average from workerAvgRates (not reportAvgRate!)
+  // This ensures the average matches the same dataset used for Top Performers/At-Risk classification
+  const avgRate = workerAvgRates.reduce((sum, w) => sum + w.avgRate, 0) / workerAvgRates.length;
   
   // Update summary cards (using Set-based counts from above)
   document.getElementById('aiTopPerformersCount').textContent = topPerformersCount;
@@ -7278,17 +7280,17 @@ function updateAIInsightContent() {
   // Generate Recommendations
   const recommendations = [];
   
-  if (atRiskWorkers.length > 0) {
+  if (atRiskWorkersCount > 0) {
     recommendations.push(`<li class="flex items-start gap-2">
       <i class="fas fa-arrow-right text-green-500 mt-1"></i>
-      <span>Provide additional training or support for <strong>${atRiskWorkers.length} at-risk workers</strong> to improve their ${isEfficiency ? 'efficiency' : 'utilization'} rates.</span>
+      <span>Provide additional training or support for <strong>${atRiskWorkersCount} at-risk workers</strong> to improve their ${isEfficiency ? 'efficiency' : 'utilization'} rates.</span>
     </li>`);
   }
   
-  if (topPerformers.length > 0) {
+  if (topPerformersCount > 0) {
     recommendations.push(`<li class="flex items-start gap-2">
       <i class="fas fa-arrow-right text-green-500 mt-1"></i>
-      <span>Analyze best practices from top ${topPerformers.length} performers and share knowledge across the team.</span>
+      <span>Analyze best practices from top ${topPerformersCount} performers and share knowledge across the team.</span>
     </li>`);
   }
   
