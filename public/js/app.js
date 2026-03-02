@@ -3765,17 +3765,22 @@ function initDatabaseButtons() {
     document.getElementById('loadLastUploadBtn')?.addEventListener('click', loadLastUpload);
     
     // Save to database button
-    document.getElementById('saveToDatabaseBtn')?.addEventListener('click', () => {
-        saveToDatabase();
+    // Save to Database button - DISABLED (Cloudflare Workers limitations)
+    document.getElementById('saveToDatabaseBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('Server storage is temporarily disabled due to Cloudflare Workers time limitations.\n\nPlease use the Excel upload feature instead.\n\nYour data will be processed in the browser without server storage.');
+        return false;
     });
     
-    // Refresh uploads list button
-    document.getElementById('refreshUploadsBtn')?.addEventListener('click', () => {
-        loadUploadsList();
+    // Refresh uploads list button - DISABLED
+    document.getElementById('refreshUploadsBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('Server storage is temporarily disabled.\n\nPlease use Excel upload feature instead.');
+        return false;
     });
     
-    // Load uploads list on page load
-    loadUploadsList();
+    // Load uploads list on page load - DISABLED
+    // loadUploadsList();
 }
 
 
