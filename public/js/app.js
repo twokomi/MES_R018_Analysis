@@ -6061,7 +6061,7 @@ function generateWarnings(data) {
 function refreshTrendChart() {
   const period = document.getElementById('trendPeriod').value;
   const kpi = document.getElementById('trendKPI').value;
-  const processFilterEl = document.getElementById('trendProcess');
+  const processFilterEl = document.getElementById('trendHierarchy');
   const processFilter = processFilterEl ? processFilterEl.value : 'all';
   
   const data = AppState.aggregatedData || [];
@@ -7225,7 +7225,8 @@ function openAIInsightModal() {
 }
 
 function updateAIInsightContent() {
-  const aggregated = AppState.aggregatedData || [];
+  // Use filtered data from Report tab instead of raw aggregatedData
+  const aggregated = getFilteredData();
   if (aggregated.length === 0) return;
   
   // Group by worker to calculate metrics
