@@ -2797,13 +2797,11 @@ function drawReportKpiSparklines(workerAgg, isEfficiency) {
     const date = w.workingDay;
     if (!dateGroups[date]) {
       dateGroups[date] = { 
-        workers: new Set(), 
         totalShiftTime: 0, 
         totalWorkTime: 0, 
         totalAssignedST: 0 
       };
     }
-    dateGroups[date].workers.add(w.workerName);
     const shiftTime = (w.shiftCount || 0) * 660;
     dateGroups[date].totalShiftTime += shiftTime;
     dateGroups[date].totalWorkTime += w.totalMinutes || 0;
@@ -2813,41 +2811,27 @@ function drawReportKpiSparklines(workerAgg, isEfficiency) {
   // Get last 7 dates
   const dates = Object.keys(dateGroups).sort().slice(-7);
   
-  // Calculate values for each date
-  const workersData = [];
-  const secondData = [];
-  const thirdData = [];
+  // Calculate rate data only (for the 4th card)
   const rateData = [];
   
   dates.forEach(date => {
     const g = dateGroups[date];
-    workersData.push(g.workers.size);
     
     if (isEfficiency) {
-      secondData.push(g.totalAssignedST);
-      thirdData.push(g.totalShiftTime);
       const rate = g.totalShiftTime > 0 ? (g.totalAssignedST / g.totalShiftTime) * 100 : 0;
       rateData.push(rate);
     } else {
-      secondData.push(g.totalShiftTime);
-      thirdData.push(g.totalWorkTime);
       const rate = g.totalShiftTime > 0 ? (g.totalWorkTime / g.totalShiftTime) * 100 : 0;
       rateData.push(rate);
     }
   });
   
   // Pad if less than 7 days
-  while (workersData.length < 7) {
-    workersData.unshift(workersData[0] || 0);
-    secondData.unshift(secondData[0] || 0);
-    thirdData.unshift(thirdData[0] || 0);
+  while (rateData.length < 7) {
     rateData.unshift(rateData[0] || 0);
   }
   
-  // Draw sparklines
-  drawMiniSparkline('sparkKpiWorkers', workersData, '#3b82f6');
-  drawMiniSparkline('sparkKpiSecond', secondData, isEfficiency ? '#9333ea' : '#0284c7');
-  drawMiniSparkline('sparkKpiThird', thirdData, isEfficiency ? '#0284c7' : '#f59e0b');
+  // Draw sparkline only for the 4th card (Rate)
   drawMiniSparkline('sparkKpiRate', rateData, isEfficiency ? '#9333ea' : '#0284c7');
 }
 

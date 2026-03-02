@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { serveStatic } from 'hono/cloudflare-workers'
 
 type Bindings = {
   DB: D1Database;
@@ -18,6 +19,12 @@ const uploadProgress = new Map<string, {
 
 // CORS 설정
 app.use('/api/*', cors())
+
+// Serve static files from public directory
+app.use('/static/*', serveStatic({ root: './public' }))
+
+// Root route - serve the main HTML
+app.get('/', serveStatic({ path: './public/index.html' }))
 
 // API: 엑셀 데이터 저장 (백그라운드)
 app.post('/api/upload', async (c) => {
