@@ -5989,17 +5989,46 @@ function generateWarnings(data) {
   
   if (aggregated.length === 0) return warnings;
   
-  // Rule 1: Low Utilization
-  let totalUtil = 0, countUtil = 0;
-  aggregated.forEach(r => {
-    if (r.utilizationRate >= 0 && r.utilizationRate <= 100) {
-      totalUtil += r.utilizationRate;
-      countUtil++;
-    }
-  });
-  const avgUtil = countUtil > 0 ? totalUtil / countUtil : 0;
+  // Get utilization and efficiency from Report KPI cards
+  const reportUtilText = document.getElementById('kpiAvgWorkRate')?.textContent || '0%';
+  const reportEffText = document.getElementById('kpiAvgWorkRate')?.textContent || '0%';
   
-  if (avgUtil < 50 && countUtil >= 10) {
+  // Determine which metric to use based on current mode
+  const isEfficiency = AppState.currentMetricType === 'efficiency';
+  
+  let avgUtil = 0;
+  let avgEff = 0;
+  
+  if (isEfficiency) {
+    // In efficiency mode, get efficiency from report
+    avgEff = parseFloat(reportEffText.replace('%', ''));
+    // Calculate utilization from aggregated data for comparison
+    let totalUtil = 0, countUtil = 0;
+    aggregated.forEach(r => {
+      if (r.utilizationRate >= 0 && r.utilizationRate <= 100) {
+        totalUtil += r.utilizationRate;
+        countUtil++;
+      }
+    });
+    avgUtil = countUtil > 0 ? totalUtil / countUtil : 0;
+  } else {
+    // In utilization mode, get utilization from report
+    avgUtil = parseFloat(reportUtilText.replace('%', ''));
+    // Calculate efficiency from aggregated data for comparison
+    let totalEff = 0, countEff = 0;
+    aggregated.forEach(r => {
+      if (r.efficiencyRate >= 0 && r.efficiencyRate <= 200) {
+        totalEff += r.efficiencyRate;
+        countEff++;
+      }
+    });
+    avgEff = countEff > 0 ? totalEff / countEff : 0;
+  }
+  
+  console.log(`📊 AI Warnings using Report values: Util=${avgUtil.toFixed(1)}%, Eff=${avgEff.toFixed(1)}%`);
+  
+  // Rule 1: Low Utilization (always check, regardless of current mode)
+  if (avgUtil < 50 && aggregated.length >= 10) {
     warnings.push({
       severity: 'CRITICAL',
       icon: '',
@@ -6010,17 +6039,8 @@ function generateWarnings(data) {
     });
   }
   
-  // Rule 2: Low Efficiency
-  let totalEff = 0, countEff = 0;
-  aggregated.forEach(r => {
-    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 200) {
-      totalEff += r.efficiencyRate;
-      countEff++;
-    }
-  });
-  const avgEff = countEff > 0 ? totalEff / countEff : 0;
-  
-  if (avgEff < 50 && countEff >= 10) {
+  // Rule 2: Low Efficiency (always check, regardless of current mode)
+  if (avgEff < 50 && aggregated.length >= 10) {
     warnings.push({
       severity: 'CRITICAL',
       icon: '',
