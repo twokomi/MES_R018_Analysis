@@ -4281,11 +4281,14 @@ async function loadUploadById(uploadId) {
         
         // For large datasets, process in chunks to avoid blocking UI
         if (AppState.rawData.length > 5000) {
-            console.log(`� Large dataset detected (${AppState.rawData.length} records) - processing in chunks...`);
+            console.log(`🔄 Large dataset detected (${AppState.rawData.length} records) - processing in chunks...`);
             AppState.processedData = await processDataInChunks(AppState.rawData);
         } else {
             AppState.processedData = processData(AppState.rawData);
         }
+        
+        // Aggregate data for dashboard (SAME ORDER AS EXCEL UPLOAD)
+        AppState.aggregatedData = aggregateDataForDashboard(AppState.processedData);
         
         updateProgress(100);
         
@@ -4302,14 +4305,8 @@ async function loadUploadById(uploadId) {
         
         updateReport();
         
-        // Aggregate data for dashboard (CRITICAL: needed for dashboard charts)
-        console.log(' Aggregating data for dashboard...');
-        AppState.aggregatedData = aggregateDataForDashboard(AppState.processedData);
-        console.log(` Aggregated ${AppState.aggregatedData ? AppState.aggregatedData.length : 0} entries for dashboard`);
-        
-        // Refresh Executive Dashboard if data exists
+        // Refresh Executive Dashboard if data exists (SAME AS EXCEL UPLOAD)
         if (typeof refreshExecutiveDashboard === 'function' && AppState.processedData && AppState.processedData.length > 0) {
-            console.log('📊 Refreshing Dashboard after upload load...');
             setTimeout(() => {
                 refreshExecutiveDashboard();
                 if (typeof initExecutiveDashboard === 'function') {
