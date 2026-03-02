@@ -7158,59 +7158,78 @@ function updateAIInsightContent() {
   const aggregated = getFilteredData();
   if (aggregated.length === 0) return;
   
-  // Get the average rate directly from Report KPI card (same calculation as Report)
-  const reportAvgRateText = document.getElementById('kpiAvgWorkRate')?.textContent || '0%';
-  const reportAvgRate = parseFloat(reportAvgRateText.replace('%', ''));
-  
-  console.log(`🔍 AI Insight using Report KPI value: ${reportAvgRate}%`);
-  
   const isEfficiency = aiModalMetricType === 'efficiency';
-  const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
   
-  // Calculate statistics from aggregated data
-  // Step 1: Calculate average rate per worker across all their shifts
-  const workerRatesByName = {};
+  // ===== USE EXACT SAME CALCULATION AS REPORT TAB (line 2700-2799) =====
+  // Group by worker to calculate totals (same as Report tab logic)
+  const workerTotals = {};
   aggregated.forEach(r => {
-    const name = r.workerName;
-    if (!workerRatesByName[name]) {
-      workerRatesByName[name] = [];
+    const key = r.workerName;
+    if (!workerTotals[key]) {
+      workerTotals[key] = {
+        totalWorkTime: 0,
+        totalAssignedST: 0,
+        shifts: new Set()
+      };
     }
-    workerRatesByName[name].push(r[metric] || 0);
+    workerTotals[key].totalWorkTime += (r.totalMinutes || 0);
+    workerTotals[key].totalAssignedST += (r.assignedStandardTime || 0);
+    if (r.workingDay && r.workingShift) {
+      workerTotals[key].shifts.add(`${r.workingDay}_${r.workingShift}`);
+    }
   });
   
-  // Step 2: Calculate average for each worker
-  const workerAvgRates = Object.entries(workerRatesByName).map(([name, rates]) => ({
-    name,
-    avgRate: rates.reduce((a, b) => a + b, 0) / rates.length
-  }));
+  // Calculate totals across all workers
+  let totalWorkTime = 0;
+  let totalAdjustedST = 0;
+  let totalShifts = 0;
   
-  // CRITICAL FIX: Calculate avgRate FIRST before using it
-  // Use aggregated data's actual average (weight by shift count)
-  const totalRate = aggregated.reduce((sum, r) => sum + (r[metric] || 0), 0);
-  const avgRate = totalRate / aggregated.length;
+  Object.values(workerTotals).forEach(worker => {
+    totalWorkTime += worker.totalWorkTime;
+    totalAdjustedST += worker.totalAssignedST;
+    totalShifts += worker.shifts.size;
+  });
   
-  // Step 3: Classify workers based on their average rate
+  const totalShiftTime = totalShifts * 660; // Each shift = 11 hours = 660 minutes
+  
+  // Calculate OVERALL average rate using Report's method
+  const avgRate = isEfficiency
+    ? (totalShiftTime > 0 ? (totalAdjustedST / totalShiftTime) * 100 : 0)
+    : (totalShiftTime > 0 ? (totalWorkTime / totalShiftTime) * 100 : 0);
+  
+  // Calculate PER-WORKER average rates for classification
+  const workerAvgRates = Object.entries(workerTotals).map(([name, totals]) => {
+    const workerShiftTime = totals.shifts.size * 660;
+    const workerRate = isEfficiency
+      ? (workerShiftTime > 0 ? (totals.totalAssignedST / workerShiftTime) * 100 : 0)
+      : (workerShiftTime > 0 ? (totals.totalWorkTime / workerShiftTime) * 100 : 0);
+    
+    return { name, avgRate: workerRate };
+  });
+  
+  // Classify workers based on their average rate
   const topThreshold = isEfficiency ? 80 : 50;  // Eff ≥80%, Util ≥50%
   const riskThreshold = isEfficiency ? 50 : 30;  // Eff <50%, Util <30%
   
-  const topPerformersSet = new Set(
-    workerAvgRates.filter(w => w.avgRate >= topThreshold).map(w => w.name)
-  );
-  const atRiskWorkersSet = new Set(
-    workerAvgRates.filter(w => w.avgRate < riskThreshold).map(w => w.name)
-  );
+  const topPerformers = workerAvgRates.filter(w => w.avgRate >= topThreshold);
+  const atRiskWorkers = workerAvgRates.filter(w => w.avgRate < riskThreshold);
   
-  const topPerformersCount = topPerformersSet.size;
-  const atRiskWorkersCount = atRiskWorkersSet.size;
+  const topPerformersCount = topPerformers.length;
+  const atRiskWorkersCount = atRiskWorkers.length;
   
-  console.log(`📊 AI Modal Stats (${isEfficiency ? 'Efficiency' : 'Utilization'}):
+  console.log(`📊 AI Modal Stats (${isEfficiency ? 'Efficiency' : 'Utilization'}) - USING REPORT CALCULATION:
     - Total aggregated records: ${aggregated.length}
     - Total unique workers: ${workerAvgRates.length}
-    - Calculated average from aggregated data: ${avgRate.toFixed(1)}%
+    - Total shifts: ${totalShifts}
+    - Total shift time: ${totalShiftTime.toFixed(0)} min
+    ${isEfficiency
+      ? `- Total Adjusted S/T: ${totalAdjustedST.toFixed(0)} min
+    - Efficiency: (${totalAdjustedST.toFixed(0)} / ${totalShiftTime.toFixed(0)}) × 100 = ${avgRate.toFixed(1)}%`
+      : `- Total work time: ${totalWorkTime.toFixed(0)} min
+    - Utilization: (${totalWorkTime.toFixed(0)} / ${totalShiftTime.toFixed(0)}) × 100 = ${avgRate.toFixed(1)}%`}
     - Top Performers (≥${topThreshold}%): ${topPerformersCount} unique workers (${(topPerformersCount/workerAvgRates.length*100).toFixed(1)}%)
     - At-Risk (<${riskThreshold}%): ${atRiskWorkersCount} unique workers (${(atRiskWorkersCount/workerAvgRates.length*100).toFixed(1)}%)
-    - Sample top workers:`, Array.from(topPerformersSet).slice(0, 3));
-  console.log('🔍 Worker average rates sample:', workerAvgRates.slice(0, 5).map(w => `${w.name}: ${w.avgRate.toFixed(1)}%`));
+    - Sample top workers:`, topPerformers.slice(0, 3).map(w => `${w.name}: ${w.avgRate.toFixed(1)}%`));
   console.log(`📊 Distribution check: Top (${topPerformersCount}) + At-Risk (${atRiskWorkersCount}) + Middle (${workerAvgRates.length - topPerformersCount - atRiskWorkersCount}) = ${workerAvgRates.length} total workers`);
   
   // Update toggle button states
