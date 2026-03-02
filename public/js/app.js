@@ -15,8 +15,8 @@ const CATEGORY_ORDER = {
     'Other': 999
 };
 
-// 하드코딩된 Process Mapping 규칙 (FO Desc → FO Desc 2, FO Desc 3)
-// Excel 파일에 Mapping 시트가 없을 때 이 규칙을 사용
+// ����� Process Mapping �칙 (FO Desc � FO Desc 2, FO Desc 3)
+// Excel ��� Mapping ��가 �� � � �칙� 사�
 const DEFAULT_PROCESS_MAPPING = {
   "Fitup Bracket": { foDesc2: "BT Complete", foDesc3: "Fitup Bracket", seq: 1 },
   "Weld Bracket": { foDesc2: "BT Complete", foDesc3: "Weld Bracket", seq: 2 },
@@ -116,7 +116,7 @@ const AppState = {
     currentFileSize: 0,
     allWorkers: [], // For worker search functionality
     currentMetricType: 'utilization', // 'utilization' or 'efficiency'
-    outlierThreshold: 1000, // ✅ Filter out rates > 1000% (configurable)
+    outlierThreshold: 1000, //  Filter out rates > 1000% (configurable)
     filters: {
         shift: '',
         workingDays: [],
@@ -133,10 +133,10 @@ const AppState = {
         column: 'seq',
         ascending: true
     },
-    filteredData: null, // ✅ Store filtered data separately
-    workerSummary: null, // ✅ Store aggregated worker summary
-    cachedWorkerAgg: null, // ✅ Cache for search/sort
-    dataTableSort: { column: null, order: 'desc' } // ✅ Sort state
+    filteredData: null, //  Store filtered data separately
+    workerSummary: null, //  Store aggregated worker summary
+    cachedWorkerAgg: null, //  Cache for search/sort
+    dataTableSort: { column: null, order: 'desc' } //  Sort state
 };
 
 // Header normalization and synonym dictionary
@@ -204,9 +204,9 @@ function parseShiftCalendarDate(dateValue) {
         return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
     }
     
-    // If Korean format like "02월 17일"
+    // If Korean format like "02� 17�"
     if (typeof dateValue === 'string') {
-        const match = dateValue.match(/(\d+)월\s*(\d+)일/);
+        const match = dateValue.match(/(\d+)�\s*(\d+)�/);
         if (match) {
             const month = match[1].padStart(2, '0');
             const day = match[2].padStart(2, '0');
@@ -227,32 +227,32 @@ function parseShiftCalendarDate(dateValue) {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 App initializing...');
+    console.log('� App initializing...');
     try {
         initTabs();
-        console.log('✅ Tabs initialized');
+        console.log(' Tabs initialized');
         
-        // ✅ Initialize tab colors based on current metric (default: Utilization = Blue)
+        //  Initialize tab colors based on current metric (default: Utilization = Blue)
         initTabColors();
-        console.log('✅ Tab colors initialized');
+        console.log(' Tab colors initialized');
         
         initFileUpload();
-        console.log('✅ File upload initialized');
+        console.log(' File upload initialized');
         initFilters();
-        console.log('✅ Filters initialized');
+        console.log(' Filters initialized');
         initMapping();
-        console.log('✅ Mapping initialized');
+        console.log(' Mapping initialized');
         initDatabaseButtons();
-        console.log('✅ Database buttons initialized');
+        console.log(' Database buttons initialized');
         initViewToggle();
-        console.log('✅ View toggle initialized');
+        console.log(' View toggle initialized');
         
-        // ✅ NEW: Outlier threshold control
+        //  NEW: Outlier threshold control
         document.getElementById('applyThresholdBtn')?.addEventListener('click', () => {
             const input = document.getElementById('outlierThresholdInput');
             const value = parseInt(input.value) || 1000;
             AppState.outlierThreshold = value;
-            console.log(`🎯 Outlier threshold updated: ${value}%`);
+            console.log(` Outlier threshold updated: ${value}%`);
             
             // Show loading indicator
             const loadingIndicator = document.getElementById('filterLoadingIndicator');
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 50);
         });
         
-        // ✅ NEW: Worker search
+        //  NEW: Worker search
         let searchTimeout;
         document.getElementById('workerSearchInput')?.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
@@ -307,15 +307,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Render shift calendar
         renderShiftCalendar();
-        console.log('✅ Shift calendar rendered');
+        console.log(' Shift calendar rendered');
         
         // Initialize calendar navigation
         initCalendarNavigation();
-        console.log('✅ Calendar navigation initialized');
+        console.log(' Calendar navigation initialized');
         
-        console.log('🎉 App fully initialized!');
+        console.log('� App fully initialized!');
     } catch (error) {
-        console.error('❌ Initialization error:', error);
+        console.error(' Initialization error:', error);
     }
 });
 
@@ -417,7 +417,7 @@ function loadDefaultShiftCalendar() {
         { date: '2026-04-29', dayShift: 'B', nightShift: 'C' },
         { date: '2026-04-30', dayShift: 'A', nightShift: 'C' }
     ];
-    console.log(`✅ ${AppState.shiftCalendar.length} default Shift Calendar entries loaded (Feb-Apr 2026)`);
+    console.log(` ${AppState.shiftCalendar.length} default Shift Calendar entries loaded (Feb-Apr 2026)`);
 }
 
 // Tab management
@@ -557,11 +557,11 @@ function handleFileUpload(file) {
             });
             
             if (shiftCalendarSheetName) {
-                console.log('🔍 [DEBUG] Shift Calendar 시트 발견:', shiftCalendarSheetName);
+                console.log(' [DEBUG] Shift Calendar �� �견:', shiftCalendarSheetName);
                 try {
                     const shiftCalendarSheet = workbook.Sheets[shiftCalendarSheetName];
                     const shiftCalendarData = XLSX.utils.sheet_to_json(shiftCalendarSheet, { header: 1, raw: false });
-                    console.log('🔍 [DEBUG] Shift Calendar 데이터 로드됨:', shiftCalendarData.length, '행');
+                    console.log(' [DEBUG] Shift Calendar ���� ���:', shiftCalendarData.length, '행');
                     
                     if (shiftCalendarData.length > 1) {
                         const shiftHeaders = shiftCalendarData[0];
@@ -588,12 +588,12 @@ function handleFileUpload(file) {
                                 }
                             });
                             
-                            console.log(`✅ ${AppState.shiftCalendar.length}개의 Shift Calendar 항목을 불러왔습니다.`);
-                            console.log('🔍 [DEBUG] First 3 shift calendar entries:', AppState.shiftCalendar.slice(0, 3));
+                            console.log(` ${AppState.shiftCalendar.length}�� Shift Calendar ��목� ������.`);
+                            console.log(' [DEBUG] First 3 shift calendar entries:', AppState.shiftCalendar.slice(0, 3));
                         }
                     }
                 } catch (err) {
-                    console.warn('Shift Calendar 시트 로드 실패:', err);
+                    console.warn('Shift Calendar �� �� ��:', err);
                 }
             }
             
@@ -633,18 +633,18 @@ function handleFileUpload(file) {
                             });
                             
                             updateMappingTable();
-                            console.log(`✅ ${AppState.processMapping.length} process mappings loaded from Mapping sheet`);
+                            console.log(` ${AppState.processMapping.length} process mappings loaded from Mapping sheet`);
                         }
                     }
                 } catch (err) {
-                    console.warn('매핑 시트 로드 실패:', err);
+                    console.warn('�� �� �� ��:', err);
                 }
             } else {
-                // Mapping 시트가 없으면 기본 하드코딩 매핑 사용
-                console.log('ℹ️ Mapping 시트가 없습니다. 하드코딩된 기본 매핑을 사용합니다.');
+                // Mapping ��가 ��면 �� ���� �� 사�
+                console.log('� Mapping ��가 ����. ����� �� ��� 사�����.');
                 AppState.processMapping = [];
                 
-                // DEFAULT_PROCESS_MAPPING을 AppState.processMapping 형식으로 변환
+                // DEFAULT_PROCESS_MAPPING� AppState.processMapping ���� 변환
                 Object.keys(DEFAULT_PROCESS_MAPPING).forEach(fdDesc => {
                     const mapping = DEFAULT_PROCESS_MAPPING[fdDesc];
                     AppState.processMapping.push({
@@ -656,7 +656,7 @@ function handleFileUpload(file) {
                 });
                 
                 updateMappingTable();
-                console.log(`✅ ${AppState.processMapping.length} process mappings loaded from DEFAULT_PROCESS_MAPPING`);
+                console.log(` ${AppState.processMapping.length} process mappings loaded from DEFAULT_PROCESS_MAPPING`);
             }
             
             updateProgress(50);
@@ -669,13 +669,13 @@ function handleFileUpload(file) {
             // If no 'Raw' sheet found, use the first sheet
             if (!rawSheetName) {
                 rawSheetName = workbook.SheetNames[0];
-                console.log(`ℹ️ 'Raw' 시트를 찾을 수 없어 첫 번째 시트를 사용합니다: "${rawSheetName}"`);
+                console.log(`� 'Raw' ��를 찾� � �어 첫 �� ��를 사�����: "${rawSheetName}"`);
             } else {
-                console.log(`✅ 'Raw' 시트를 찾았습니다: "${rawSheetName}"`);
+                console.log(` 'Raw' ��를 찾����: "${rawSheetName}"`);
             }
             
             if (!rawSheetName) {
-                throw new Error("Excel 파일에 시트가 없습니다.");
+                throw new Error("Excel ��� ��가 ����.");
             }
             
             updateProgress(60);
@@ -694,7 +694,7 @@ function handleFileUpload(file) {
             
             // LOG ALL HEADERS IMMEDIATELY FOR DEBUGGING
             console.log('\n' + '='.repeat(80));
-            console.log('📋 EXCEL HEADERS FROM FILE (Total: ' + headers.length + '):');
+            console.log(' EXCEL HEADERS FROM FILE (Total: ' + headers.length + '):');
             console.log('='.repeat(80));
             headers.forEach((h, i) => {
                 console.log(`[${i.toString().padStart(2, ' ')}] "${h}"`);
@@ -720,7 +720,7 @@ function handleFileUpload(file) {
             }
             
             if (missingHeaders.length > 0) {
-                throw new Error(`필수 헤더가 누락되었습니다: ${missingHeaders.join(', ')}`);
+                throw new Error(`�� ���가 �������: ${missingHeaders.join(', ')}`);
             }
             
             updateProgress(80);
@@ -765,14 +765,14 @@ function handleFileUpload(file) {
             
         } catch (error) {
             console.error('File parsing error:', error);
-            alert('파일 처리 중 오류가 발생했습니다:\n' + error.message);
+            alert('�� 처리 � 오류가 ������:\n' + error.message);
             showUploadStatus(false);
             hideLoadingOverlay();
         }
     };
     
     reader.onerror = function() {
-        alert('파일을 읽는 중 오류가 발생했습니다.');
+        alert('��� �� � 오류가 ������.');
         showUploadStatus(false);
         hideLoadingOverlay();
     };
@@ -785,8 +785,8 @@ function parseRawData(headers, dataRows) {
     const parsed = [];
     
     // Log all headers for debugging
-    console.log('📋 Excel headers (raw):', headers);
-    console.log('📋 Excel headers (normalized):', headers.map(h => normalizeHeader(h)));
+    console.log(' Excel headers (raw):', headers);
+    console.log(' Excel headers (normalized):', headers.map(h => normalizeHeader(h)));
     
     // Find column indices
     const colWorkerName = findColumnIndex(headers, 'workername');
@@ -801,7 +801,7 @@ function parseRawData(headers, dataRows) {
     const colRework = findColumnIndex(headers, 'rework');
     const colActualShift = findColumnIndex(headers, 'actualshift');
     
-    console.log('📊 Column indices:', {
+    console.log(' Column indices:', {
         workerName: colWorkerName,
         workerST: colWorkerST,
         workerRate: colWorkerRate,
@@ -809,19 +809,19 @@ function parseRawData(headers, dataRows) {
         rework: colRework
     });
     
-    // ✅ DEBUG: Show actual Excel headers
-    console.log('📋 Actual Excel headers (first 20):', headers.slice(0, 20));
-    console.log('📋 Normalized headers (first 20):', headers.slice(0, 20).map(h => normalizeHeader(h)));
+    //  DEBUG: Show actual Excel headers
+    console.log(' Actual Excel headers (first 20):', headers.slice(0, 20));
+    console.log(' Normalized headers (first 20):', headers.slice(0, 20).map(h => normalizeHeader(h)));
     
-    // ⚠️ CRITICAL: Check if Worker S/T or Rate columns are missing
+    //  CRITICAL: Check if Worker S/T or Rate columns are missing
     if (colWorkerST === -1) {
-        console.error('❌ CRITICAL ERROR: Worker S/T column not found in Excel!');
+        console.error(' CRITICAL ERROR: Worker S/T column not found in Excel!');
         console.error('   Expected headers: Worker S/T, Worker ST, workerst, st, Standard Time');
         console.error('   Actual headers:', headers);
         console.error('   All Efficiency values will be 0.');
     }
     if (colWorkerRate === -1) {
-        console.error('❌ CRITICAL ERROR: Worker Rate(%) column not found in Excel!');
+        console.error(' CRITICAL ERROR: Worker Rate(%) column not found in Excel!');
         console.error('   Expected headers: Worker Rate(%), Worker Rate, workerrate, rate');
         console.error('   Actual headers:', headers);
         console.error('   All Efficiency values will be 0.');
@@ -865,11 +865,11 @@ function parseRawData(headers, dataRows) {
         parsed.push(record);
     });
     
-    console.log(`📊 Parsed ${parsed.length} records (Rework excluded: ${parsed.filter(r => r.rework).length})`);
+    console.log(` Parsed ${parsed.length} records (Rework excluded: ${parsed.filter(r => r.rework).length})`);
     
     // Debug: Show first 3 records with S/T and Rate values
     if (parsed.length > 0) {
-        console.log('🔍 Sample parsed records (first 3):', parsed.slice(0, 3).map(r => ({
+        console.log(' Sample parsed records (first 3):', parsed.slice(0, 3).map(r => ({
             worker: r.workerName,
             workerST: r.workerST,
             'Worker S/T': r['Worker S/T'],
@@ -879,19 +879,19 @@ function parseRawData(headers, dataRows) {
             calculatedAssigned: (r['Worker S/T'] * r['Worker Rate(%)'] / 100).toFixed(2)
         })));
         
-        // ⚠️ CRITICAL: Check if Worker S/T and Rate columns are all zeros
+        //  CRITICAL: Check if Worker S/T and Rate columns are all zeros
         const allSTZero = parsed.every(r => r['Worker S/T'] === 0);
         const allRateZero = parsed.every(r => r['Worker Rate(%)'] === 0);
         
         if (allSTZero && allRateZero) {
-            console.error('❌ CRITICAL ERROR: All Worker S/T and Worker Rate(%) values are 0!');
+            console.error(' CRITICAL ERROR: All Worker S/T and Worker Rate(%) values are 0!');
             console.error('   This will cause all Efficiency values to be 0.');
             console.error('   Excel column mapping may be incorrect.');
             console.error('   Check Excel headers: Worker S/T, Worker Rate(%)');
         } else if (allSTZero) {
-            console.warn('⚠️ WARNING: All Worker S/T values are 0!');
+            console.warn(' WARNING: All Worker S/T values are 0!');
         } else if (allRateZero) {
-            console.warn('⚠️ WARNING: All Worker Rate(%) values are 0!');
+            console.warn(' WARNING: All Worker Rate(%) values are 0!');
         }
     }
     
@@ -927,7 +927,7 @@ function parseExcelDate(dateValue) {
 function mergeOverlappingIntervals(records) {
     if (!records || records.length === 0) return records;
     
-    console.log(`⏱️  Checking for overlapping time intervals...`);
+    console.log(`�  Checking for overlapping time intervals...`);
     
     // Group records by worker
     const recordsByWorker = {};
@@ -1020,10 +1020,10 @@ function mergeOverlappingIntervals(records) {
     });
     
     if (totalOverlaps > 0) {
-        console.log(`⚠️  Found ${totalOverlaps} overlapping intervals`);
-        console.log(`📉 Total overlap time removed: ${totalOverlapMinutes.toFixed(1)} minutes`);
+        console.log(`  Found ${totalOverlaps} overlapping intervals`);
+        console.log(`� Total overlap time removed: ${totalOverlapMinutes.toFixed(1)} minutes`);
     } else {
-        console.log(`✅ No overlapping intervals found`);
+        console.log(` No overlapping intervals found`);
     }
     
     return records;
@@ -1034,7 +1034,7 @@ async function processDataInChunks(rawData, chunkSize = 1000) {
     const processed = [];
     const totalChunks = Math.ceil(rawData.length / chunkSize);
     
-    console.log(`📦 Processing ${rawData.length} records in ${totalChunks} chunks of ${chunkSize}...`);
+    console.log(`� Processing ${rawData.length} records in ${totalChunks} chunks of ${chunkSize}...`);
     
     for (let i = 0; i < totalChunks; i++) {
         const start = i * chunkSize;
@@ -1055,7 +1055,7 @@ async function processDataInChunks(rawData, chunkSize = 1000) {
         }
     }
     
-    console.log(`✅ All chunks processed: ${processed.length} records`);
+    console.log(` All chunks processed: ${processed.length} records`);
     return processed;
 }
 
@@ -1063,13 +1063,13 @@ async function processDataInChunks(rawData, chunkSize = 1000) {
 function processData(rawData) {
     const processed = [];
     
-    console.log(`🔍 Processing ${rawData.length} raw records...`);
-    console.log(`📋 Current mappings count: ${AppState.processMapping.length}`);
+    console.log(` Processing ${rawData.length} raw records...`);
+    console.log(` Current mappings count: ${AppState.processMapping.length}`);
     
     // Debug: Show first few mappings
     if (AppState.processMapping.length > 0) {
-        console.log(`📝 Sample mappings:`, AppState.processMapping.slice(0, 3).map(m => 
-            `${m.fdDesc} → ${m.foDesc2} / ${m.foDesc3} (Seq: ${m.seq})`
+        console.log(` Sample mappings:`, AppState.processMapping.slice(0, 3).map(m => 
+            `${m.fdDesc} � ${m.foDesc2} / ${m.foDesc3} (Seq: ${m.seq})`
         ).join(', '));
     }
     
@@ -1144,7 +1144,7 @@ function processData(rawData) {
         processed.push(processedRecord);
     });
     
-    console.log(`✅ Mapping results: ${mappedCount} matched, ${notFoundCount} not found`);
+    console.log(` Mapping results: ${mappedCount} matched, ${notFoundCount} not found`);
     
     // Calculate overall statistics
     let totalUtil = 0, totalEff = 0, validCount = 0;
@@ -1165,13 +1165,13 @@ function processData(rawData) {
     });
     const avgUtil = validCount > 0 ? (totalUtil / validCount).toFixed(2) : 0;
     const avgEff = validCount > 0 ? (totalEff / validCount).toFixed(2) : 0;
-    console.log(`📊 Calculated rates: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%, Valid records=${validCount}`);
-    console.log(`🔄 Actual Shift distribution: A=${shiftCount.A}, B=${shiftCount.B}, C=${shiftCount.C}, Unknown=${shiftCount.unknown}`);
+    console.log(` Calculated rates: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%, Valid records=${validCount}`);
+    console.log(` Actual Shift distribution: A=${shiftCount.A}, B=${shiftCount.B}, C=${shiftCount.C}, Unknown=${shiftCount.unknown}`);
     
     // Debug: Show sample records with detailed info
     if (processed.length > 0) {
         const sampleRecords = processed.slice(0, 3);
-        console.log(`📋 Sample records for validation:`);
+        console.log(` Sample records for validation:`);
         sampleRecords.forEach((r, idx) => {
             const datetime = r.startDatetime || r.endDatetime;
             const timeStr = datetime ? datetime.toISOString() : 'N/A';
@@ -1179,8 +1179,8 @@ function processData(rawData) {
             console.log(`      DateTime: ${timeStr}`);
             console.log(`      Working Day: ${r.workingDay}, Shift: ${r.workingShift}, Actual: ${r.actualShift}`);
             console.log(`      Result Cnt: "${r.resultCnt}", Valid: ${r.validFlag}, Minutes: ${r.workerActMins}`);
-            console.log(`      🔍 RATES: Util=${r.utilizationRate?.toFixed(1)}%, Eff=${r.efficiencyRate?.toFixed(1)}%`);
-            console.log(`      🔍 RAW DATA: Worker S/T=${r.workerST}, Worker Act Mins=${r.workerActMins}`);
+            console.log(`       RATES: Util=${r.utilizationRate?.toFixed(1)}%, Eff=${r.efficiencyRate?.toFixed(1)}%`);
+            console.log(`       RAW DATA: Worker S/T=${r.workerST}, Worker Act Mins=${r.workerActMins}`);
         });
     }
     
@@ -1192,8 +1192,8 @@ function processData(rawData) {
         }
     });
     const uniqueCategories = Object.keys(categoryCount).sort();
-    console.log(`📂 Unique categories (FO Desc 2): ${uniqueCategories.length}`, uniqueCategories);
-    console.log(`📊 Category counts:`, categoryCount);
+    console.log(`� Unique categories (FO Desc 2): ${uniqueCategories.length}`, uniqueCategories);
+    console.log(` Category counts:`, categoryCount);
     
     // Debug: Show unique processes with their Seq
     const processSeqMap = {};
@@ -1206,7 +1206,7 @@ function processData(rawData) {
     const sortedProcesses = Object.entries(processSeqMap)
         .sort((a, b) => a[1] - b[1]);
     
-    console.log('📊 Processes with Seq:', sortedProcesses.map(([name, seq]) => `${name} (Seq: ${seq})`).join(', '));
+    console.log(' Processes with Seq:', sortedProcesses.map(([name, seq]) => `${name} (Seq: ${seq})`).join(', '));
     
     // Debug: Show date/shift distribution
     const dateShiftCount = {};
@@ -1214,7 +1214,7 @@ function processData(rawData) {
         const key = `${r.workingDay}_${r.actualShift}_${r.workingShift}`;
         dateShiftCount[key] = (dateShiftCount[key] || 0) + 1;
     });
-    console.log('📊 Date/Shift distribution:', dateShiftCount);
+    console.log(' Date/Shift distribution:', dateShiftCount);
     
     // Merge overlapping time intervals for each worker
     mergeOverlappingIntervals(processed);
@@ -1226,7 +1226,7 @@ function processData(rawData) {
 // NEW: Aggregate processed data for dashboard
 // ========================================
 function aggregateDataForDashboard(processedData) {
-    console.log('🔄 Starting data aggregation for dashboard...');
+    console.log(' Starting data aggregation for dashboard...');
     
     // Group by: Worker + Date + Shift
     const aggregated = {};
@@ -1254,7 +1254,7 @@ function aggregateDataForDashboard(processedData) {
         
         aggregated[key].totalActualMins += record.workerActMins || 0;
         
-        // Calculate assigned standard time: Worker S/T × Worker Rate(%) / 100
+        // Calculate assigned standard time: Worker S/T � Worker Rate(%) / 100
         const st = record.workerST || record['Worker S/T'] || 0;
         const rate = record.workerRate || record['Worker Rate(%)'] || 0;
         const assignedST = (st * rate / 100);
@@ -1271,10 +1271,10 @@ function aggregateDataForDashboard(processedData) {
             ? new Set(agg.records.map(r => `${r.workingDay}_${r.workingShift}`)).size 
             : 1;
         
-        // Utilization: total actual minutes / (660 min × shift count)
+        // Utilization: total actual minutes / (660 min � shift count)
         const utilization = shiftCount > 0 ? (agg.totalActualMins / (660 * shiftCount)) * 100 : 0;
         
-        // Efficiency: total assigned standard time / (660 min × shift count)
+        // Efficiency: total assigned standard time / (660 min � shift count)
         const shiftTime = shiftCount * 660;
         const efficiency = shiftTime > 0 
             ? (agg.totalStandardTime / shiftTime) * 100 
@@ -1288,7 +1288,7 @@ function aggregateDataForDashboard(processedData) {
         };
     });
     
-    console.log(`✅ Aggregated ${aggregatedArray.length} worker-day-shift entries`);
+    console.log(` Aggregated ${aggregatedArray.length} worker-day-shift entries`);
     
     // Calculate overall statistics
     const avgUtil = aggregatedArray.length > 0 
@@ -1298,8 +1298,8 @@ function aggregateDataForDashboard(processedData) {
         ? (aggregatedArray.reduce((s, a) => s + a.efficiencyRate, 0) / aggregatedArray.length).toFixed(1)
         : 0;
     
-    console.log(`📊 Overall aggregated stats: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
-    console.log(`📊 Sample aggregated data:`, aggregatedArray.slice(0, 3).map(a => ({
+    console.log(` Overall aggregated stats: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
+    console.log(` Sample aggregated data:`, aggregatedArray.slice(0, 3).map(a => ({
         worker: a.workerName,
         date: a.workingDay,
         shift: a.workingShift,
@@ -1356,7 +1356,7 @@ function calculateWorkingDayShift(datetime) {
     // Format as YYYY-MM-DD
     const workingDayStr = workingDay.toISOString().split('T')[0];
     
-    console.log(`🕐 calculateWorkingDayShift: ${datetime.toISOString()} (${hours}:${minutes.toString().padStart(2,'0')}) → ${workingDayStr} ${workingShift}`);
+    console.log(` calculateWorkingDayShift: ${datetime.toISOString()} (${hours}:${minutes.toString().padStart(2,'0')}) � ${workingDayStr} ${workingShift}`);
     
     return {
         workingDay: workingDayStr,
@@ -1368,8 +1368,8 @@ function calculateWorkingDayShift(datetime) {
 // using ShiftCalendar to determine which dates each shift works on
 
 // Check if result should be counted (CHANGED: count ALL records)
-// ✅ Result CNT와 무관하게 모든 레코드를 valid로 처리
-// Result CNT는 표시용으로만 사용됨
+//  Result CNT와 무관�� �� ���를 valid� 처리
+// Result CNT� ������ 사��
 function isValidResult(resultCnt) {
     return true; // Count all records regardless of Result CNT
 }
@@ -1501,7 +1501,7 @@ function updateWorkingDayOptions(selectedShift) {
             });
         } else {
             // Fallback: if no shift calendar, show all dates (cannot filter by shift)
-            console.warn('⚠️ No shift calendar available - showing all dates');
+            console.warn(' No shift calendar available - showing all dates');
             availableDates = [...new Set(AppState.processedData.map(d => d.workingDay))].filter(d => d).sort();
         }
         
@@ -1533,7 +1533,7 @@ function updateWorkingDayOptions(selectedShift) {
         const weekKey = `${yearNum}-${String(weekStartDate.getMonth() + 1).padStart(2, '0')}-${String(weekStartDate.getDate()).padStart(2, '0')}`;
         
         // Debug log for ALL dates to verify week calculation
-        console.log(`📅 ${date} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}) → Week ${weekKey} (Mon)`);
+        console.log(` ${date} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}) � Week ${weekKey} (Mon)`);
 
         
         if (!datesByWeek[weekKey]) {
@@ -1633,7 +1633,7 @@ function updateWorkingDayOptions(selectedShift) {
 function updateFilterOptions() {
     const data = AppState.processedData;
     
-    console.log(`🔧 Updating filter options with ${data.length} records`);
+    console.log(` Updating filter options with ${data.length} records`);
     
     // Update working day options based on current shift filter
     const selectedShift = getRadioValue('shift');
@@ -1652,7 +1652,7 @@ function updateFilterOptions() {
             const orderB = CATEGORY_ORDER[b] || 999;
             return orderA - orderB;
         });
-    console.log(`📂 Showing ${uniqueCategories.length} categories (from CATEGORY_ORDER):`, uniqueCategories);
+    console.log(`� Showing ${uniqueCategories.length} categories (from CATEGORY_ORDER):`, uniqueCategories);
     
     const categoryDropdown = document.getElementById('filterCategoryDropdown');
     if (categoryDropdown) {
@@ -1669,7 +1669,7 @@ function updateFilterOptions() {
             </label>
         `).join('');
     }
-    console.log(`✅ Category dropdown updated with ${uniqueCategories.length} options`);
+    console.log(` Category dropdown updated with ${uniqueCategories.length} options`);
     
     // Process (FO Desc 3) - Show all processes sorted by FO Desc 2 category order, then by Seq
     const processMap = new Map();
@@ -1952,7 +1952,7 @@ function applyFilters() {
         workers: selectedWorkers
     };
     
-    console.log('🎯 Applied filters:', AppState.filters);
+    console.log(' Applied filters:', AppState.filters);
     
     // Close all dropdowns after applying filters
     document.getElementById('filterWorkingDayDropdown')?.classList.add('hidden');
@@ -2046,14 +2046,14 @@ function resetFilters() {
 function getFilteredData() {
     let filtered = AppState.processedData;
     
-    console.log(`🔍 Starting filter with ${filtered.length} records`);
+    console.log(` Starting filter with ${filtered.length} records`);
     console.log('Applied filters:', AppState.filters);
     
     // Filter by shift (A/B/C)
     // ShiftCalendar shows which dates each shift works on
-    // e.g., "2026-02-09 → Day Shift A" means Shift A works on 2026-02-09 (Day)
+    // e.g., "2026-02-09 � Day Shift A" means Shift A works on 2026-02-09 (Day)
     if (AppState.filters.shift) {
-        console.log(`🔍 Filtering by Shift ${AppState.filters.shift}`);
+        console.log(` Filtering by Shift ${AppState.filters.shift}`);
         
         if (AppState.shiftCalendar && AppState.shiftCalendar.length > 0) {
             // Find all dates where the selected shift is working
@@ -2068,7 +2068,7 @@ function getFilteredData() {
                 }
             });
             
-            console.log(`📅 Shift ${AppState.filters.shift} works on ${workingDates.size} date+shift combinations`);
+            console.log(` Shift ${AppState.filters.shift} works on ${workingDates.size} date+shift combinations`);
             console.log('Sample working dates:', Array.from(workingDates).slice(0, 10));
             
             // DEBUG: Check for records that don't match ShiftCalendar
@@ -2079,7 +2079,7 @@ function getFilteredData() {
             });
             
             if (unmatchedRecords.length > 0) {
-                console.log(`⚠️ Found ${unmatchedRecords.length} records NOT in ShiftCalendar:`);
+                console.log(` Found ${unmatchedRecords.length} records NOT in ShiftCalendar:`);
                 const unmatchedDates = new Set(unmatchedRecords.map(r => `${r.workingDay}|${r.workingShift}`));
                 console.log('Sample unmatched date+shift combinations:', Array.from(unmatchedDates).slice(0, 10));
             }
@@ -2092,7 +2092,7 @@ function getFilteredData() {
             
             console.log(`After shift filter (${AppState.filters.shift}): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
         } else {
-            console.warn('⚠️ ShiftCalendar not found or empty - cannot filter by shift');
+            console.warn(' ShiftCalendar not found or empty - cannot filter by shift');
             filtered = [];
         }
     }
@@ -2127,7 +2127,7 @@ function getFilteredData() {
         console.log(`After worker filter (${AppState.filters.workers}): ${filtered.length} records`);
     }
     
-    console.log(`✅ Final filtered: ${filtered.length} records`);
+    console.log(` Final filtered: ${filtered.length} records`);
     
     // Debug: Show sample of filtered data
     if (filtered.length > 0 && filtered.length <= 5) {
@@ -2146,7 +2146,7 @@ function updateReport() {
     // Store filtered data in AppState for use in Worker Detail modal
     AppState.filteredData = filteredData;
     
-    // 🔍 DEBUG: Check Day+Night overlap workers and their actual time distribution
+    //  DEBUG: Check Day+Night overlap workers and their actual time distribution
     if (AppState.filters.workingShift === 'All') {
         const dayData = filteredData.filter(r => r.workingShift === 'Day');
         const nightData = filteredData.filter(r => r.workingShift === 'Night');
@@ -2156,7 +2156,7 @@ function updateReport() {
         
         const overlapWorkers = [...dayWorkers].filter(w => nightWorkers.has(w));
         
-        console.log(`\n🔍 DEBUG: Day+Night Overlap Analysis`);
+        console.log(`\n DEBUG: Day+Night Overlap Analysis`);
         console.log(`Total overlap workers: ${overlapWorkers.length}`);
         
         // Sample first 3 overlap workers
@@ -2167,7 +2167,7 @@ function updateReport() {
             const dayTotalMinutes = workerDayRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
             const nightTotalMinutes = workerNightRecords.reduce((sum, r) => sum + (r.workerActMins || 0), 0);
             
-            console.log(`\n👤 ${workerName}`);
+            console.log(`\n� ${workerName}`);
             console.log(`  Day: ${workerDayRecords.length} records, ${dayTotalMinutes} minutes (${(dayTotalMinutes/60).toFixed(1)} hrs)`);
             console.log(`  Night: ${workerNightRecords.length} records, ${nightTotalMinutes} minutes (${(nightTotalMinutes/60).toFixed(1)} hrs)`);
             console.log(`  Ratio: Day ${(dayTotalMinutes/(dayTotalMinutes+nightTotalMinutes)*100).toFixed(1)}% / Night ${(nightTotalMinutes/(dayTotalMinutes+nightTotalMinutes)*100).toFixed(1)}%`);
@@ -2177,22 +2177,22 @@ function updateReport() {
     // Aggregate by worker (detailed: worker+date+shift+process)
     const workerAgg = aggregateByWorker(filteredData);
     
-    // ✅ Cache for search/sort
+    //  Cache for search/sort
     AppState.cachedWorkerAgg = workerAgg;
     
     // Aggregate by worker only (for Performance Bands and Charts)
     const workerSummary = aggregateByWorkerOnly(workerAgg);
     
-    // ✅ FIX: Cache workerSummary for Performance Band sorting
+    //  FIX: Cache workerSummary for Performance Band sorting
     AppState.workerSummary = workerSummary;
     
-    updateKPIs(workerSummary); // ✅ FIXED: Use workerSummary instead of workerAgg
+    updateKPIs(workerSummary); //  FIXED: Use workerSummary instead of workerAgg
     updatePerformanceBands(workerSummary); // Use worker summary for bands
     updateCharts(workerSummary, filteredData); // Use worker summary for charts
     updateDataTable(workerAgg);
     updatePivotReport(workerAgg);
     
-    // ✅ NEW: Update Dashboard after filtering
+    //  NEW: Update Dashboard after filtering
     if (typeof refreshDashboard === 'function') {
         refreshDashboard();
     }
@@ -2200,17 +2200,17 @@ function updateReport() {
 
 // Aggregate by worker only (consolidate all records per worker)
 function aggregateByWorkerOnly(workerAgg) {
-    // ✅ FIX: Use workerAgg directly instead of re-processing original data
+    //  FIX: Use workerAgg directly instead of re-processing original data
     // This ensures outliers already filtered in aggregateByWorker() stay filtered
     const byWorker = {};
     
-    console.log(`📊 aggregateByWorkerOnly: Processing ${workerAgg.length} pre-aggregated records`);
+    console.log(` aggregateByWorkerOnly: Processing ${workerAgg.length} pre-aggregated records`);
     
     // Process pre-aggregated workerAgg data
     workerAgg.forEach(item => {
         const workerName = item.workerName;
         
-        // ✅ Include ALL records (outliers are real work)
+        //  Include ALL records (outliers are real work)
         // Outliers will be visually marked but included in calculations
         
         if (!byWorker[workerName]) {
@@ -2219,7 +2219,7 @@ function aggregateByWorkerOnly(workerAgg) {
                 totalMinutes: 0, // For Time Utilization (overlap-removed)
                 totalMinutesOriginal: 0, // For Work Efficiency (original Worker Act)
                 assignedStandardTime: 0, // For Work Efficiency
-                'Worker S/T': 0, // ✅ NEW: Total Standard Time
+                'Worker S/T': 0, //  NEW: Total Standard Time
                 validCount: 0,
                 foDesc3: '', // Will be set from primary process
                 workingDay: '', // Will be set from latest working day
@@ -2234,7 +2234,7 @@ function aggregateByWorkerOnly(workerAgg) {
         byWorker[workerName].totalMinutes += item.totalMinutes || 0;
         byWorker[workerName].totalMinutesOriginal += item.totalMinutesOriginal || 0;
         byWorker[workerName].assignedStandardTime += item.assignedStandardTime || 0;
-        byWorker[workerName]['Worker S/T'] += item['Worker S/T'] || 0; // ✅ NEW: Accumulate S/T
+        byWorker[workerName]['Worker S/T'] += item['Worker S/T'] || 0; //  NEW: Accumulate S/T
         byWorker[workerName].validCount += item.validCount || 0;
         byWorker[workerName].recordCount += 1;
         
@@ -2256,7 +2256,7 @@ function aggregateByWorkerOnly(workerAgg) {
         }
     });
     
-    console.log(`📊 Worker Summary:
+    console.log(` Worker Summary:
     - Workers aggregated: ${Object.keys(byWorker).length}
     - Current metric: ${AppState.currentMetricType}
     `);
@@ -2275,11 +2275,11 @@ function aggregateByWorkerOnly(workerAgg) {
     const result = Object.values(byWorker).map(worker => {
         const shiftCount = worker.shifts.size;
         
-        // Calculate Time Utilization Rate: total work time / (660 min * shift count) × 100
+        // Calculate Time Utilization Rate: total work time / (660 min * shift count) � 100
         const utilizationRate = shiftCount > 0 ? (worker.totalMinutes / (660 * shiftCount)) * 100 : 0;
         const utilizationBand = getUtilizationBand(utilizationRate);
         
-        // Calculate Work Efficiency Rate: assigned standard time / shift time × 100
+        // Calculate Work Efficiency Rate: assigned standard time / shift time � 100
         // Shift-based productivity: How much standard work completed per shift (660 min)
         const shiftTime = shiftCount * 660; // Total available shift time
         const efficiencyRate = shiftTime > 0 
@@ -2307,11 +2307,11 @@ function aggregateByWorkerOnly(workerAgg) {
         result.sort((a, b) => b.utilizationRate - a.utilizationRate);
     }
     
-    // ℹ️ No filtering at Worker Total level (already filtered at W/O level in aggregateByWorker)
-    // Logic: If all W/O records are ≤ threshold, then Worker Total (average) must also be ≤ threshold
-    console.log(`ℹ️ Worker Total level: No additional filtering needed (already filtered at W/O level)`);
+    // � No filtering at Worker Total level (already filtered at W/O level in aggregateByWorker)
+    // Logic: If all W/O records are �� threshold, then Worker Total (average) must also be �� threshold
+    console.log(`� Worker Total level: No additional filtering needed (already filtered at W/O level)`);
     
-    console.log('📊 Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
+    console.log(' Worker Summary (Top 5):', result.slice(0, 5).map(w => ({
         name: w.workerName,
         totalMinutes: w.totalMinutes.toFixed(0),
         shifts: w.shiftCount,
@@ -2330,7 +2330,7 @@ function updatePivotReport(workerAgg) {
     const pivotDiv = document.getElementById('pivotReportView');
     
     if (workerAgg.length === 0) {
-        pivotDiv.innerHTML = '<p class="text-gray-500 text-center py-8">데이터를 업로드하고 필터를 적용해주세요</p>';
+        pivotDiv.innerHTML = '<p class="text-gray-500 text-center py-8">����를 ����� ���를 ����주��</p>';
         return;
     }
     
@@ -2363,7 +2363,7 @@ function updatePivotReport(workerAgg) {
             validCount: item.validCount,
             totalMinutes: item.totalMinutes,
             totalMinutesOriginal: item.totalMinutesOriginal || 0,
-            'Worker S/T': item['Worker S/T'] || 0, // ✅ FIX: Add Worker S/T for Pivot Report
+            'Worker S/T': item['Worker S/T'] || 0, //  FIX: Add Worker S/T for Pivot Report
             assignedStandardTime: item.assignedStandardTime || 0,
             workerRate: item['Worker Rate(%)'] || 0,
             workRate: item.workRate,
@@ -2418,7 +2418,7 @@ function updatePivotReport(workerAgg) {
             return a[0].localeCompare(b[0]);
         });
     
-    console.log('📊 Pivot Report Process Order:', sortedProcesses.map(([name, data]) => `${name} (Seq: ${data.seq})`));
+    console.log(' Pivot Report Process Order:', sortedProcesses.map(([name, data]) => `${name} (Seq: ${data.seq})`));
     
     sortedProcesses.forEach(([processName, processData]) => {
         // Process header row - LEFT ALIGNED
@@ -2440,11 +2440,11 @@ function updatePivotReport(workerAgg) {
                     if (isEfficiency) {
                         // Efficiency Mode: S/T, Rate, Adjusted S/T, Efficiency, WO Count
                         const st = dateData['Worker S/T'] || 0; // Standard Time (baseline)
-                        const adjusted = dateData.assignedStandardTime || 0; // Adjusted = S/T × Rate ÷ 100
-                        const rate = st > 0 ? (adjusted / st) * 100 : 0; // Rate = Adjusted ÷ S/T × 100
+                        const adjusted = dateData.assignedStandardTime || 0; // Adjusted = S/T � Rate ÷ 100
+                        const rate = st > 0 ? (adjusted / st) * 100 : 0; // Rate = Adjusted ÷ S/T � 100
                         const woCount = dateData.validCount || 0; // Number of work orders
                         
-                        // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count × 660) × 100
+                        // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count � 660) � 100
                         // Count unique shifts for this worker on this date
                         const shiftsForDate = new Set();
                         Object.entries(processData.workers[workerName]).forEach(([d, data]) => {
@@ -2458,7 +2458,7 @@ function updatePivotReport(workerAgg) {
                         
                         // Display: S/T, Rate, Adjusted S/T, Efficiency (%), WO Count
                         html += `<td>${Math.round(st)}</td>`; // S/T column shows standard time
-                        html += `<td>${rate.toFixed(0)}%</td>`; // Rate = (Adjusted/S/T)×100
+                        html += `<td>${rate.toFixed(0)}%</td>`; // Rate = (Adjusted/S/T)�100
                         html += `<td>${Math.round(adjusted)}</td>`; // Adjusted S/T
                         html += `<td>${efficiency.toFixed(1)}%</td>`; // Daily Efficiency
                         html += `<td>${woCount}</td>`; // WO Count
@@ -2493,14 +2493,14 @@ function updatePivotReport(workerAgg) {
     if (isEfficiency) {
         pivotGlossary.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Metric Explained (Shift Productivity):</strong><br>
-            • <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
-            • <strong>Rate(%)</strong>: Worker performance multiplier (portion of task completed by this worker)<br>
-            • <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Rate ÷ 100<br>
-            • <strong>Efficiency(%)</strong>: Daily efficiency = (Adjusted S/T ÷ (Shift Count × 660 min)) × 100%<br>
-            • <strong>WO#</strong>: Number of work orders completed<br>
-            • <strong>🚫 Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
+            �� <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
+            �� <strong>Rate(%)</strong>: Worker performance multiplier (portion of task completed by this worker)<br>
+            �� <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T � Rate ÷ 100<br>
+            �� <strong>Efficiency(%)</strong>: Daily efficiency = (Adjusted S/T ÷ (Shift Count � 660 min)) � 100%<br>
+            �� <strong>WO#</strong>: Number of work orders completed<br>
+            �� <strong>� Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
             <br>
-            <strong class="text-sm">📘 Note:</strong><br>
+            <strong class="text-sm">� Note:</strong><br>
             <span class="text-xs">
             This table shows daily breakdown of work. Efficiency is calculated per date based on shifts worked that day.
             </span>
@@ -2508,9 +2508,9 @@ function updatePivotReport(workerAgg) {
     } else {
         pivotGlossary.innerHTML = `
             <strong class="text-blue-700">Time Utilization Metric:</strong><br>
-            • <strong>WO Count</strong>: Number of valid work orders completed<br>
-            • <strong>Std Time(m)</strong>: Total work time after removing overlapping intervals<br>
-            • <strong>Work Rate</strong>: Utilization = Actual time ÷ Available shift time × 100%<br>
+            �� <strong>WO Count</strong>: Number of valid work orders completed<br>
+            �� <strong>Std Time(m)</strong>: Total work time after removing overlapping intervals<br>
+            �� <strong>Work Rate</strong>: Utilization = Actual time ÷ Available shift time � 100%<br>
             <span class="text-xs italic">Note: Overlapping time periods are detected and excluded</span>
         `;
     }
@@ -2523,14 +2523,14 @@ function aggregateByWorker(data) {
     let totalRecords = 0;
     let validRecords = 0;
     let invalidRecords = 0;
-    let filteredOutliers = 0; // ✅ NEW: Track outliers
+    let filteredOutliers = 0; //  NEW: Track outliers
     
     data.forEach(record => {
         totalRecords++;
         
         // Debug: Check first record's foDesc2
         if (totalRecords === 1) {
-            console.log('🔍 First record in aggregateByWorker:', {
+            console.log(' First record in aggregateByWorker:', {
                 workerName: record.workerName,
                 foDesc3: record.foDesc3,
                 foDesc2: record.foDesc2,
@@ -2538,7 +2538,7 @@ function aggregateByWorker(data) {
             });
         }
         
-        // ℹ️ Individual record outlier filtering removed - now done at aggregation level
+        // � Individual record outlier filtering removed - now done at aggregation level
         
         // Group by: worker + day + shift + actualShift + process for display purposes
         const key = `${record.workerName}|${record.workingDay}|${record.workingShift}|${record.actualShift}|${record.foDesc3}`;
@@ -2554,28 +2554,28 @@ function aggregateByWorker(data) {
                 totalMinutes: 0,
                 validCount: 0,
                 seq: record.seq,
-                // ✅ FIX: Initialize accumulation fields for Efficiency mode
+                //  FIX: Initialize accumulation fields for Efficiency mode
                 'Worker S/T': 0,  // Will accumulate S/T
                 assignedStandardTime: 0,  // Will accumulate Adjusted S/T
                 totalMinutesOriginal: 0  // Will accumulate Actual
             };
         }
         
-        // ✅ CHANGED: Result CNT와 무관하게 모든 작업시간을 누적
-        // 작업시간이 있는 모든 레코드를 계산에 포함
+        //  CHANGED: Result CNT와 무관�� �� ����� ��
+        // ����� �� �� ���를 �산� ���
         if (record.workerActMins > 0) {
             aggregated[key].totalMinutes += record.workerActMins;
             aggregated[key].validCount += 1;
             validRecords++;
             
-            // ✅ Accumulate efficiency fields (S/T, Rate, Assigned, Actual)
+            //  Accumulate efficiency fields (S/T, Rate, Assigned, Actual)
             const st = record['Worker S/T'] || 0;
             const rate = record['Worker Rate(%)'] || 0;
             const assigned = (st * rate / 100);
             
-            // 🔍 DEBUG: Log first few records to check S/T values
+            //  DEBUG: Log first few records to check S/T values
             if (totalRecords <= 3) {
-                console.log(`📊 Record ${totalRecords}: Worker="${record.workerName}", S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}`, {
+                console.log(` Record ${totalRecords}: Worker="${record.workerName}", S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}`, {
                     process: record.foDesc3,
                     date: record.workingDay,
                     resultCnt: record.resultCnt,
@@ -2592,11 +2592,11 @@ function aggregateByWorker(data) {
         }
     });
     
-    console.log(`📊 Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid (outlier marking will be applied next)`);
+    console.log(` Aggregation summary: ${totalRecords} total, ${validRecords} valid, ${invalidRecords} invalid (outlier marking will be applied next)`);
     
-    // ✅ DEBUG: Check if assignedStandardTime is being accumulated
+    //  DEBUG: Check if assignedStandardTime is being accumulated
     const sampleAggregated = Object.values(aggregated).slice(0, 3);
-    console.log('🔍 Sample aggregated data (first 3):', sampleAggregated.map(item => ({
+    console.log(' Sample aggregated data (first 3):', sampleAggregated.map(item => ({
         worker: item.workerName,
         day: item.workingDay,
         process: item.foDesc3,
@@ -2614,17 +2614,17 @@ function aggregateByWorker(data) {
         // Calculate Utilization Rate
         const utilizationRate = (item.totalMinutes / 660) * 100;
         
-        // Calculate Efficiency Rate: assigned standard time / shift time × 100
+        // Calculate Efficiency Rate: assigned standard time / shift time � 100
         // Shift-based productivity measure
         const shiftTime = 660; // Standard shift time (11 hours)
         const efficiencyRate = (item.assignedStandardTime / shiftTime) * 100;
         
-        // ✅ Mark outliers for visual display (but don't filter them out)
+        //  Mark outliers for visual display (but don't filter them out)
         const outlierThreshold = AppState.outlierThreshold || 1000;
         const isOutlier = (AppState.currentMetricType === 'efficiency' && efficiencyRate > outlierThreshold);
         
         if (isOutlier) {
-            console.warn(`🚫 Outlier marked (>${outlierThreshold}%): ${item.workerName}, ${item.workingDay}, ${item.foDesc3}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
+            console.warn(`� Outlier marked (>${outlierThreshold}%): ${item.workerName}, ${item.workingDay}, ${item.foDesc3}, Efficiency: ${efficiencyRate.toFixed(1)}%`);
         }
         
         return {
@@ -2633,7 +2633,7 @@ function aggregateByWorker(data) {
             utilizationBand: getUtilizationBand(utilizationRate),
             efficiencyRate: efficiencyRate,
             efficiencyBand: getEfficiencyBand(efficiencyRate),
-            isOutlier: isOutlier, // ✅ Flag for visual styling in table
+            isOutlier: isOutlier, //  Flag for visual styling in table
             // Legacy fields
             workRate: utilizationRate,
             performanceBand: getPerformanceBand(utilizationRate)
@@ -2643,7 +2643,7 @@ function aggregateByWorker(data) {
     // Count outliers for logging
     const outlierCount = result.filter(r => r.isOutlier).length;
     if (outlierCount > 0) {
-        console.log(`📊 Outlier marking complete: ${outlierCount} records marked (will be shown in gray with 🚫 icon)`);
+        console.log(` Outlier marking complete: ${outlierCount} records marked (will be shown in gray with � icon)`);
     }
     
     // Sort by seq, then worker name
@@ -2698,17 +2698,17 @@ function updateKPIs(workerAgg) {
     let secondValue, thirdValue, avgRate;
     
     if (isEfficiency) {
-        // ⚡ Efficiency Mode
+        //  Efficiency Mode
         // Card 2: Total Adjusted S/T (Total Assigned Time)
         secondLabel.textContent = 'Total Adjusted S/T (min)';
         secondValue = workerAgg.reduce((sum, w) => sum + (w.assignedStandardTime || 0), 0);
         
-        // Card 3: Total Shift Time (total shifts × 660 min)
+        // Card 3: Total Shift Time (total shifts � 660 min)
         thirdLabel.textContent = 'Total Shift Time (min)';
         const totalShifts = workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0);
         thirdValue = totalShifts * 660; // Each shift = 11 hours = 660 minutes
         
-        // Card 4: Average Efficiency Rate = (Total Adjusted S/T / Total Shift Time) × 100
+        // Card 4: Average Efficiency Rate = (Total Adjusted S/T / Total Shift Time) � 100
         avgRateLabel.textContent = 'Avg Efficiency Rate (Shift Productivity)';
         avgRate = thirdValue > 0 ? (secondValue / thirdValue) * 100 : 0;
         
@@ -2719,10 +2719,10 @@ function updateKPIs(workerAgg) {
         avgRateLabel.style.color = '#7e22ce';
         
     } else {
-        // ⏱️ Utilization Mode
-        // Card 2: Total Shift Time (total shifts × 660 min)
+        // � Utilization Mode
+        // Card 2: Total Shift Time (total shifts � 660 min)
         secondLabel.textContent = 'Total Shift Time (min)';
-        // ✅ CORRECTED: Sum of all actual shifts worked by all workers
+        //  CORRECTED: Sum of all actual shifts worked by all workers
         const totalShifts = workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0);
         secondValue = totalShifts * 660; // Each shift = 11 hours = 660 minutes
         
@@ -2730,7 +2730,7 @@ function updateKPIs(workerAgg) {
         thirdLabel.textContent = 'Total Work Time (min)';
         thirdValue = workerAgg.reduce((sum, w) => sum + (w.totalMinutes || 0), 0);
         
-        // Card 4: Average Utilization Rate = (Total Work Time / Total Shift Time) × 100
+        // Card 4: Average Utilization Rate = (Total Work Time / Total Shift Time) � 100
         avgRateLabel.textContent = 'Average Utilization Rate';
         avgRate = secondValue > 0 ? (thirdValue / secondValue) * 100 : 0;
         
@@ -2741,13 +2741,13 @@ function updateKPIs(workerAgg) {
         avgRateLabel.style.color = '#0369a1';
     }
     
-    console.log(`📊 KPI Calculation:
+    console.log(` KPI Calculation:
     - Metric: ${isEfficiency ? 'Efficiency' : 'Utilization'}
     - Total Workers: ${totalWorkers}
     ${!isEfficiency ? `- Total Shifts: ${workerAgg.reduce((sum, w) => sum + (w.shiftCount || 0), 0)}` : ''}
     - Card 2 (${secondLabel.textContent}): ${secondValue.toFixed(0)}
     - Card 3 (${thirdLabel.textContent}): ${thirdValue.toFixed(0)}
-    - Average Rate Calculation: (${secondValue.toFixed(0)} / ${thirdValue.toFixed(0)}) × 100 = ${avgRate.toFixed(2)}%
+    - Average Rate Calculation: (${secondValue.toFixed(0)} / ${thirdValue.toFixed(0)}) � 100 = ${avgRate.toFixed(2)}%
     `);
     
     // Update display
@@ -2762,7 +2762,7 @@ function updateKPIs(workerAgg) {
         outlierControl.style.display = isEfficiency ? 'block' : 'none';
     }
     
-    // 🆕 v3.4.0: Show/hide info icon and shift filter warning based on Working Shift filter
+    // � v3.4.0: Show/hide info icon and shift filter warning based on Working Shift filter
     const infoIcon = document.getElementById('kpiWorkersInfoIcon');
     const shiftWarning = document.getElementById('shiftFilterWarning');
     const currentShift = AppState.filters.workingShift;
@@ -2785,12 +2785,12 @@ function updatePerformanceBands(workerAgg) {
     // Determine which metric to use
     const isEfficiency = AppState.currentMetricType === 'efficiency';
     
-    console.log(`📊 updatePerformanceBands - Mode: ${isEfficiency ? 'Efficiency' : 'Utilization'}, Workers: ${workerAgg.length}`);
+    console.log(` updatePerformanceBands - Mode: ${isEfficiency ? 'Efficiency' : 'Utilization'}, Workers: ${workerAgg.length}`);
     
-    // 🔍 DEBUG: Check for duplicate workers
+    //  DEBUG: Check for duplicate workers
     const workerNames = workerAgg.map(w => w.workerName);
     const uniqueWorkers = new Set(workerNames);
-    console.log(`🔍 WORKER COUNT DEBUG:
+    console.log(` WORKER COUNT DEBUG:
     - Total records in workerAgg: ${workerAgg.length}
     - Unique worker names: ${uniqueWorkers.size}
     - Duplicate entries: ${workerAgg.length - uniqueWorkers.size}
@@ -2813,7 +2813,7 @@ function updatePerformanceBands(workerAgg) {
         .slice(0, 5);
     
     if (multiShiftWorkers.length > 0) {
-        console.log(`🔍 Sample workers with multiple shifts:`, multiShiftWorkers.map(([name, shifts]) => ({
+        console.log(` Sample workers with multiple shifts:`, multiShiftWorkers.map(([name, shifts]) => ({
             name,
             shifts: Array.from(shifts)
         })));
@@ -2830,7 +2830,7 @@ function updatePerformanceBands(workerAgg) {
             assignedST: w.assignedStandardTime?.toFixed(1),
             actualTime: w.totalMinutesOriginal?.toFixed(1)
         }));
-        console.log('🔍 Sample workers:', samples);
+        console.log(' Sample workers:', samples);
         console.table(samples);
     }
     
@@ -2842,13 +2842,13 @@ function updatePerformanceBands(workerAgg) {
     
     if (isEfficiency) {
         // Work Efficiency bands
-        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥100%)';
+        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (��100%)';
         normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (80-<100%)';
         poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (60-<80%)';
         criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<60%)';
     } else {
         // Time Utilization bands
-        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (≥80%)';
+        excellentTitle.innerHTML = '<i class="fas fa-trophy mr-2"></i>Excellent (��80%)';
         normalTitle.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Normal (50-<80%)';
         poorTitle.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Poor (30-<50%)';
         criticalTitle.innerHTML = '<i class="fas fa-times-circle mr-2"></i>At-Risk (<30%)';
@@ -2872,7 +2872,7 @@ function updatePerformanceBands(workerAgg) {
         return band && band.label === 'Critical';
     });
     
-    console.log(`📊 Band distribution: Excellent=${excellent.length}, Normal=${normal.length}, Poor=${poor.length}, Critical=${critical.length}`);
+    console.log(` Band distribution: Excellent=${excellent.length}, Normal=${normal.length}, Poor=${poor.length}, Critical=${critical.length}`);
     
     // Get rate value based on current metric
     const getRate = (w) => isEfficiency ? w.efficiencyRate : w.utilizationRate;
@@ -2896,7 +2896,7 @@ function updatePerformanceBands(workerAgg) {
         excellentDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No data available</p>';
     }
     
-    // Normal workers - ✅ FIX: Use blue color consistently
+    // Normal workers -  FIX: Use blue color consistently
     const normalDiv = document.getElementById('normalWorkers');
     if (normal.length > 0) {
         normalDiv.innerHTML = '<div class="space-y-2">' + normal.map(w => 
@@ -3005,7 +3005,7 @@ function updateProcessChart(filteredData) {
     
     // Debug: Show sample process data before calculation
     const sampleProcesses = Object.entries(processData).slice(0, 3);
-    console.log('🔍 Sample process data:');
+    console.log(' Sample process data:');
     sampleProcesses.forEach(([name, data]) => {
         const workerCount = data.workers.size;
         const totalShifts = Object.values(data.workerShifts).reduce((sum, shifts) => sum + shifts.size, 0);
@@ -3046,8 +3046,8 @@ function updateProcessChart(filteredData) {
             return a.seq - b.seq;
         });
     
-    console.log('📊 Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq}, WorkRate: ${p.avgWorkRate}%)`).join(', '));
-    console.log('📊 Top 3 processes:', sortedProcesses.slice(0, 3).map(p => ({
+    console.log(' Process chart order:', sortedProcesses.map(p => `${p.name} [${p.foDesc2}] (Cat: ${p.categorySeq}, Seq: ${p.seq}, WorkRate: ${p.avgWorkRate}%)`).join(', '));
+    console.log(' Top 3 processes:', sortedProcesses.slice(0, 3).map(p => ({
         name: p.name,
         totalMinutes: p.totalMinutes.toFixed(1),
         records: p.count,
@@ -3119,7 +3119,7 @@ function updatePerformanceChart(workerAgg) {
         }
     });
     
-    console.log(`🍩 Donut chart band counts: Excellent=${bandCounts['Excellent']}, Normal=${bandCounts['Normal']}, Poor=${bandCounts['Poor']}, Critical=${bandCounts['Critical']}`);
+    console.log(`� Donut chart band counts: Excellent=${bandCounts['Excellent']}, Normal=${bandCounts['Normal']}, Poor=${bandCounts['Poor']}, Critical=${bandCounts['Critical']}`);
     
     const ctx = document.getElementById('performanceChart');
     
@@ -3129,10 +3129,10 @@ function updatePerformanceChart(workerAgg) {
     
     // Dynamic labels based on metric type
     const labels = isEfficiency
-        ? ['Excellent (≥100%)', 'Normal (80-<100%)', 'Poor (60-<80%)', 'At-Risk (<60%)']
-        : ['Excellent (≥80%)', 'Normal (50-<80%)', 'Poor (30-<50%)', 'At-Risk (<30%)'];
+        ? ['Excellent (��100%)', 'Normal (80-<100%)', 'Poor (60-<80%)', 'At-Risk (<60%)']
+        : ['Excellent (��80%)', 'Normal (50-<80%)', 'Poor (30-<50%)', 'At-Risk (<30%)'];
     
-    console.log(`🍩 Donut chart updating: Metric=${AppState.currentMetricType}, Labels=${JSON.stringify(labels)}`);
+    console.log(`� Donut chart updating: Metric=${AppState.currentMetricType}, Labels=${JSON.stringify(labels)}`);
     
     AppState.charts.performance = new Chart(ctx, {
         type: 'doughnut',
@@ -3173,7 +3173,7 @@ function updateDataTable(workerAgg) {
     const thead = document.querySelector('#dataTable thead tr');
     const isEfficiency = AppState.currentMetricType === 'efficiency';
     
-    // ✅ FIX: Update entire table header with sortable columns
+    //  FIX: Update entire table header with sortable columns
     if (isEfficiency) {
         thead.innerHTML = `
             <th class="cursor-pointer hover:bg-gray-100" onclick="sortDataTable('workerName')">
@@ -3246,7 +3246,7 @@ function updateDataTable(workerAgg) {
         const shiftText = item.workingShift === 'Day' ? 'Day' : 'Night';
         const actualShiftText = item.actualShift || '-';
         
-        // ✅ Visual styling for outliers
+        //  Visual styling for outliers
         const outlierThreshold = AppState.outlierThreshold || 1000;
         const isOutlier = item.isOutlier || false;
         const rowClass = isOutlier ? 'class="outlier-row"' : '';
@@ -3258,7 +3258,7 @@ function updateDataTable(workerAgg) {
             const workerRate = item['Worker Rate(%)'] || 0;
             const assigned = item.assignedStandardTime || 0;
             
-            // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count × 660) × 100
+            // Calculate daily efficiency: Adjusted S/T ÷ (Shift Count � 660) � 100
             const shiftCount = item.shifts?.size || 1;
             const shiftTime = shiftCount * 660;
             const efficiency = shiftTime > 0 ? (assigned / shiftTime) * 100 : 0;
@@ -3408,7 +3408,7 @@ function loadDefaultProcessMapping() {
         { fdDesc: 'QC UT', foDesc2: 'BT QC', foDesc3: 'QC UT', seq: 2 },
         { fdDesc: 'Ovality Repair', foDesc2: 'BT QC', foDesc3: 'Ovality Repair', seq: 6 }
     ];
-    console.log(`✅ ${AppState.processMapping.length} process mappings loaded`);
+    console.log(` ${AppState.processMapping.length} process mappings loaded`);
     updateMappingTable();
 }
 
@@ -3420,7 +3420,7 @@ function addMapping() {
     const seq = parseInt(document.getElementById('newSeq').value) || 999;
     
     if (!fdDesc || !foDesc3) {
-        alert('FD Desc와 FO Desc 3는 필수 입력 항목입니다.');
+        alert('FD Desc와 FO Desc 3� �� �� ��목���.');
         return;
     }
     
@@ -3430,7 +3430,7 @@ function addMapping() {
     );
     
     if (exists) {
-        if (!confirm('이미 존재하는 매핑입니다. 덮어쓰시겠습니까?')) {
+        if (!confirm('�� �재�� �����. �어������?')) {
             return;
         }
         // Remove existing
@@ -3463,7 +3463,7 @@ function addMapping() {
 
 // Delete mapping
 function deleteMapping(fdDesc) {
-    if (!confirm('이 매핑을 삭제하시겠습니까?')) {
+    if (!confirm('� ��� 삭�������?')) {
         return;
     }
     
@@ -3770,7 +3770,7 @@ async function saveToDatabase() {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
         saveStatus.classList.add('hidden');
         
-        console.log('💾 Saving data to database...');
+        console.log('� Saving data to database...');
         
         const payload = {
             filename: AppState.currentFileName || 'Unknown',
@@ -3797,7 +3797,7 @@ async function saveToDatabase() {
         const result = await response.json();
         
         if (result.success) {
-            console.log('✅ Upload started in background!', result);
+            console.log(' Upload started in background!', result);
             
             // Hide loading overlay
             hideLoadingOverlay();
@@ -3819,7 +3819,7 @@ async function saveToDatabase() {
         }
         
     } catch (error) {
-        console.error('❌ Failed to save to database:', error);
+        console.error(' Failed to save to database:', error);
         hideLoadingOverlay();
         alert('Failed to save to database:\n' + error.message);
         
@@ -3902,10 +3902,10 @@ async function loadUploadsList() {
             `;
         }).join('');
         
-        console.log(`✅ Loaded ${result.uploads.length} uploads`);
+        console.log(` Loaded ${result.uploads.length} uploads`);
         
     } catch (error) {
-        console.error('❌ Failed to load uploads list:', error);
+        console.error(' Failed to load uploads list:', error);
         uploadsListDiv.innerHTML = `
             <div class="text-center text-red-500 py-8">
                 <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
@@ -3929,7 +3929,7 @@ async function deleteUpload(uploadId, event) {
     }
     
     try {
-        console.log(`🗑️  Deleting upload #${uploadId}...`);
+        console.log(`  Deleting upload #${uploadId}...`);
         
         const response = await fetch(`/api/uploads/${uploadId}`, {
             method: 'DELETE'
@@ -3943,7 +3943,7 @@ async function deleteUpload(uploadId, event) {
         const result = await response.json();
         
         if (result.success) {
-            console.log(`✅ Upload #${uploadId} deleted successfully`);
+            console.log(` Upload #${uploadId} deleted successfully`);
             
             // Refresh uploads list
             loadUploadsList();
@@ -3954,7 +3954,7 @@ async function deleteUpload(uploadId, event) {
             throw new Error(result.error || 'Delete failed');
         }
     } catch (error) {
-        console.error(`❌ Failed to delete upload #${uploadId}:`, error);
+        console.error(` Failed to delete upload #${uploadId}:`, error);
         alert('Failed to delete upload:\n' + error.message);
     }
 }
@@ -3962,7 +3962,7 @@ async function deleteUpload(uploadId, event) {
 // Load specific upload by ID
 async function loadUploadById(uploadId) {
     try {
-        console.log(`📥 Loading upload #${uploadId}...`);
+        console.log(`� Loading upload #${uploadId}...`);
         showUploadStatus(true);
         updateProgress(20);
         showLoadingOverlay('Loading data from database...');
@@ -3983,23 +3983,23 @@ async function loadUploadById(uploadId) {
         updateProgress(70);
         
         // Load raw data with pagination
-        console.log('📄 Loading raw data in batches...');
+        console.log(' Loading raw data in batches...');
         const allRawData = [];
         let page = 1;
         let hasMore = true;
-        const limit = 1000; // 한 번에 1000개씩
+        const limit = 1000; // � �� 1000��
         
         while (hasMore) {
             const rawDataResponse = await fetch(`/api/uploads/${uploadId}/raw-data?page=${page}&limit=${limit}`);
             if (!rawDataResponse.ok) {
-                console.warn(`⚠️ Failed to load page ${page}, stopping pagination`);
+                console.warn(` Failed to load page ${page}, stopping pagination`);
                 break;
             }
             
             const rawDataResult = await rawDataResponse.json();
             if (rawDataResult.success && rawDataResult.rawData) {
                 allRawData.push(...rawDataResult.rawData);
-                console.log(`✅ Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
+                console.log(` Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
                 
                 hasMore = rawDataResult.pagination.hasMore;
                 page++;
@@ -4012,7 +4012,7 @@ async function loadUploadById(uploadId) {
             }
         }
         
-        console.log(`✅ All raw data loaded: ${allRawData.length} records`);
+        console.log(` All raw data loaded: ${allRawData.length} records`);
         updateProgress(90);
         
         // Restore data to AppState - convert DB format to app format
@@ -4024,9 +4024,9 @@ async function loadUploadById(uploadId) {
             endDatetime: d.end_datetime,
             workerAct: d.worker_act,
             workerActMins: d.worker_act,  // Add this field for consistency
-            'Worker Act': d.worker_act,   // ✅ Add Worker Act field
-            'Worker S/T': d.worker_st || 0,  // ✅ Restore Worker S/T
-            'Worker Rate(%)': d.worker_rate_pct || 0,  // ✅ Restore Worker Rate(%)
+            'Worker Act': d.worker_act,   //  Add Worker Act field
+            'Worker S/T': d.worker_st || 0,  //  Restore Worker S/T
+            'Worker Rate(%)': d.worker_rate_pct || 0,  //  Restore Worker Rate(%)
             resultCnt: d.result_cnt,
             workingDay: d.working_day,
             workingShift: d.working_shift,
@@ -4044,7 +4044,7 @@ async function loadUploadById(uploadId) {
         // Load process mapping from DB or use default hardcoded mappings
         if (!dataResult.processMapping || dataResult.processMapping.length === 0) {
             // No mappings in DB, use default hardcoded mappings
-            console.log('ℹ️ No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
+            console.log('� No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
             AppState.processMapping = [];
             Object.keys(DEFAULT_PROCESS_MAPPING).forEach(fdDesc => {
                 const mapping = DEFAULT_PROCESS_MAPPING[fdDesc];
@@ -4055,9 +4055,9 @@ async function loadUploadById(uploadId) {
                     seq: mapping.seq || 999
                 });
             });
-            console.log(`✅ Loaded ${AppState.processMapping.length} default process mappings`);
+            console.log(` Loaded ${AppState.processMapping.length} default process mappings`);
         } else {
-            console.log(`✅ Loaded ${AppState.processMapping.length} process mappings from database`);
+            console.log(` Loaded ${AppState.processMapping.length} process mappings from database`);
         }
         
         // Load shift calendar from DB, or use default if not available
@@ -4069,11 +4069,11 @@ async function loadUploadById(uploadId) {
         
         if (dbShiftCalendar.length > 0) {
             AppState.shiftCalendar = dbShiftCalendar;
-            console.log(`✅ Loaded ${dbShiftCalendar.length} shift calendar entries from DB`);
+            console.log(` Loaded ${dbShiftCalendar.length} shift calendar entries from DB`);
         } else {
             // Use default hardcoded shift calendar if DB doesn't have one
             loadDefaultShiftCalendar();
-            console.log(`✅ Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
+            console.log(` Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
         }
         
         // Convert datetime strings back to Date objects for rawData
@@ -4083,19 +4083,19 @@ async function loadUploadById(uploadId) {
             endDatetime: d.endDatetime ? new Date(d.endDatetime) : null
         }));
         
-        // ✅ DEBUG: Check if Worker S/T and Worker Rate(%) are loaded from DB
-        console.log('🔍 DEBUG: First 3 rawData records after DB load:');
+        //  DEBUG: Check if Worker S/T and Worker Rate(%) are loaded from DB
+        console.log(' DEBUG: First 3 rawData records after DB load:');
         AppState.rawData.slice(0, 3).forEach((r, idx) => {
             console.log(`  [${idx+1}] Worker: ${r.workerName}`);
             console.log(`      Worker S/T: ${r['Worker S/T']}, Worker Rate(%): ${r['Worker Rate(%)']}, Worker Act: ${r['Worker Act']}`);
         });
         
         // Re-process the data with current mappings (async chunks for large datasets)
-        console.log('🔄 Re-processing data with mappings...');
+        console.log(' Re-processing data with mappings...');
         
         // For large datasets, process in chunks to avoid blocking UI
         if (AppState.rawData.length > 5000) {
-            console.log(`📦 Large dataset detected (${AppState.rawData.length} records) - processing in chunks...`);
+            console.log(`� Large dataset detected (${AppState.rawData.length} records) - processing in chunks...`);
             AppState.processedData = await processDataInChunks(AppState.rawData);
         } else {
             AppState.processedData = processData(AppState.rawData);
@@ -4119,9 +4119,9 @@ async function loadUploadById(uploadId) {
         // Switch to Report tab
         switchTab('report');
         
-        console.log('✅ Data loaded successfully!');
-        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${uploadId}`);
-        console.log(`📅 Upload: ${dataResult.upload.filename}`);
+        console.log(' Data loaded successfully!');
+        console.log(` Loaded ${AppState.processedData.length} records from upload #${uploadId}`);
+        console.log(` Upload: ${dataResult.upload.filename}`);
         
         setTimeout(() => {
             showUploadStatus(false);
@@ -4129,7 +4129,7 @@ async function loadUploadById(uploadId) {
         }, 500);
         
     } catch (error) {
-        console.error('❌ Failed to load upload:', error);
+        console.error(' Failed to load upload:', error);
         alert('Failed to load upload:\n' + error.message);
         showUploadStatus(false);
         hideLoadingOverlay();
@@ -4139,7 +4139,7 @@ async function loadUploadById(uploadId) {
 // Load last upload from database
 async function loadLastUpload() {
     try {
-        console.log('📥 Loading last upload from database...');
+        console.log('� Loading last upload from database...');
         showUploadStatus(true);
         updateProgress(20);
         showLoadingOverlay('Loading last upload...');
@@ -4161,7 +4161,7 @@ async function loadLastUpload() {
         
         // Get the most recent upload
         const lastUpload = listResult.uploads[0];
-        console.log('📄 Last upload:', lastUpload);
+        console.log(' Last upload:', lastUpload);
         
         updateProgress(60);
         
@@ -4179,23 +4179,23 @@ async function loadLastUpload() {
         }
         
         // Load raw data with pagination
-        console.log('📄 Loading raw data in batches...');
+        console.log(' Loading raw data in batches...');
         const allRawData = [];
         let page = 1;
         let hasMore = true;
-        const limit = 1000; // 한 번에 1000개씩
+        const limit = 1000; // � �� 1000��
         
         while (hasMore) {
             const rawDataResponse = await fetch(`/api/uploads/${lastUpload.id}/raw-data?page=${page}&limit=${limit}`);
             if (!rawDataResponse.ok) {
-                console.warn(`⚠️ Failed to load page ${page}, stopping pagination`);
+                console.warn(` Failed to load page ${page}, stopping pagination`);
                 break;
             }
             
             const rawDataResult = await rawDataResponse.json();
             if (rawDataResult.success && rawDataResult.rawData) {
                 allRawData.push(...rawDataResult.rawData);
-                console.log(`✅ Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
+                console.log(` Loaded page ${page}/${rawDataResult.pagination.totalPages} (${allRawData.length}/${rawDataResult.pagination.total} records)`);
                 
                 hasMore = rawDataResult.pagination.hasMore;
                 page++;
@@ -4208,7 +4208,7 @@ async function loadLastUpload() {
             }
         }
         
-        console.log(`✅ All raw data loaded: ${allRawData.length} records`);
+        console.log(` All raw data loaded: ${allRawData.length} records`);
         updateProgress(90);
         
         // Restore data to AppState - convert DB format to app format
@@ -4237,7 +4237,7 @@ async function loadLastUpload() {
         // Load process mapping from DB or use default hardcoded mappings
         if (!dataResult.processMapping || dataResult.processMapping.length === 0) {
             // No mappings in DB, use default hardcoded mappings
-            console.log('ℹ️ No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
+            console.log('� No process mappings in database. Using DEFAULT_PROCESS_MAPPING.');
             AppState.processMapping = [];
             Object.keys(DEFAULT_PROCESS_MAPPING).forEach(fdDesc => {
                 const mapping = DEFAULT_PROCESS_MAPPING[fdDesc];
@@ -4248,9 +4248,9 @@ async function loadLastUpload() {
                     seq: mapping.seq || 999
                 });
             });
-            console.log(`✅ Loaded ${AppState.processMapping.length} default process mappings`);
+            console.log(` Loaded ${AppState.processMapping.length} default process mappings`);
         } else {
-            console.log(`✅ Loaded ${AppState.processMapping.length} process mappings from database`);
+            console.log(` Loaded ${AppState.processMapping.length} process mappings from database`);
         }
         
         // Load shift calendar from DB, or use default if not available
@@ -4262,11 +4262,11 @@ async function loadLastUpload() {
         
         if (dbShiftCalendar2.length > 0) {
             AppState.shiftCalendar = dbShiftCalendar2;
-            console.log(`✅ Loaded ${dbShiftCalendar2.length} shift calendar entries from DB`);
+            console.log(` Loaded ${dbShiftCalendar2.length} shift calendar entries from DB`);
         } else {
             // Use default hardcoded shift calendar if DB doesn't have one
             loadDefaultShiftCalendar();
-            console.log(`✅ Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
+            console.log(` Using default hardcoded shift calendar (${AppState.shiftCalendar.length} entries)`);
         }
         
         // Convert datetime strings back to Date objects for rawData
@@ -4277,7 +4277,7 @@ async function loadLastUpload() {
         }));
         
         // Re-process the data with current mappings
-        console.log('🔄 Re-processing data with mappings...');
+        console.log(' Re-processing data with mappings...');
         AppState.processedData = processData(AppState.rawData);
         
         updateProgress(100);
@@ -4287,10 +4287,10 @@ async function loadLastUpload() {
         showUploadResult(AppState.processedData);
         updateReport();
         
-        console.log('✅ Data loaded successfully!');
-        console.log(`📊 Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
-        console.log(`📅 Upload date: ${lastUpload.upload_date}`);
-        console.log(`📁 Filename: ${lastUpload.filename}`);
+        console.log(' Data loaded successfully!');
+        console.log(` Loaded ${AppState.processedData.length} records from upload #${lastUpload.id}`);
+        console.log(` Upload date: ${lastUpload.upload_date}`);
+        console.log(`� Filename: ${lastUpload.filename}`);
         
         setTimeout(() => {
             showUploadStatus(false);
@@ -4298,7 +4298,7 @@ async function loadLastUpload() {
         }, 1000);
         
     } catch (error) {
-        console.error('❌ Failed to load from database:', error);
+        console.error(' Failed to load from database:', error);
         alert('Failed to load last upload:\n' + error.message);
         showUploadStatus(false);
         hideLoadingOverlay();
@@ -4307,11 +4307,11 @@ async function loadLastUpload() {
 
 // Sort Performance Bands
 function sortPerformanceBand(bandType, order) {
-    // ✅ FIX: Use cached workerSummary instead of re-aggregating
+    //  FIX: Use cached workerSummary instead of re-aggregating
     const aggregatedData = AppState.workerSummary || [];
     
     if (aggregatedData.length === 0) {
-        console.warn('⚠️ No worker summary data available for sorting');
+        console.warn(' No worker summary data available for sorting');
         return;
     }
     
@@ -4319,9 +4319,9 @@ function sortPerformanceBand(bandType, order) {
     const isEfficiency = AppState.currentMetricType === 'efficiency';
     const sortKey = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
     
-    console.log(`🔄 Sorting ${bandType} band by ${sortKey} (${order})`);
+    console.log(` Sorting ${bandType} band by ${sortKey} (${order})`);
     
-    // ✅ FIX: Filter by correct band based on current metric
+    //  FIX: Filter by correct band based on current metric
     let workers;
     const targetBand = bandType.charAt(0).toUpperCase() + bandType.slice(1);
     if (isEfficiency) {
@@ -4349,12 +4349,12 @@ function sortPerformanceBand(bandType, order) {
                        bandType === 'normal' ? 'blue' :
                        bandType === 'poor' ? 'orange' : 'red';
     
-    console.log(`✅ Rendering ${workers.length} workers for ${bandType} band`);
+    console.log(` Rendering ${workers.length} workers for ${bandType} band`);
     
     const div = document.getElementById(divId);
     if (workers.length > 0) {
         div.innerHTML = '<div class="space-y-2">' + workers.map(w => {
-            // ✅ FIX: Use the correct rate based on current metric type
+            //  FIX: Use the correct rate based on current metric type
             const displayRate = isEfficiency ? w.efficiencyRate : w.utilizationRate;
             return `<div class="flex flex-col p-4 bg-white border-l-4 border-${colorClass}-500 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="showWorkerDetail('${w.workerName.replace(/'/g, "\\'")}')">
                 <div class="flex justify-between items-center">
@@ -4413,7 +4413,7 @@ function showWorkerDetail(workerName) {
     const rawDataSource = AppState.filteredData || AppState.processedData;
     const rawRecords = rawDataSource.filter(r => r.workerName === workerName && !r.rework);
     
-    // ✅ FIX: Aggregate rawRecords directly to match current filter state
+    //  FIX: Aggregate rawRecords directly to match current filter state
     // Don't use cachedWorkerAgg because it may be out of sync with filters
     const aggregatedRecords = aggregateByWorker(rawRecords);
     
@@ -4422,7 +4422,7 @@ function showWorkerDetail(workerName) {
     if (isEfficiency) {
         // Efficiency: Use ALL aggregated data for KPI (including outliers)
         // Outliers are real work and should be included in calculations
-        dataForSummary = aggregatedRecords; // ✅ Include outliers in KPI
+        dataForSummary = aggregatedRecords; //  Include outliers in KPI
         dataForTable = rawRecords; // Show individual activity records
     } else {
         // Utilization: Use aggregated data for KPI, raw data for table
@@ -4438,10 +4438,10 @@ function showWorkerDetail(workerName) {
     
     // If all records are outliers, show warning but continue
     if (dataForSummary.length === 0 && dataForTable.length > 0) {
-        console.warn(`⚠️ All ${dataForTable.length} records for ${workerName} are outliers (>${AppState.outlierThreshold}%)`);
+        console.warn(` All ${dataForTable.length} records for ${workerName} are outliers (>${AppState.outlierThreshold}%)`);
     }
     
-    // 🆕 v3.4.1: Count unique shifts from ALL data (not just non-outliers)
+    // � v3.4.1: Count unique shifts from ALL data (not just non-outliers)
     // For Efficiency: Use aggregatedRecords (includes outliers)
     // For Utilization: Use raw data (already using dataForTable)
     const uniqueShifts = new Set();
@@ -4455,7 +4455,7 @@ function showWorkerDetail(workerName) {
     let currentRate, performanceBand, totalValue;
     
     if (isEfficiency) {
-        // ✅ FIX: Use aggregated data (outliers already excluded for KPI)
+        //  FIX: Use aggregated data (outliers already excluded for KPI)
         // If all are outliers, use dataForTable for display but show warning
         const dataForKPI = dataForSummary.length > 0 ? dataForSummary : dataForTable;
         const assignedStandardTime = dataForKPI.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
@@ -4465,7 +4465,7 @@ function showWorkerDetail(workerName) {
         performanceBand = getEfficiencyBand(currentRate);
         totalValue = assignedStandardTime;
         
-        console.log(`📊 Worker Detail (Efficiency) for ${workerName}:`, {
+        console.log(` Worker Detail (Efficiency) for ${workerName}:`, {
             assignedStandardTime: assignedStandardTime.toFixed(1),
             shiftTime: shiftTime,
             shiftCount,
@@ -4475,7 +4475,7 @@ function showWorkerDetail(workerName) {
             calculation: `${assignedStandardTime.toFixed(1)} / ${shiftTime} * 100 = ${currentRate.toFixed(1)}%`
         });
     } else {
-        // ✅ FIX: Use aggregated totalMinutes from cachedWorkerAgg (already deduped)
+        //  FIX: Use aggregated totalMinutes from cachedWorkerAgg (already deduped)
         const totalMinutes = dataForSummary.reduce((sum, r) => sum + (r.totalMinutes || 0), 0);
         const availableTime = shiftCount * 660;
         
@@ -4483,7 +4483,7 @@ function showWorkerDetail(workerName) {
         performanceBand = getUtilizationBand(currentRate);
         totalValue = totalMinutes;
         
-        console.log(`📊 Worker Detail (Utilization) for ${workerName}:`, {
+        console.log(` Worker Detail (Utilization) for ${workerName}:`, {
             actualWorkTime: totalValue.toFixed(1),
             availableTime,
             shiftCount,
@@ -4551,7 +4551,7 @@ function showWorkerDetail(workerName) {
     // Set Total Records count based on table data (individual activity records)
     document.getElementById('modalRecordCount').textContent = dataForTable.length.toLocaleString();
     
-    // ✅ FIX: Remove background color, only use text color
+    //  FIX: Remove background color, only use text color
     const bandElement = document.getElementById('modalPerformanceBand');
     bandElement.textContent = performanceBand.label;
     bandElement.style.backgroundColor = 'transparent';
@@ -4562,28 +4562,28 @@ function showWorkerDetail(workerName) {
     if (isEfficiency) {
         glossaryDiv.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Glossary (Shift Productivity):</strong><br>
-            • <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
-            • <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
-            • <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Worker Rate ÷ 100<br>
-            • <strong>Shift Time</strong>: Available shift time (660 minutes = 11 hours)<br>
-            • <strong>Efficiency(%)</strong>: Shift productivity = Adjusted S/T ÷ Shift Time × 100<br>
-            • <strong>🚫 Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (shown in red for visual reference, but <strong>included in all calculations</strong>)<br>
+            �� <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
+            �� <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
+            �� <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T � Worker Rate ÷ 100<br>
+            �� <strong>Shift Time</strong>: Available shift time (660 minutes = 11 hours)<br>
+            �� <strong>Efficiency(%)</strong>: Shift productivity = Adjusted S/T ÷ Shift Time � 100<br>
+            �� <strong>� Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (shown in red for visual reference, but <strong>included in all calculations</strong>)<br>
             <br>
-            <strong class="text-purple-600">📌 Note:</strong> Efficiency (also called "Shift Productivity") measures how much standard work was completed per shift. 100% = completed exactly the standard amount of work in one shift (660 min).
+            <strong class="text-purple-600"> Note:</strong> Efficiency (also called "Shift Productivity") measures how much standard work was completed per shift. 100% = completed exactly the standard amount of work in one shift (660 min).
         `;
     } else {
         glossaryDiv.innerHTML = `
             <strong class="text-blue-700">Time Utilization Glossary:</strong><br>
-            • <strong>Original(m)</strong>: Time calculated from End - Start time<br>
-            • <strong>Adjusted(m)</strong>: Original time after removing overlapping intervals<br>
-            • <strong>Removed overlap</strong>: Duplicate time periods detected and excluded<br>
-            • <strong>Utilization Rate</strong>: Adjusted time ÷ Available shift time × 100
+            �� <strong>Original(m)</strong>: Time calculated from End - Start time<br>
+            �� <strong>Adjusted(m)</strong>: Original time after removing overlapping intervals<br>
+            �� <strong>Removed overlap</strong>: Duplicate time periods detected and excluded<br>
+            �� <strong>Utilization Rate</strong>: Adjusted time ÷ Available shift time � 100
         `;
     }
     
     // Render charts based on metric type
     if (isEfficiency) {
-        // ✅ Charts need aggregated data with assignedStandardTime
+        //  Charts need aggregated data with assignedStandardTime
         renderEfficiencyCharts(aggregatedRecords);
     } else {
         renderUtilizationCharts(dataForTable);
@@ -4592,7 +4592,7 @@ function showWorkerDetail(workerName) {
     // Render records table based on metric type
     const tableBody = document.getElementById('modalRecordsTable');
     if (isEfficiency) {
-        // ✅ Table shows individual records (rawRecords)
+        //  Table shows individual records (rawRecords)
         renderEfficiencyTable(dataForTable, tableBody);
     } else {
         renderUtilizationTable(dataForTable, tableBody);
@@ -4756,7 +4756,7 @@ function renderEfficiencyCharts(workerRecords) {
             dailyData[date] = { assigned: 0 };
             dailyShifts[date] = new Set();
         }
-        // ✅ Use aggregated data fields
+        //  Use aggregated data fields
         dailyData[date].assigned += r.assignedStandardTime || 0;
         
         // Track unique shifts per date
@@ -4817,7 +4817,7 @@ function renderEfficiencyCharts(workerRecords) {
         }
     });
     
-    // ✅ Hourly distribution: Use raw processedData for individual time records
+    //  Hourly distribution: Use raw processedData for individual time records
     const processCtx = document.getElementById('modalProcessChart');
     if (modalCharts.process) {
         modalCharts.process.destroy();
@@ -4837,7 +4837,7 @@ function renderEfficiencyCharts(workerRecords) {
             return false;
         }
         
-        // ✅ FIX: Use correct field names from parseRawData
+        //  FIX: Use correct field names from parseRawData
         const st = r['Worker S/T'] || 0;
         const rate = r['Worker Rate(%)'] || 0;
         const assigned = (st * rate) / 100;
@@ -4887,7 +4887,7 @@ function renderEfficiencyCharts(workerRecords) {
         if (!hourlyData[hour]) {
             hourlyData[hour] = 0;
         }
-        // ✅ FIX: Use correct field names Worker S/T and Worker Rate(%)
+        //  FIX: Use correct field names Worker S/T and Worker Rate(%)
         const st = r['Worker S/T'] || 0;
         const rate = r['Worker Rate(%)'] || 0;
         const assigned = (st * rate) / 100;
@@ -4981,7 +4981,7 @@ function renderEfficiencyTable(workerRecords, tableBody) {
             // Use individual record fields
             const st = r['Worker S/T'] || 0;
             const rate = r['Worker Rate(%)'] || 0;
-            const assigned = (st * rate / 100) || 0;  // Adjusted S/T = S/T × Rate ÷ 100
+            const assigned = (st * rate / 100) || 0;  // Adjusted S/T = S/T � Rate ÷ 100
             const actual = r['Worker Act'] || 0;
             
             // Calculate efficiency for this individual record
@@ -5157,14 +5157,14 @@ function toggleMetric() {
         }, 500);
     }, 800);
     
-    console.log(`🔄 Metric switched to: ${AppState.currentMetricType}`);
+    console.log(` Metric switched to: ${AppState.currentMetricType}`);
 }
 
 // Sort data table
 function sortDataTable(column) {
-    // ✅ FIX: Ensure cachedWorkerAgg exists
+    //  FIX: Ensure cachedWorkerAgg exists
     if (!AppState.cachedWorkerAgg || AppState.cachedWorkerAgg.length === 0) {
-        console.warn('⚠️ No cached data available for sorting');
+        console.warn(' No cached data available for sorting');
         return;
     }
     
@@ -5180,7 +5180,7 @@ function sortDataTable(column) {
     
     const data = [...AppState.cachedWorkerAgg];
     
-    console.log(`🔄 Sorting by ${column} (${sort.order})`);
+    console.log(` Sorting by ${column} (${sort.order})`);
     
     data.sort((a, b) => {
         let valA, valB;
@@ -5261,7 +5261,7 @@ window.filterWorkerList = filterWorkerList;
 window.toggleMetric = toggleMetric;
 window.sortDataTable = sortDataTable;
 
-// 📊 Background Upload Progress Functions
+//  Background Upload Progress Functions
 function showUploadProgressBar(uploadId, totalRecords) {
     // Remove existing progress bar if any
     const existingBar = document.getElementById('upload-progress-bar');
@@ -5316,9 +5316,9 @@ function updateProgressBar(progress) {
     if (progress.status === 'processing') {
         progressStatus.textContent = `Processing... ${percentage}% complete`;
     } else if (progress.status === 'completed') {
-        progressStatus.textContent = '✅ Upload completed successfully!';
+        progressStatus.textContent = ' Upload completed successfully!';
     } else if (progress.status === 'error') {
-        progressStatus.textContent = `❌ Error: ${progress.error || 'Unknown error'}`;
+        progressStatus.textContent = ` Error: ${progress.error || 'Unknown error'}`;
     }
 }
 
@@ -5414,7 +5414,7 @@ function startProgressPolling(uploadId) {
                         saveStatus.classList.add('bg-green-100', 'border-green-400', 'text-green-700');
                         saveStatus.innerHTML = `
                             <strong>Success!</strong> Data saved to database.
-                            <button onclick="this.parentElement.classList.add('hidden')" class="float-right">×</button>
+                            <button onclick="this.parentElement.classList.add('hidden')" class="float-right">�</button>
                         `;
                     }
                 }, 2000);
@@ -5451,11 +5451,11 @@ const DashboardState = {
 // ========== Main Dashboard Refresh ==========
 function refreshExecutiveDashboard() {
   if (!AppState.processedData || AppState.processedData.length === 0) {
-    console.warn('⚠️ No data for dashboard');
+    console.warn(' No data for dashboard');
     return;
   }
   
-  console.log('🎯 Refreshing Executive Dashboard...');
+  console.log(' Refreshing Executive Dashboard...');
   const data = AppState.processedData;
   
   // 1. Flight Deck
@@ -5471,14 +5471,14 @@ function refreshExecutiveDashboard() {
   // 6. Health Matrix
   refreshHealthMatrix(data);
   
-  console.log('✅ Dashboard refreshed');
+  console.log(' Dashboard refreshed');
 }
 
 // ========== 1. Flight Deck ==========
 function updateFlightDeck(data) {
-  console.log('🎯 updateFlightDeck called with', data.length, 'records');
+  console.log(' updateFlightDeck called with', data.length, 'records');
   if (data.length > 0) {
-    console.log('📊 Sample record:', data[0]);
+    console.log(' Sample record:', data[0]);
   }
   
   // Calculate KPIs from raw data by aggregating by worker
@@ -5508,7 +5508,7 @@ function updateFlightDeck(data) {
     }
   });
   
-  console.log(`📊 Aggregated ${workerStats.size} workers from ${data.length} records`);
+  console.log(` Aggregated ${workerStats.size} workers from ${data.length} records`);
   
   // Calculate average utilization and efficiency
   let totalUtil = 0, totalEff = 0, countWorkers = 0;
@@ -5538,7 +5538,7 @@ function updateFlightDeck(data) {
   const avgUtil = countWorkers > 0 ? (totalUtil / countWorkers).toFixed(1) : 0;
   const avgEff = countWorkers > 0 ? (totalEff / countWorkers).toFixed(1) : 0;
   
-  console.log(`📊 Final KPIs: Workers=${countWorkers}, Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
+  console.log(` Final KPIs: Workers=${countWorkers}, Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
   
   document.getElementById('flightWorkers').textContent = countWorkers;
   document.getElementById('flightUtil').textContent = avgUtil + '%';
@@ -5559,25 +5559,25 @@ function updateFlightDeck(data) {
 }
 
 function drawSparkline(canvasId, data) {
-  console.log(`📈 Drawing sparkline for ${canvasId}:`, data);
+  console.log(` Drawing sparkline for ${canvasId}:`, data);
   
   const canvas = document.getElementById(canvasId);
   if (!canvas) {
-    console.error(`❌ Canvas not found: ${canvasId}`);
+    console.error(` Canvas not found: ${canvasId}`);
     return;
   }
   
-  console.log(`✅ Canvas found: ${canvasId}, dimensions: ${canvas.width}x${canvas.height}`);
+  console.log(` Canvas found: ${canvasId}, dimensions: ${canvas.width}x${canvas.height}`);
   
   // Check if Chart.js is loaded
   if (typeof Chart === 'undefined') {
-    console.error('❌ Chart.js is not loaded!');
+    console.error(' Chart.js is not loaded!');
     return;
   }
   
   // Destroy existing chart
   if (DashboardState.charts[canvasId]) {
-    console.log(`🗑️ Destroying existing chart: ${canvasId}`);
+    console.log(` Destroying existing chart: ${canvasId}`);
     DashboardState.charts[canvasId].destroy();
   }
   
@@ -5611,9 +5611,9 @@ function drawSparkline(canvasId, data) {
         }
       }
     });
-    console.log(`✅ Chart created successfully: ${canvasId}`);
+    console.log(` Chart created successfully: ${canvasId}`);
   } catch (error) {
-    console.error(`❌ Error creating chart ${canvasId}:`, error);
+    console.error(` Error creating chart ${canvasId}:`, error);
   }
 }
 
@@ -5623,7 +5623,7 @@ function updateFocusQueue(data) {
   const container = document.getElementById('focusQueueContainer');
   
   if (warnings.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-sm">✅ No warnings detected. All systems normal.</p>';
+    container.innerHTML = '<p class="text-gray-500 text-sm">No critical issues detected. Performance metrics within normal range.</p>';
     document.getElementById('showAllWarnings').classList.add('hidden');
     return;
   }
@@ -5633,9 +5633,8 @@ function updateFocusQueue(data) {
     <div class="border-l-4 ${w.color} bg-${w.bgColor} p-3 mb-3 rounded">
       <div class="flex items-start justify-between">
         <div class="flex-1">
-          <p class="text-sm font-bold text-gray-800">${w.icon} ${w.severity} | ${w.title}</p>
-          <p class="text-xs text-gray-600 mt-1">Evidence: ${w.evidence}</p>
-          <p class="text-xs text-gray-500 mt-1">Confidence: ${w.confidence} (n=${w.sampleSize})</p>
+          <p class="text-sm font-bold text-gray-800">${w.severity} | ${w.title}</p>
+          <p class="text-xs text-gray-600 mt-1">${w.evidence}</p>
         </div>
       </div>
     </div>
@@ -5648,51 +5647,70 @@ function updateFocusQueue(data) {
 
 function generateWarnings(data) {
   const warnings = [];
+  const aggregated = AppState.aggregatedData || [];
+  
+  if (aggregated.length === 0) return warnings;
   
   // Rule 1: Low Utilization
   let totalUtil = 0, countUtil = 0;
-  data.forEach(r => {
-    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
+  aggregated.forEach(r => {
+    if (r.utilizationRate >= 0 && r.utilizationRate <= 100) {
       totalUtil += r.utilizationRate;
       countUtil++;
     }
   });
   const avgUtil = countUtil > 0 ? totalUtil / countUtil : 0;
   
-  if (avgUtil < 50 && countUtil >= 100) {
+  if (avgUtil < 50 && countUtil >= 10) {
     warnings.push({
       severity: 'CRITICAL',
-      icon: '🔴',
+      icon: '',
       color: 'border-red-500',
       bgColor: 'red-50',
-      title: 'Low Overall Utilization',
-      evidence: `Average ${avgUtil.toFixed(1)}% (threshold: 50%)`,
-      confidence: 'High',
-      sampleSize: countUtil
+      title: 'Low Overall Utilization Detected',
+      evidence: `Current average: ${avgUtil.toFixed(1)}% (threshold: <50%)`
     });
   }
   
   // Rule 2: Low Efficiency
   let totalEff = 0, countEff = 0;
-  data.forEach(r => {
-    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
+  aggregated.forEach(r => {
+    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 200) {
       totalEff += r.efficiencyRate;
       countEff++;
     }
   });
   const avgEff = countEff > 0 ? totalEff / countEff : 0;
   
-  if (avgEff < 50 && countEff >= 100) {
+  if (avgEff < 50 && countEff >= 10) {
     warnings.push({
       severity: 'CRITICAL',
-      icon: '🔴',
+      icon: '',
       color: 'border-red-500',
       bgColor: 'red-50',
-      title: 'Low Overall Efficiency',
-      evidence: `Average ${avgEff.toFixed(1)}% (threshold: 50%)`,
-      confidence: 'High',
-      sampleSize: countEff
+      title: 'Low Overall Efficiency Detected',
+      evidence: `Current average: ${avgEff.toFixed(1)}% (threshold: <50%)`
     });
+  }
+  
+  // Rule 3: High variance (inconsistent performance)
+  if (countUtil >= 10) {
+    const utilVariance = aggregated.reduce((sum, r) => {
+      const diff = r.utilizationRate - avgUtil;
+      return sum + (diff * diff);
+    }, 0) / countUtil;
+    const utilStdDev = Math.sqrt(utilVariance);
+    
+    if (utilStdDev > 20) {
+      warnings.push({
+        severity: 'WARNING',
+        icon: '',
+        color: 'border-yellow-500',
+        bgColor: 'yellow-50',
+        title: 'High Performance Variance',
+        evidence: `Standard deviation: ${utilStdDev.toFixed(1)}% (indicates inconsistent performance)`
+      });
+    }
   }
   
   return warnings.sort((a, b) => {
@@ -5710,7 +5728,7 @@ function refreshTrendChart() {
   
   const data = AppState.aggregatedData || [];
   
-  console.log(`📈 Refreshing Trend Chart: period=${period}, kpi=${kpi}, process=${processFilter}, data=${data.length} entries`);
+  console.log(` Refreshing Trend Chart: period=${period}, kpi=${kpi}, process=${processFilter}, data=${data.length} entries`);
   
   // Filter by process if selected
   let filteredData = data;
@@ -5799,7 +5817,7 @@ function refreshContributionChart() {
   const kpi = document.getElementById('contributionKPI').value;
   const data = AppState.aggregatedData || [];
   
-  console.log(`📊 Refreshing Contribution Chart: period=${period}, kpi=${kpi}, data=${data.length} entries`);
+  console.log(` Refreshing Contribution Chart: period=${period}, kpi=${kpi}, data=${data.length} entries`);
   
   // Group by process category (foDesc2)
   const groups = {};
@@ -5885,7 +5903,7 @@ function refreshShiftChart() {
   const kpi = document.getElementById('shiftKPI').value;
   const data = AppState.aggregatedData || [];
   
-  console.log(`🌓 Refreshing Shift Chart: mode=${mode}, kpi=${kpi}, data=${data.length} entries`);
+  console.log(` Refreshing Shift Chart: mode=${mode}, kpi=${kpi}, data=${data.length} entries`);
   
   let labels, values;
   
@@ -5966,7 +5984,7 @@ function calcAvg(data, kpi) {
 function refreshHealthMatrix(data) {
   const aggregated = AppState.aggregatedData || [];
   
-  console.log(`🎯 Refreshing Health Matrix: ${aggregated.length} aggregated entries`);
+  console.log(` Refreshing Health Matrix: ${aggregated.length} aggregated entries`);
   
   // Group by process category
   const groups = {};
@@ -6069,7 +6087,7 @@ function filterDashboardByKPI(kpi) {
 
 // ========== Initialization ==========
 function initExecutiveDashboard() {
-  console.log('✅ Executive Dashboard initialized');
+  console.log(' Executive Dashboard initialized');
   
   // Populate hierarchy dropdown
   if (AppState.processedData && AppState.processedData.length > 0) {
@@ -6080,7 +6098,7 @@ function initExecutiveDashboard() {
   }
 }
 
-console.log('✅ Executive Dashboard functions loaded');
+console.log(' Executive Dashboard functions loaded');
 
 // Hook: Call Executive Dashboard refresh when tab is shown
 (function() {
