@@ -6773,7 +6773,6 @@ function openPeriodModal(date, kpi) {
   document.getElementById('modalWorkers').textContent = workers.toLocaleString();
   document.getElementById('modalUtil').textContent = avgUtil.toFixed(1) + '%';
   document.getElementById('modalEff').textContent = avgEff.toFixed(1) + '%';
-  document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
   // Display in hours (hr) with comma formatting
   const totalShiftTimeHr = totalShiftTime / 60;
