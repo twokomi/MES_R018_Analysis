@@ -5634,17 +5634,111 @@ function updateFlightDeck(data) {
   document.getElementById('flightEff').textContent = avgEff + '%';
   document.getElementById('flightRecords').textContent = data.length.toLocaleString();
   
-  // WoW change (simplified)
-  document.getElementById('flightWorkersChange').textContent = 'WoW: -';
-  document.getElementById('flightUtilChange').textContent = 'WoW: -';
-  document.getElementById('flightEffChange').textContent = 'WoW: -';
-  document.getElementById('flightRecordsChange').textContent = 'WoW: -';
+  // Draw sparklines with real trend data (last 7 days)
+  drawSparklineWithTrend('sparkWorkers', data, 'workers');
+  drawSparklineWithTrend('sparkUtil', data, 'util');
+  drawSparklineWithTrend('sparkEff', data, 'eff');
+  drawSparklineWithTrend('sparkRecords', data, 'records');
+}
+
+function drawSparklineWithTrend(canvasId, data, type) {
+  console.log(`Drawing sparkline with trend for ${canvasId}, type=${type}`);
   
-  // Sparklines (simplified - just show trend)
-  drawSparkline('sparkWorkers', [countWorkers, countWorkers, countWorkers, countWorkers, countWorkers, countWorkers, countWorkers]);
-  drawSparkline('sparkUtil', [avgUtil, avgUtil, avgUtil, avgUtil, avgUtil, avgUtil, avgUtil]);
-  drawSparkline('sparkEff', [avgEff, avgEff, avgEff, avgEff, avgEff, avgEff, avgEff]);
-  drawSparkline('sparkRecords', [data.length, data.length, data.length, data.length, data.length, data.length, data.length]);
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    console.error(` Canvas not found: ${canvasId}`);
+    return;
+  }
+  
+  // Group data by date
+  const dateGroups = {};
+  data.forEach(r => {
+    const date = r.workingDay;
+    if (!dateGroups[date]) {
+      dateGroups[date] = { workers: new Set(), totalUtil: 0, totalEff: 0, countUtil: 0, countEff: 0, records: 0 };
+    }
+    dateGroups[date].workers.add(r.workerName);
+    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
+      dateGroups[date].totalUtil += r.utilizationRate;
+      dateGroups[date].countUtil++;
+    }
+    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
+      dateGroups[date].totalEff += r.efficiencyRate;
+      dateGroups[date].countEff++;
+    }
+    dateGroups[date].records++;
+  });
+  
+  // Get last 7 dates
+  const dates = Object.keys(dateGroups).sort().slice(-7);
+  
+  // Calculate values for each date
+  let values = [];
+  dates.forEach(date => {
+    const g = dateGroups[date];
+    switch(type) {
+      case 'workers':
+        values.push(g.workers.size);
+        break;
+      case 'util':
+        values.push(g.countUtil > 0 ? g.totalUtil / g.countUtil : 0);
+        break;
+      case 'eff':
+        values.push(g.countEff > 0 ? g.totalEff / g.countEff : 0);
+        break;
+      case 'records':
+        values.push(g.records);
+        break;
+    }
+  });
+  
+  // If less than 7 days, pad with first value
+  while (values.length < 7) {
+    values.unshift(values[0] || 0);
+  }
+  
+  console.log(`Sparkline ${canvasId} values:`, values);
+  
+  // Destroy existing chart
+  if (DashboardState.charts[canvasId]) {
+    DashboardState.charts[canvasId].destroy();
+  }
+  
+  // Draw chart
+  try {
+    DashboardState.charts[canvasId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: ['', '', '', '', '', '', ''],
+        datasets: [{
+          data: values,
+          borderColor: '#3b82f6',
+          borderWidth: 2,
+          tension: 0.4,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false }, 
+          tooltip: { enabled: false } 
+        },
+        scales: {
+          x: { display: false },
+          y: { 
+            display: false,
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    console.log(`Sparkline chart created: ${canvasId}`);
+  } catch (error) {
+    console.error(` Error creating sparkline ${canvasId}:`, error);
+  }
 }
 
 function drawSparkline(canvasId, data) {
@@ -5999,27 +6093,134 @@ function refreshContributionChart() {
   
   console.log(`Refreshing Contribution Chart: period=${period}, kpi=${kpi}, data=${data.length} entries`);
   
-  // Group by process category (foDesc2)
-  const groups = {};
-  data.forEach(r => {
-    const cat = r.foDesc2 || 'Unknown';
-    if (!groups[cat]) groups[cat] = { sum: 0, count: 0 };
+  if (data.length === 0) {
+    document.getElementById('contributionOverall').textContent = 'No data';
+    return;
+  }
+  
+  // Get all unique dates sorted
+  const dates = [...new Set(data.map(r => r.workingDay))].sort();
+  
+  if (dates.length < 2) {
+    document.getElementById('contributionOverall').textContent = 'Not enough data';
+    return;
+  }
+  
+  // Determine comparison period
+  let currentPeriod, previousPeriod;
+  
+  if (period === 'wow') {
+    // Week-over-Week: last 7 days vs previous 7 days
+    const latestDate = new Date(dates[dates.length - 1]);
+    const sevenDaysAgo = new Date(latestDate);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date(latestDate);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     
-    const rate = kpi === 'util' ? r.utilizationRate : r.efficiencyRate;
-    if (rate >= 0 && rate <= 1000) {
-      groups[cat].sum += rate;
-      groups[cat].count++;
-    }
+    currentPeriod = data.filter(r => new Date(r.workingDay) > sevenDaysAgo);
+    previousPeriod = data.filter(r => {
+      const d = new Date(r.workingDay);
+      return d > fourteenDaysAgo && d <= sevenDaysAgo;
+    });
+  } else {
+    // Day-over-Day: latest day vs previous day
+    const latestDate = dates[dates.length - 1];
+    const previousDate = dates[dates.length - 2];
+    
+    currentPeriod = data.filter(r => r.workingDay === latestDate);
+    previousPeriod = data.filter(r => r.workingDay === previousDate);
+  }
+  
+  if (currentPeriod.length === 0 || previousPeriod.length === 0) {
+    document.getElementById('contributionOverall').textContent = 'Insufficient comparison data';
+    return;
+  }
+  
+  // Calculate metrics by process for both periods
+  const calcByProcess = (periodData) => {
+    const processes = {};
+    periodData.forEach(r => {
+      const proc = r.foDesc2 || 'Unknown';
+      if (!processes[proc]) {
+        processes[proc] = { 
+          totalShiftTime: 0, 
+          totalWorkTime: 0, 
+          totalStandardTime: 0 
+        };
+      }
+      const shiftTime = (r.shiftCount || 0) * 660;
+      processes[proc].totalShiftTime += shiftTime;
+      processes[proc].totalWorkTime += r.totalActualMins || 0;
+      processes[proc].totalStandardTime += r.totalStandardTime || 0;
+    });
+    
+    // Calculate rate for each process
+    Object.keys(processes).forEach(proc => {
+      const p = processes[proc];
+      if (kpi === 'util') {
+        p.rate = p.totalShiftTime > 0 ? (p.totalWorkTime / p.totalShiftTime) * 100 : 0;
+        p.weight = p.totalShiftTime;
+      } else {
+        p.rate = p.totalShiftTime > 0 ? (p.totalStandardTime / p.totalShiftTime) * 100 : 0;
+        p.weight = p.totalShiftTime;
+      }
+    });
+    
+    return processes;
+  };
+  
+  const currentMetrics = calcByProcess(currentPeriod);
+  const previousMetrics = calcByProcess(previousPeriod);
+  
+  // Calculate contribution for each process
+  const allProcesses = new Set([...Object.keys(currentMetrics), ...Object.keys(previousMetrics)]);
+  const contributions = {};
+  
+  let totalCurrentValue = 0;
+  let totalCurrentWeight = 0;
+  let totalPreviousValue = 0;
+  let totalPreviousWeight = 0;
+  
+  allProcesses.forEach(proc => {
+    const curr = currentMetrics[proc] || { rate: 0, weight: 0 };
+    const prev = previousMetrics[proc] || { rate: 0, weight: 0 };
+    
+    totalCurrentValue += curr.rate * curr.weight;
+    totalCurrentWeight += curr.weight;
+    totalPreviousValue += prev.rate * prev.weight;
+    totalPreviousWeight += prev.weight;
+    
+    // Contribution = (current value - previous value)
+    const currentValue = curr.rate * curr.weight;
+    const previousValue = prev.rate * prev.weight;
+    contributions[proc] = currentValue - previousValue;
   });
   
-  const categories = Object.keys(groups).sort();
-  const values = categories.map(c => groups[c].count > 0 ? groups[c].sum / groups[c].count : 0);
+  // Calculate overall change
+  const overallCurrent = totalCurrentWeight > 0 ? totalCurrentValue / totalCurrentWeight : 0;
+  const overallPrevious = totalPreviousWeight > 0 ? totalPreviousValue / totalPreviousWeight : 0;
+  const overallChange = overallCurrent - overallPrevious;
   
-  console.log(`Found ${categories.length} categories`);
-  console.log(`Categories:`, categories);
-  console.log(`Values:`, values.map(v => v.toFixed(1)));
+  const sign = overallChange >= 0 ? '+' : '';
+  const color = overallChange >= 0 ? 'text-green-600' : 'text-red-600';
+  document.getElementById('contributionOverall').innerHTML = 
+    `<span class="${color} font-bold">${sign}${overallChange.toFixed(1)}%</span>`;
   
-  document.getElementById('contributionOverall').textContent = 'Current Distribution';
+  // Sort processes by absolute contribution
+  const sortedProcesses = Object.keys(contributions)
+    .sort((a, b) => Math.abs(contributions[b]) - Math.abs(contributions[a]))
+    .slice(0, 10); // Top 10
+  
+  const labels = sortedProcesses;
+  const values = sortedProcesses.map(p => {
+    // Normalize contribution to percentage points
+    const totalWeight = totalCurrentWeight || 1;
+    return (contributions[p] / totalWeight);
+  });
+  
+  console.log(`Overall change: ${overallChange.toFixed(1)}%`);
+  console.log(`Top processes:`, labels);
+  console.log(`Contributions:`, values.map(v => v.toFixed(2)));
   
   if (DashboardState.charts.contribution) {
     DashboardState.charts.contribution.destroy();
@@ -6029,11 +6230,13 @@ function refreshContributionChart() {
   DashboardState.charts.contribution = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: categories,
+      labels: labels,
       datasets: [{
-        label: kpi === 'util' ? 'Utilization %' : 'Efficiency %',
+        label: 'Contribution to Change (%)',
         data: values,
-        backgroundColor: '#6366f1'
+        backgroundColor: values.map(v => v >= 0 ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+        borderColor: values.map(v => v >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'),
+        borderWidth: 1
       }]
     },
     options: {
@@ -6045,15 +6248,15 @@ function refreshContributionChart() {
         tooltip: {
           callbacks: {
             label: function(context) {
-              return `${context.parsed.x.toFixed(1)}%`;
+              const val = context.parsed.x;
+              return `${val >= 0 ? '+' : ''}${val.toFixed(2)}% points`;
             }
           }
         }
       },
       scales: {
         x: {
-          beginAtZero: true,
-          max: kpi === 'util' ? 100 : undefined // Auto scale for efficiency
+          title: { display: true, text: 'Contribution (% points)' }
         }
       }
     }
@@ -6735,7 +6938,7 @@ function openAIInsightModal() {
   </li>`);
   
   // Find best and worst performers
-  const sorted = [...workerAgg].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+  const sorted = [...workers].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
   const best = sorted[0];
   const worst = sorted[sorted.length - 1];
   
