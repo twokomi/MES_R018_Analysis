@@ -7164,37 +7164,37 @@ function updateAIInsightContent() {
   
   console.log(`🔍 AI Insight using Report KPI value: ${reportAvgRate}%`);
   
-  // Group by worker to calculate metrics
-  const workerMap = {};
+  const isEfficiency = aiModalMetricType === 'efficiency';
+  const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
+  
+  // Calculate statistics directly from aggregated data
+  // Each record is already worker-day-shift level with calculated rates
+  
+  // Collect unique workers who meet the threshold
+  const topPerformersSet = new Set();
+  const atRiskWorkersSet = new Set();
+  
+  const topThreshold = isEfficiency ? 80 : 50;  // Eff ≥80%, Util ≥50%
+  const riskThreshold = isEfficiency ? 50 : 30;  // Eff <50%, Util <30%
+  
   aggregated.forEach(r => {
-    const name = r.workerName;
-    if (!workerMap[name]) {
-      workerMap[name] = {
-        workerName: name,
-        totalUtil: 0,
-        totalEff: 0,
-        count: 0
-      };
+    const rate = r[metric] || 0;
+    if (rate >= topThreshold) {
+      topPerformersSet.add(r.workerName);
     }
-    workerMap[name].totalUtil += r.utilizationRate || 0;
-    workerMap[name].totalEff += r.efficiencyRate || 0;
-    workerMap[name].count++;
+    if (rate < riskThreshold) {
+      atRiskWorkersSet.add(r.workerName);
+    }
   });
   
-  const workers = Object.values(workerMap).map(w => ({
-    workerName: w.workerName,
-    utilizationRate: w.totalUtil / w.count,
-    efficiencyRate: w.totalEff / w.count
-  }));
+  const topPerformersCount = topPerformersSet.size;
+  const atRiskWorkersCount = atRiskWorkersSet.size;
   
-  console.log(`👥 Total unique workers: ${workers.length}`);
-  console.log(`📊 Sample worker rates:`, workers.slice(0, 3).map(w => ({
-    name: w.workerName,
-    util: w.utilizationRate.toFixed(1) + '%',
-    eff: w.efficiencyRate.toFixed(1) + '%'
-  })));
-  
-  const isEfficiency = aiModalMetricType === 'efficiency';
+  console.log(`📊 AI Modal Stats (${isEfficiency ? 'Efficiency' : 'Utilization'}):
+    - Total records: ${aggregated.length}
+    - Top Performers (≥${topThreshold}%): ${topPerformersCount} unique workers
+    - At-Risk (<${riskThreshold}%): ${atRiskWorkersCount} unique workers
+    - Sample top workers:`, Array.from(topPerformersSet).slice(0, 3));
   
   // Update toggle button states
   const utilBtn = document.getElementById('aiModalUtilBtn');
@@ -7210,35 +7210,25 @@ function updateAIInsightContent() {
   // Use Report page's average rate
   const avgRate = reportAvgRate;
   
-  // Calculate statistics
-  const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
-  const rates = workers.map(w => w[metric] || 0);
-  
-  // Different thresholds for Utilization vs Efficiency
-  const topPerformers = workers.filter(w => (w[metric] || 0) >= (isEfficiency ? 80 : 50));  // Eff ≥80%, Util ≥50%
-  const atRiskWorkers = workers.filter(w => (w[metric] || 0) < (isEfficiency ? 50 : 30));  // Eff <50%, Util <30%
-  
-  console.log(`📊 AI Modal Stats: ${workers.length} workers, Top: ${topPerformers.length}, At-Risk: ${atRiskWorkers.length}`);
-  
-  // Update summary cards
-  document.getElementById('aiTopPerformersCount').textContent = topPerformers.length;
-  document.getElementById('aiAtRiskCount').textContent = atRiskWorkers.length;
+  // Update summary cards (using Set-based counts from above)
+  document.getElementById('aiTopPerformersCount').textContent = topPerformersCount;
+  document.getElementById('aiAtRiskCount').textContent = atRiskWorkersCount;
   document.getElementById('aiAvgPerformance').textContent = avgRate.toFixed(1) + '%';
   
   // Generate Key Findings
   const keyFindings = [];
   
-  if (topPerformers.length > 0) {
+  if (topPerformersCount > 0) {
     keyFindings.push(`<li class="flex items-start gap-2">
       <i class="fas fa-check-circle text-green-500 mt-1"></i>
-      <span><strong>${topPerformers.length} workers</strong> are performing excellently with ${isEfficiency ? '≥80%' : '≥50%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
+      <span><strong>${topPerformersCount} workers</strong> are performing excellently with ${isEfficiency ? '≥80%' : '≥50%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
     </li>`);
   }
   
-  if (atRiskWorkers.length > 0) {
+  if (atRiskWorkersCount > 0) {
     keyFindings.push(`<li class="flex items-start gap-2">
       <i class="fas fa-exclamation-circle text-orange-500 mt-1"></i>
-      <span><strong>${atRiskWorkers.length} workers</strong> need attention with ${isEfficiency ? '<50%' : '<30%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
+      <span><strong>${atRiskWorkersCount} workers</strong> need attention with ${isEfficiency ? '<50%' : '<30%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
     </li>`);
   }
   
