@@ -795,6 +795,7 @@ function parseRawData(headers, dataRows) {
     const colWorkerST = findColumnIndex(headers, 'workerst');
     const colWorkerRate = findColumnIndex(headers, 'workerrate');
     const colRework = findColumnIndex(headers, 'rework');
+    const colActualShift = findColumnIndex(headers, 'actualshift');
     
     console.log('📊 Column indices:', {
         workerName: colWorkerName,
@@ -853,7 +854,8 @@ function parseRawData(headers, dataRows) {
             workerRate: colWorkerRate !== -1 ? parseFloat(row[colWorkerRate]) || 0 : 0, // Worker Rate (%)
             'Worker Rate(%)': colWorkerRate !== -1 ? parseFloat(row[colWorkerRate]) || 0 : 0, // Alternative key
             rework: reworkFlag, // Rework flag
-            resultCnt: row[colResultCnt]
+            resultCnt: row[colResultCnt],
+            actualShift: colActualShift !== -1 ? (row[colActualShift] || '').toString().trim() : '' // Actual Shift (A/B/C)
         };
         
         parsed.push(record);
@@ -1081,6 +1083,15 @@ function processData(rawData) {
         // Calculate Working Day and Shift (Day/Night)
         const { workingDay, workingShift } = calculateWorkingDayShift(baseDt);
         
+        // Determine Actual Shift (A/B/C) from Excel or ShiftCalendar
+        let actualShift = record.actualShift || '';
+        if (!actualShift && workingDay && AppState.shiftCalendar.length > 0) {
+            const calendarEntry = AppState.shiftCalendar.find(entry => entry.date === workingDay);
+            if (calendarEntry) {
+                actualShift = workingShift === 'Day' ? calendarEntry.dayShift : calendarEntry.nightShift;
+            }
+        }
+        
         // Determine valid flag
         const validFlag = isValidResult(record.resultCnt) ? 1 : 0;
         
@@ -1117,6 +1128,7 @@ function processData(rawData) {
             validFlag: validFlag,
             workingDay: workingDay,
             workingShift: workingShift,
+            actualShift: actualShift,
             foDesc2: mapping.foDesc2,
             foDesc3: mapping.foDesc3,
             seq: mapping.seq,
@@ -1132,6 +1144,7 @@ function processData(rawData) {
     
     // Calculate overall statistics
     let totalUtil = 0, totalEff = 0, validCount = 0;
+    const shiftCount = { A: 0, B: 0, C: 0, unknown: 0 };
     processed.forEach(r => {
         if (r.utilizationRate > 0) {
             totalUtil += r.utilizationRate;
@@ -1140,10 +1153,16 @@ function processData(rawData) {
         if (r.efficiencyRate > 0) {
             totalEff += r.efficiencyRate;
         }
+        // Count actual shifts
+        if (r.actualShift === 'A') shiftCount.A++;
+        else if (r.actualShift === 'B') shiftCount.B++;
+        else if (r.actualShift === 'C') shiftCount.C++;
+        else shiftCount.unknown++;
     });
     const avgUtil = validCount > 0 ? (totalUtil / validCount).toFixed(2) : 0;
     const avgEff = validCount > 0 ? (totalEff / validCount).toFixed(2) : 0;
     console.log(`📊 Calculated rates: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%, Valid records=${validCount}`);
+    console.log(`🔄 Actual Shift distribution: A=${shiftCount.A}, B=${shiftCount.B}, C=${shiftCount.C}, Unknown=${shiftCount.unknown}`);
     
     // Debug: Show sample records with detailed info
     if (processed.length > 0) {
@@ -5741,9 +5760,9 @@ function refreshShiftChart() {
     labels = ['Day', 'Night'];
     values = [calcAvg(dayData, kpi), calcAvg(nightData, kpi)];
   } else {
-    const aData = data.filter(r => r.shift === 'A');
-    const bData = data.filter(r => r.shift === 'B');
-    const cData = data.filter(r => r.shift === 'C');
+    const aData = data.filter(r => r.actualShift === 'A');
+    const bData = data.filter(r => r.actualShift === 'B');
+    const cData = data.filter(r => r.actualShift === 'C');
     
     labels = ['A Shift', 'B Shift', 'C Shift'];
     values = [calcAvg(aData, kpi), calcAvg(bData, kpi), calcAvg(cData, kpi)];
