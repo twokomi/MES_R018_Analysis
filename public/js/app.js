@@ -4690,10 +4690,10 @@ function showWorkerDetail(workerName) {
         document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shift Time';
         document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Efficiency Rate (Shift Productivity)';
         
-        // Update values
+        // Update values with comma formatting
         document.getElementById('modalTotalShifts').textContent = shiftCount.toLocaleString();
-        document.getElementById('modalTotalShiftTime').textContent = assignedHours.toFixed(1) + ' hr';
-        document.getElementById('modalTotalMinutes').textContent = shiftHours.toFixed(1) + ' hr';
+        document.getElementById('modalTotalShiftTime').textContent = assignedHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
+        document.getElementById('modalTotalMinutes').textContent = shiftHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
         document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
         
         // Update descriptions
@@ -4713,10 +4713,10 @@ function showWorkerDetail(workerName) {
         document.querySelector('#modalTotalMinutes').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Work Time';
         document.querySelector('#modalWorkRate').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Work Rate';
         
-        // Update values
+        // Update values with comma formatting
         document.getElementById('modalTotalShifts').textContent = shiftCount.toLocaleString();
-        document.getElementById('modalTotalShiftTime').textContent = totalShiftHours.toFixed(1) + ' hr';
-        document.getElementById('modalTotalMinutes').textContent = totalValueHours.toFixed(1) + ' hr';
+        document.getElementById('modalTotalShiftTime').textContent = totalShiftHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
+        document.getElementById('modalTotalMinutes').textContent = totalValueHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
         document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
         
         // Update descriptions
@@ -6759,9 +6759,9 @@ function openPeriodModal(date, kpi) {
     totalShifts,
     avgUtil: avgUtil.toFixed(1),
     avgEff: avgEff.toFixed(1),
-    totalShiftTime,
-    totalWorkTime,
-    totalAdjustedST,
+    totalShiftTime: `${totalShiftTime} min (${(totalShiftTime / 60).toFixed(1)} hr)`,
+    totalWorkTime: `${totalWorkTime} min (${(totalWorkTime / 60).toFixed(1)} hr)`,
+    totalAdjustedST: `${totalAdjustedST} min`,
     totalRecords
   });
   
@@ -6770,16 +6770,16 @@ function openPeriodModal(date, kpi) {
   document.getElementById('modalSubtitle').textContent = `${filtered.length} worker-shift entries | ${workers} unique workers`;
   
   // Update summary cards
-  document.getElementById('modalWorkers').textContent = workers;
+  document.getElementById('modalWorkers').textContent = workers.toLocaleString();
   document.getElementById('modalUtil').textContent = avgUtil.toFixed(1) + '%';
   document.getElementById('modalEff').textContent = avgEff.toFixed(1) + '%';
   
-  // FIXED: Display in hours (hr) like Report page, not minutes
+  // Display in hours (hr) with comma formatting
   const totalShiftTimeHr = totalShiftTime / 60;
   const totalWorkTimeHr = totalWorkTime / 60;
   
-  document.getElementById('modalTotalShiftTime').textContent = totalShiftTimeHr.toFixed(1) + ' hr';
-  document.getElementById('modalTotalWorkTime').textContent = totalWorkTimeHr.toFixed(1) + ' hr';
+  document.getElementById('modalTotalShiftTime').textContent = totalShiftTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
+  document.getElementById('modalTotalWorkTime').textContent = totalWorkTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
   
   document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
