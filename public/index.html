@@ -784,21 +784,44 @@
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content hidden">
             
-            <!-- 1. AI Insights & Alerts -->
-            <div class="card mb-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">
-                    <i class="fas fa-robot text-purple-600 mr-2"></i>
-                    AI Insights & Alerts
-                    <button onclick="openAIInsightModal()" class="ml-3 text-xs px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full hover:from-purple-600 hover:to-indigo-700 transition">
-                        <i class="fas fa-brain mr-1"></i>View AI Analysis
+            <!-- 1. AI Insights & Alerts - Enhanced AI Style -->
+            <div class="relative mb-6 overflow-hidden rounded-xl">
+                <!-- Animated gradient background -->
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 opacity-90"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)] animate-pulse"></div>
+                
+                <!-- Content -->
+                <div class="relative p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-lg"></i>
+                            </div>
+                            <span>AI Insights & Alerts</span>
+                            <div class="flex gap-1">
+                                <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                                <span class="w-2 h-2 bg-white rounded-full animate-pulse" style="animation-delay: 0.2s"></span>
+                                <span class="w-2 h-2 bg-white rounded-full animate-pulse" style="animation-delay: 0.4s"></span>
+                            </div>
+                        </h3>
+                        <button onclick="openAIInsightModal()" class="px-4 py-2 bg-white/20 backdrop-blur border border-white/30 text-white rounded-lg hover:bg-white/30 transition-all shadow-lg flex items-center gap-2 font-medium">
+                            <i class="fas fa-brain"></i>
+                            <span>View AI Analysis</span>
+                            <i class="fas fa-arrow-right text-sm"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="focusQueueContainer" class="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                        <p class="text-white text-sm flex items-center gap-2">
+                            <i class="fas fa-check-circle text-green-300"></i>
+                            No warnings detected. All systems normal.
+                        </p>
+                    </div>
+                    
+                    <button id="showAllWarnings" class="mt-3 text-sm text-white hover:text-white/80 transition hidden" onclick="toggleOutlierScanner()">
+                        <i class="fas fa-chevron-down mr-1"></i>Show All Warnings
                     </button>
-                </h3>
-                <div id="focusQueueContainer">
-                    <p class="text-gray-500 text-sm">No warnings detected. All systems normal.</p>
                 </div>
-                <button id="showAllWarnings" class="mt-3 text-sm text-blue-600 hover:underline hidden" onclick="toggleOutlierScanner()">
-                    Show All Warnings ▼
-                </button>
             </div>
 
             <!-- 3. KPI Trend Intelligence -->
@@ -2707,9 +2730,9 @@
                         <h4 class="font-bold text-gray-800 mb-2 flex items-center gap-2 text-lg">
                             <i class="fas fa-trophy text-yellow-500"></i>
                             Top Performers
-                            <span class="text-xs font-normal text-gray-600 ml-auto">(최상위 3명)</span>
+                            <span class="text-xs font-normal text-gray-600 ml-auto">(Top 3)</span>
                         </h4>
-                        <p class="text-xs text-gray-600 mb-3 italic">기준: Utilization + Efficiency 합계 기준 상위 3명</p>
+                        <p class="text-xs text-gray-600 mb-3 italic">Ranked by combined Utilization + Efficiency score</p>
                         <div id="modalTopPerformers" class="space-y-2">
                             <!-- Dynamic content -->
                         </div>
@@ -2718,9 +2741,9 @@
                         <h4 class="font-bold text-gray-800 mb-2 flex items-center gap-2 text-lg">
                             <i class="fas fa-exclamation-triangle text-orange-500"></i>
                             Need Attention
-                            <span class="text-xs font-normal text-gray-600 ml-auto">(최하위 3명)</span>
+                            <span class="text-xs font-normal text-gray-600 ml-auto">(Bottom 3)</span>
                         </h4>
-                        <p class="text-xs text-gray-600 mb-3 italic">기준: Utilization + Efficiency 합계 기준 하위 3명</p>
+                        <p class="text-xs text-gray-600 mb-3 italic">Ranked by combined Utilization + Efficiency score</p>
                         <div id="modalBottomPerformers" class="space-y-2">
                             <!-- Dynamic content -->
                         </div>
