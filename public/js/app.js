@@ -7187,6 +7187,13 @@ function updateAIInsightContent() {
     efficiencyRate: w.totalEff / w.count
   }));
   
+  console.log(`👥 Total unique workers: ${workers.length}`);
+  console.log(`📊 Sample worker rates:`, workers.slice(0, 3).map(w => ({
+    name: w.workerName,
+    util: w.utilizationRate.toFixed(1) + '%',
+    eff: w.efficiencyRate.toFixed(1) + '%'
+  })));
+  
   const isEfficiency = aiModalMetricType === 'efficiency';
   
   // Update toggle button states
