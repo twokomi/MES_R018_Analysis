@@ -5306,33 +5306,32 @@ function showSuccessMessage(message) {
 }
 
 // Toggle between Time Utilization and Work Efficiency metrics
-function toggleMetric() {
+function switchToMetric(metricType) {
+    if (AppState.currentMetricType === metricType) return; // Already in this mode
+    
     // Show transition overlay
     showLoadingOverlay('Switching metric...');
     
-    // Toggle metric type
-    AppState.currentMetricType = AppState.currentMetricType === 'utilization' ? 'efficiency' : 'utilization';
+    // Set metric type
+    AppState.currentMetricType = metricType;
     
-    const metricIcon = document.getElementById('metricIcon');
-    const metricLabel = document.getElementById('metricLabel');
-    const metricDescription = document.getElementById('metricDescription');
-    const metricToggle = document.getElementById('metricToggle');
+    // Update button states
+    const utilBtn = document.getElementById('metricUtilBtn');
+    const effBtn = document.getElementById('metricEffBtn');
     
     // Get all primary buttons and active tabs
     const primaryButtons = document.querySelectorAll('.btn-primary');
     const activeTabs = document.querySelectorAll('.tab-active');
     
-    if (AppState.currentMetricType === 'efficiency') {
+    if (metricType === 'efficiency') {
         // Switch to Work Efficiency (Purple theme)
         transitionText.textContent = 'Switching to Work Efficiency...';
         document.body.style.transition = 'background-color 0.6s ease-in-out';
-        document.body.style.backgroundColor = '#f3e8ff'; // More visible light purple
+        document.body.style.backgroundColor = '#f3e8ff'; // Light purple
         
-        metricIcon.className = 'fas fa-bolt text-purple-500 text-xl';
-        metricLabel.textContent = 'Work Efficiency';
-        metricDescription.textContent = 'Standard time vs actual performance';
-        metricToggle.classList.remove('border-blue-500', 'hover:bg-blue-50');
-        metricToggle.classList.add('border-purple-500', 'hover:bg-purple-50');
+        // Update button states
+        utilBtn.className = 'px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 text-gray-600 hover:bg-white hover:bg-opacity-50';
+        effBtn.className = 'px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 bg-white text-purple-600 shadow-md';
         
         // Change all primary buttons to purple
         primaryButtons.forEach(btn => {
@@ -5354,13 +5353,11 @@ function toggleMetric() {
         // Switch to Time Utilization (Blue theme)
         transitionText.textContent = 'Switching to Time Utilization...';
         document.body.style.transition = 'background-color 0.6s ease-in-out';
-        document.body.style.backgroundColor = '#dbeafe'; // More visible light blue
+        document.body.style.backgroundColor = '#dbeafe'; // Light blue
         
-        metricIcon.className = 'fas fa-clock text-blue-500 text-xl';
-        metricLabel.textContent = 'Time Utilization';
-        metricDescription.textContent = 'Actual work time usage rate';
-        metricToggle.classList.remove('border-purple-500', 'hover:bg-purple-50');
-        metricToggle.classList.add('border-blue-500', 'hover:bg-blue-50');
+        // Update button states
+        utilBtn.className = 'px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 bg-white text-blue-600 shadow-md';
+        effBtn.className = 'px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 text-gray-600 hover:bg-white hover:bg-opacity-50';
         
         // Reset all primary buttons to blue
         primaryButtons.forEach(btn => {
@@ -5396,6 +5393,12 @@ function toggleMetric() {
     }, 800);
     
     console.log(` Metric switched to: ${AppState.currentMetricType}`);
+}
+
+// Legacy function for backward compatibility
+function toggleMetric() {
+    const newType = AppState.currentMetricType === 'utilization' ? 'efficiency' : 'utilization';
+    switchToMetric(newType);
 }
 
 // Sort data table

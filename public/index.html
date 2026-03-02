@@ -663,14 +663,16 @@
                 </div>
                 <!-- Metric Toggle Button -->
                 <div class="flex items-center gap-4">
-                    <button id="metricToggle" onclick="toggleMetric()" class="flex items-center gap-3 px-6 py-3 bg-white border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md w-80 h-20">
-                        <i id="metricIcon" class="fas fa-clock text-blue-500 text-xl"></i>
-                        <div class="text-left">
-                            <div id="metricLabel" class="text-sm font-semibold text-gray-800">Time Utilization</div>
-                            <div id="metricDescription" class="text-xs text-gray-500">Actual work time usage rate</div>
-                        </div>
-                        <i class="fas fa-exchange-alt text-gray-400 ml-2"></i>
-                    </button>
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-1 flex gap-1 shadow-sm">
+                        <button id="metricUtilBtn" onclick="switchToMetric('utilization')" 
+                                class="px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 bg-white text-blue-600 shadow-md">
+                            <i class="fas fa-clock mr-2"></i>Utilization
+                        </button>
+                        <button id="metricEffBtn" onclick="switchToMetric('efficiency')" 
+                                class="px-5 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 text-gray-600 hover:bg-white hover:bg-opacity-50">
+                            <i class="fas fa-bolt mr-2"></i>Efficiency
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
