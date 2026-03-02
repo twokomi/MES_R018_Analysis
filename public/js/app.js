@@ -6027,37 +6027,6 @@ function refreshHealthMatrix(data) {
     }
   });
 }
-        })
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          beginAtZero: true,
-          max: 100,
-          title: { display: true, text: 'Utilization %' }
-        },
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: { display: true, text: 'Efficiency %' }
-        }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const p = points[ctx.dataIndex];
-              return `${p.label}: Util ${p.x.toFixed(1)}%, Eff ${p.y.toFixed(1)}%`;
-            }
-          }
-        }
-      }
-    }
-  });
-}
 
 // ========== Utility Functions ==========
 function toggleOutlierScanner() {
