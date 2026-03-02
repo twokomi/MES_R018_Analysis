@@ -2763,6 +2763,9 @@ function updateKPIs(workerAgg) {
     document.getElementById('kpiThirdValue').textContent = Math.round(thirdValue).toLocaleString();
     document.getElementById('kpiAvgWorkRate').textContent = avgRate.toFixed(1) + '%';
     
+    // Draw Report KPI sparklines
+    drawReportKpiSparklines(workerAgg, isEfficiency);
+    
     // Show/hide Outlier Threshold control based on metric type
     const outlierControl = document.getElementById('outlierThresholdControl');
     if (outlierControl) {
@@ -2785,6 +2788,108 @@ function updateKPIs(workerAgg) {
             shiftWarning.classList.remove('hidden');
         }
     }
+}
+
+function drawReportKpiSparklines(workerAgg, isEfficiency) {
+  // Group by date
+  const dateGroups = {};
+  workerAgg.forEach(w => {
+    const date = w.workingDay;
+    if (!dateGroups[date]) {
+      dateGroups[date] = { 
+        workers: new Set(), 
+        totalShiftTime: 0, 
+        totalWorkTime: 0, 
+        totalAssignedST: 0 
+      };
+    }
+    dateGroups[date].workers.add(w.workerName);
+    const shiftTime = (w.shiftCount || 0) * 660;
+    dateGroups[date].totalShiftTime += shiftTime;
+    dateGroups[date].totalWorkTime += w.totalMinutes || 0;
+    dateGroups[date].totalAssignedST += w.assignedStandardTime || 0;
+  });
+  
+  // Get last 7 dates
+  const dates = Object.keys(dateGroups).sort().slice(-7);
+  
+  // Calculate values for each date
+  const workersData = [];
+  const secondData = [];
+  const thirdData = [];
+  const rateData = [];
+  
+  dates.forEach(date => {
+    const g = dateGroups[date];
+    workersData.push(g.workers.size);
+    
+    if (isEfficiency) {
+      secondData.push(g.totalAssignedST);
+      thirdData.push(g.totalShiftTime);
+      const rate = g.totalShiftTime > 0 ? (g.totalAssignedST / g.totalShiftTime) * 100 : 0;
+      rateData.push(rate);
+    } else {
+      secondData.push(g.totalShiftTime);
+      thirdData.push(g.totalWorkTime);
+      const rate = g.totalShiftTime > 0 ? (g.totalWorkTime / g.totalShiftTime) * 100 : 0;
+      rateData.push(rate);
+    }
+  });
+  
+  // Pad if less than 7 days
+  while (workersData.length < 7) {
+    workersData.unshift(workersData[0] || 0);
+    secondData.unshift(secondData[0] || 0);
+    thirdData.unshift(thirdData[0] || 0);
+    rateData.unshift(rateData[0] || 0);
+  }
+  
+  // Draw sparklines
+  drawMiniSparkline('sparkKpiWorkers', workersData, '#3b82f6');
+  drawMiniSparkline('sparkKpiSecond', secondData, isEfficiency ? '#9333ea' : '#0284c7');
+  drawMiniSparkline('sparkKpiThird', thirdData, isEfficiency ? '#0284c7' : '#f59e0b');
+  drawMiniSparkline('sparkKpiRate', rateData, isEfficiency ? '#9333ea' : '#0284c7');
+}
+
+function drawMiniSparkline(canvasId, data, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  
+  // Destroy existing chart
+  if (DashboardState.charts[canvasId]) {
+    DashboardState.charts[canvasId].destroy();
+  }
+  
+  try {
+    DashboardState.charts[canvasId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: ['', '', '', '', '', '', ''],
+        datasets: [{
+          data: data,
+          borderColor: color,
+          borderWidth: 2,
+          tension: 0.4,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false }, 
+          tooltip: { enabled: false } 
+        },
+        scales: {
+          x: { display: false },
+          y: { display: false, beginAtZero: true }
+        }
+      }
+    });
+  } catch (error) {
+    console.error(`Error creating sparkline ${canvasId}:`, error);
+  }
 }
 
 // Calculate and display Week-over-Week (WoW) changes
@@ -6108,30 +6213,42 @@ function refreshContributionChart() {
     return;
   }
   
-  // Determine comparison period
+  // Determine comparison period based on selection
   let currentPeriod, previousPeriod;
+  let periodDays;
   
-  if (period === 'wow') {
-    // Week-over-Week: last 7 days vs previous 7 days
-    const latestDate = new Date(dates[dates.length - 1]);
-    const sevenDaysAgo = new Date(latestDate);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const fourteenDaysAgo = new Date(latestDate);
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    
-    currentPeriod = data.filter(r => new Date(r.workingDay) > sevenDaysAgo);
-    previousPeriod = data.filter(r => {
-      const d = new Date(r.workingDay);
-      return d > fourteenDaysAgo && d <= sevenDaysAgo;
-    });
+  if (period === '7d') {
+    periodDays = 7;
+  } else if (period === '14d') {
+    periodDays = 14;
+  } else if (period === '30d') {
+    periodDays = 30;
   } else {
-    // Day-over-Day: latest day vs previous day
-    const latestDate = dates[dates.length - 1];
-    const previousDate = dates[dates.length - 2];
-    
-    currentPeriod = data.filter(r => r.workingDay === latestDate);
-    previousPeriod = data.filter(r => r.workingDay === previousDate);
+    periodDays = 7; // default
   }
+  
+  const latestDate = new Date(dates[dates.length - 1]);
+  const periodStartDate = new Date(latestDate);
+  periodStartDate.setDate(periodStartDate.getDate() - periodDays);
+  const previousPeriodEndDate = new Date(periodStartDate);
+  const previousPeriodStartDate = new Date(previousPeriodEndDate);
+  previousPeriodStartDate.setDate(previousPeriodStartDate.getDate() - periodDays);
+  
+  // Current period: last N days
+  currentPeriod = data.filter(r => {
+    const d = new Date(r.workingDay);
+    return d > periodStartDate && d <= latestDate;
+  });
+  
+  // Previous period: N days before that
+  previousPeriod = data.filter(r => {
+    const d = new Date(r.workingDay);
+    return d > previousPeriodStartDate && d <= previousPeriodEndDate;
+  });
+  
+  console.log(`Period: ${periodDays} days`);
+  console.log(`Current period: ${periodStartDate.toISOString().split('T')[0]} to ${latestDate.toISOString().split('T')[0]} (${currentPeriod.length} records)`);
+  console.log(`Previous period: ${previousPeriodStartDate.toISOString().split('T')[0]} to ${previousPeriodEndDate.toISOString().split('T')[0]} (${previousPeriod.length} records)`);
   
   if (currentPeriod.length === 0 || previousPeriod.length === 0) {
     document.getElementById('contributionOverall').textContent = 'Insufficient comparison data';

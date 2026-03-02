@@ -783,68 +783,7 @@
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content hidden">
             
-            <!-- 1. Performance Flight Deck -->
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">
-                    <i class="fas fa-gauge-high text-blue-600 mr-2"></i>
-                    Performance Flight Deck
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- Card 1: Total Workers -->
-                    <div class="card bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('workers')">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-600 font-medium mb-1">👥 Total Workers</p>
-                                <p class="text-4xl font-bold text-blue-600" id="flightWorkers">-</p>
-                            </div>
-                            <div class="w-24 h-16">
-                                <canvas id="sparkWorkers" width="96" height="64"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Card 2: Avg Utilization -->
-                    <div class="card bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('util')">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-600 font-medium mb-1">⏱️ Avg Utilization</p>
-                                <p class="text-4xl font-bold text-green-600" id="flightUtil">-</p>
-                            </div>
-                            <div class="w-24 h-16">
-                                <canvas id="sparkUtil" width="96" height="64"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Card 3: Avg Efficiency -->
-                    <div class="card bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-shadow cursor-pointer" onclick="filterDashboardByKPI('eff')">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-600 font-medium mb-1">⚡ Avg Efficiency</p>
-                                <p class="text-4xl font-bold text-purple-600" id="flightEff">-</p>
-                            </div>
-                            <div class="w-24 h-16">
-                                <canvas id="sparkEff" width="96" height="64"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Card 4: Total Records -->
-                    <div class="card bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-shadow">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-600 font-medium mb-1">📊 Total Records</p>
-                                <p class="text-4xl font-bold text-gray-700" id="flightRecords">-</p>
-                            </div>
-                            <div class="w-24 h-16">
-                                <canvas id="sparkRecords" width="96" height="64"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Focus Queue -->
+            <!-- 1. AI Insights & Alerts -->
             <div class="card mb-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">
                     <i class="fas fa-robot text-purple-600 mr-2"></i>
@@ -903,8 +842,9 @@
                         </h3>
                         <div class="flex gap-2">
                             <select id="contributionPeriod" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshContributionChart()">
-                                <option value="wow">Week-over-Week</option>
-                                <option value="dod">Day-over-Day</option>
+                                <option value="7d">Last 7 days vs Previous 7 days</option>
+                                <option value="14d">Last 14 days vs Previous 14 days</option>
+                                <option value="30d">Last 30 days vs Previous 30 days</option>
                             </select>
                             <select id="contributionKPI" class="px-3 py-1 text-sm border border-gray-300 rounded-lg" onchange="refreshContributionChart()">
                                 <option value="util">Utilization</option>
@@ -1132,24 +1072,52 @@
             <!-- KPI Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="kpi-card">
-                    <div class="text-sm mb-1 flex items-center gap-2">
-                        Total Workers
-                        <i id="kpiWorkersInfoIcon" class="fas fa-info-circle text-blue-500 cursor-help hidden" 
-                           title="⚠️ Total ≠ Shift A+B+C: Workers doing overtime (OT) appear in both Day and Night shifts. Example: A-team worker does Day (07:00-19:00) + OT Night (19:00-21:00) → counted in Total twice but only Day in Shift A filter."></i>
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                            <div class="text-sm mb-1 flex items-center gap-2">
+                                Total Workers
+                                <i id="kpiWorkersInfoIcon" class="fas fa-info-circle text-blue-500 cursor-help hidden" 
+                                   title="⚠️ Total ≠ Shift A+B+C: Workers doing overtime (OT) appear in both Day and Night shifts. Example: A-team worker does Day (07:00-19:00) + OT Night (19:00-21:00) → counted in Total twice but only Day in Shift A filter."></i>
+                            </div>
+                            <div class="text-3xl font-bold" id="kpiWorkers">0</div>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="sparkKpiWorkers" width="80" height="48"></canvas>
+                        </div>
                     </div>
-                    <div class="text-3xl font-bold" id="kpiWorkers">0</div>
                 </div>
                 <div class="kpi-card success" id="kpiSecondCard">
-                    <div class="text-sm mb-1" id="kpiSecondLabel">Total S/T (min)</div>
-                    <div class="text-3xl font-bold" id="kpiSecondValue">0</div>
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                            <div class="text-sm mb-1" id="kpiSecondLabel">Total S/T (min)</div>
+                            <div class="text-3xl font-bold" id="kpiSecondValue">0</div>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="sparkKpiSecond" width="80" height="48"></canvas>
+                        </div>
+                    </div>
                 </div>
                 <div class="kpi-card warning" id="kpiThirdCard">
-                    <div class="text-sm mb-1" id="kpiThirdLabel">Total Assigned Time (min)</div>
-                    <div class="text-3xl font-bold" id="kpiThirdValue">0</div>
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                            <div class="text-sm mb-1" id="kpiThirdLabel">Total Assigned Time (min)</div>
+                            <div class="text-3xl font-bold" id="kpiThirdValue">0</div>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="sparkKpiThird" width="80" height="48"></canvas>
+                        </div>
+                    </div>
                 </div>
                 <div class="kpi-card" id="kpiAvgRateCard" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0284c7; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.1), 0 2px 4px -1px rgba(2, 132, 199, 0.06);">
-                    <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;" id="kpiAvgRateLabel">Average Rate</div>
-                    <div class="text-3xl font-bold" id="kpiAvgWorkRate" style="color: #1f2937;">0%</div>
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                            <div class="text-sm mb-1" style="color: #0369a1; font-weight: 600;" id="kpiAvgRateLabel">Average Rate</div>
+                            <div class="text-3xl font-bold" id="kpiAvgWorkRate" style="color: #1f2937;">0%</div>
+                        </div>
+                        <div class="w-20 h-12">
+                            <canvas id="sparkKpiRate" width="80" height="48"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
             
