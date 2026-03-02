@@ -6165,6 +6165,12 @@ function refreshHealthMatrix(data) {
 }
 
 // ========== Period Detail Modal ==========
+// Modal state for filtering and sorting
+const ModalState = {
+  currentData: [],
+  currentSort: { column: 'utilization', direction: 'desc' }
+};
+
 function openPeriodModal(date, kpi) {
   const aggregated = AppState.aggregatedData || [];
   const filtered = aggregated.filter(r => r.workingDay === date);
@@ -6174,50 +6180,329 @@ function openPeriodModal(date, kpi) {
     return;
   }
   
-  // Calculate summary
+  // Store data for filtering/sorting
+  ModalState.currentData = filtered;
+  
+  // Calculate detailed summary statistics
   const workers = new Set(filtered.map(r => r.workerName)).size;
-  let totalUtil = 0, totalEff = 0;
+  let totalUtil = 0, totalEff = 0, totalShiftTime = 0, totalWorkTime = 0, totalAdjustedST = 0;
+  
   filtered.forEach(r => {
     totalUtil += r.utilizationRate || 0;
     totalEff += r.efficiencyRate || 0;
+    totalShiftTime += (r.shiftCount || 1) * 660; // 660 mins per shift
+    totalWorkTime += r.totalActualMins || 0;
+    totalAdjustedST += r.totalStandardTime || 0;
   });
+  
   const avgUtil = filtered.length > 0 ? totalUtil / filtered.length : 0;
   const avgEff = filtered.length > 0 ? totalEff / filtered.length : 0;
   const totalRecords = filtered.reduce((sum, r) => sum + r.recordCount, 0);
   
-  // Update modal
-  document.getElementById('modalTitle').textContent = `Period: ${date}`;
-  document.getElementById('modalSubtitle').textContent = `${filtered.length} worker-shift entries`;
+  // Update header
+  document.getElementById('modalTitle').textContent = `Period Details: ${date}`;
+  document.getElementById('modalSubtitle').textContent = `${filtered.length} worker-shift entries | ${workers} unique workers`;
+  
+  // Update summary cards
   document.getElementById('modalWorkers').textContent = workers;
   document.getElementById('modalUtil').textContent = avgUtil.toFixed(1) + '%';
   document.getElementById('modalEff').textContent = avgEff.toFixed(1) + '%';
+  document.getElementById('modalTotalShiftTime').textContent = formatMinutes(totalShiftTime);
+  document.getElementById('modalTotalWorkTime').textContent = formatMinutes(totalWorkTime);
   document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
+  // Draw distribution charts
+  drawModalDistributionCharts(filtered);
+  
+  // Generate process breakdown
+  generateProcessBreakdown(filtered);
+  
+  // Generate top/bottom performers
+  generateTopBottomPerformers(filtered);
+  
+  // Populate process filter dropdown
+  const processes = [...new Set(filtered.map(r => r.foDesc2).filter(Boolean))].sort();
+  const processFilter = document.getElementById('modalProcessFilter');
+  processFilter.innerHTML = '<option value="all">All Processes</option>' + 
+    processes.map(p => `<option value="${p}">${p}</option>`).join('');
+  
+  // Reset filters
+  document.getElementById('modalSearchInput').value = '';
+  document.getElementById('modalShiftFilter').value = 'all';
+  
   // Build table
+  renderModalTable(filtered);
+  
+  // Show modal
+  document.getElementById('periodDetailModal').classList.remove('hidden');
+}
+
+function drawModalDistributionCharts(data) {
+  // Utilization Distribution
+  const utilRanges = { '0-20': 0, '20-40': 0, '40-60': 0, '60-80': 0, '80-100': 0 };
+  const effRanges = { '0-20': 0, '20-40': 0, '40-60': 0, '60-80': 0, '80-100': 0, '100+': 0 };
+  
+  data.forEach(r => {
+    const util = r.utilizationRate || 0;
+    if (util < 20) utilRanges['0-20']++;
+    else if (util < 40) utilRanges['20-40']++;
+    else if (util < 60) utilRanges['40-60']++;
+    else if (util < 80) utilRanges['60-80']++;
+    else utilRanges['80-100']++;
+    
+    const eff = r.efficiencyRate || 0;
+    if (eff < 20) effRanges['0-20']++;
+    else if (eff < 40) effRanges['20-40']++;
+    else if (eff < 60) effRanges['40-60']++;
+    else if (eff < 80) effRanges['60-80']++;
+    else if (eff < 100) effRanges['80-100']++;
+    else effRanges['100+']++;
+  });
+  
+  // Destroy existing charts
+  if (DashboardState.charts.modalUtilDist) DashboardState.charts.modalUtilDist.destroy();
+  if (DashboardState.charts.modalEffDist) DashboardState.charts.modalEffDist.destroy();
+  
+  // Utilization chart
+  const utilCtx = document.getElementById('modalUtilDistChart').getContext('2d');
+  DashboardState.charts.modalUtilDist = new Chart(utilCtx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(utilRanges),
+      datasets: [{
+        label: 'Workers',
+        data: Object.values(utilRanges),
+        backgroundColor: ['#ef4444', '#f59e0b', '#eab308', '#84cc16', '#22c55e']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+  
+  // Efficiency chart
+  const effCtx = document.getElementById('modalEffDistChart').getContext('2d');
+  DashboardState.charts.modalEffDist = new Chart(effCtx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(effRanges),
+      datasets: [{
+        label: 'Workers',
+        data: Object.values(effRanges),
+        backgroundColor: ['#ef4444', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#a855f7']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function generateProcessBreakdown(data) {
+  const processes = {};
+  
+  data.forEach(r => {
+    const proc = r.foDesc2 || 'Unknown';
+    if (!processes[proc]) processes[proc] = { count: 0, util: 0, eff: 0 };
+    processes[proc].count++;
+    processes[proc].util += r.utilizationRate || 0;
+    processes[proc].eff += r.efficiencyRate || 0;
+  });
+  
+  const html = Object.keys(processes)
+    .sort((a, b) => processes[b].count - processes[a].count)
+    .map(proc => {
+      const p = processes[proc];
+      const avgUtil = p.count > 0 ? p.util / p.count : 0;
+      const avgEff = p.count > 0 ? p.eff / p.count : 0;
+      return `
+        <div class="bg-gray-50 p-3 rounded border border-gray-200">
+          <p class="text-xs font-semibold text-gray-700 mb-1">${proc}</p>
+          <p class="text-xs text-gray-600">${p.count} workers</p>
+          <p class="text-xs text-green-600">Util: ${avgUtil.toFixed(1)}%</p>
+          <p class="text-xs text-purple-600">Eff: ${avgEff.toFixed(1)}%</p>
+        </div>
+      `;
+    }).join('');
+  
+  document.getElementById('modalProcessBreakdown').innerHTML = html;
+}
+
+function generateTopBottomPerformers(data) {
+  // Sort by combined score (utilization + efficiency)
+  const sorted = [...data].sort((a, b) => {
+    const scoreA = (a.utilizationRate || 0) + (a.efficiencyRate || 0);
+    const scoreB = (b.utilizationRate || 0) + (b.efficiencyRate || 0);
+    return scoreB - scoreA;
+  });
+  
+  const top3 = sorted.slice(0, 3);
+  const bottom3 = sorted.slice(-3).reverse();
+  
+  const topHtml = top3.map((r, i) => `
+    <div class="flex items-center justify-between p-2 bg-white rounded border border-green-200">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-green-600 text-white text-xs flex items-center justify-center font-bold">${i+1}</span>
+        <div>
+          <p class="text-sm font-medium text-gray-900">${r.workerName}</p>
+          <p class="text-xs text-gray-500">${r.foDesc2 || '-'}</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-green-600 font-semibold">U: ${r.utilizationRate.toFixed(1)}%</p>
+        <p class="text-xs text-purple-600 font-semibold">E: ${r.efficiencyRate.toFixed(1)}%</p>
+      </div>
+    </div>
+  `).join('');
+  
+  const bottomHtml = bottom3.map(r => `
+    <div class="flex items-center justify-between p-2 bg-white rounded border border-red-200">
+      <div>
+        <p class="text-sm font-medium text-gray-900">${r.workerName}</p>
+        <p class="text-xs text-gray-500">${r.foDesc2 || '-'}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-red-600 font-semibold">U: ${r.utilizationRate.toFixed(1)}%</p>
+        <p class="text-xs text-purple-600 font-semibold">E: ${r.efficiencyRate.toFixed(1)}%</p>
+      </div>
+    </div>
+  `).join('');
+  
+  document.getElementById('modalTopPerformers').innerHTML = topHtml;
+  document.getElementById('modalBottomPerformers').innerHTML = bottomHtml;
+}
+
+function renderModalTable(data) {
   const tbody = document.getElementById('modalTableBody');
-  tbody.innerHTML = filtered
-    .sort((a, b) => b.utilizationRate - a.utilizationRate)
-    .map(r => `
-      <tr class="hover:bg-gray-50">
+  
+  // Apply current sort
+  const sorted = [...data].sort((a, b) => {
+    let valA, valB;
+    switch (ModalState.currentSort.column) {
+      case 'worker':
+        valA = a.workerName || '';
+        valB = b.workerName || '';
+        break;
+      case 'process':
+        valA = a.foDesc2 || '';
+        valB = b.foDesc2 || '';
+        break;
+      case 'utilization':
+        valA = a.utilizationRate || 0;
+        valB = b.utilizationRate || 0;
+        break;
+      case 'efficiency':
+        valA = a.efficiencyRate || 0;
+        valB = b.efficiencyRate || 0;
+        break;
+      case 'records':
+        valA = a.recordCount || 0;
+        valB = b.recordCount || 0;
+        break;
+      default:
+        valA = a.utilizationRate || 0;
+        valB = b.utilizationRate || 0;
+    }
+    
+    if (typeof valA === 'string') {
+      return ModalState.currentSort.direction === 'asc' 
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    } else {
+      return ModalState.currentSort.direction === 'asc' 
+        ? valA - valB
+        : valB - valA;
+    }
+  });
+  
+  tbody.innerHTML = sorted.map(r => {
+    const shiftTime = (r.shiftCount || 1) * 660;
+    const workTime = r.totalActualMins || 0;
+    const adjustedST = r.totalStandardTime || 0;
+    
+    return `
+      <tr class="hover:bg-gray-50 transition">
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${r.workerName}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${r.foDesc2 || '-'}</td>
+        <td class="px-4 py-3 text-sm text-center">
+          <span class="px-2 py-1 rounded text-xs ${r.workingShift === 'Day' ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-800'}">
+            ${r.workingShift || '-'}
+          </span>
+        </td>
         <td class="px-4 py-3 text-sm text-right">
-          <span class="px-2 py-1 rounded ${r.utilizationRate >= 50 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+          <span class="px-2 py-1 rounded font-semibold ${r.utilizationRate >= 70 ? 'bg-green-100 text-green-800' : r.utilizationRate >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
             ${r.utilizationRate.toFixed(1)}%
           </span>
         </td>
         <td class="px-4 py-3 text-sm text-right">
-          <span class="px-2 py-1 rounded ${r.efficiencyRate >= 50 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+          <span class="px-2 py-1 rounded font-semibold ${r.efficiencyRate >= 70 ? 'bg-green-100 text-green-800' : r.efficiencyRate >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
             ${r.efficiencyRate.toFixed(1)}%
           </span>
         </td>
-        <td class="px-4 py-3 text-sm text-right text-gray-600">${r.totalActualMins.toFixed(0)}</td>
-        <td class="px-4 py-3 text-sm text-right text-gray-600">${r.shiftCount || 1}</td>
+        <td class="px-4 py-3 text-sm text-right text-gray-600">${formatMinutes(shiftTime)}</td>
+        <td class="px-4 py-3 text-sm text-right text-gray-600">${formatMinutes(workTime)}</td>
+        <td class="px-4 py-3 text-sm text-right text-gray-600">${formatMinutes(adjustedST)}</td>
+        <td class="px-4 py-3 text-sm text-right text-gray-600">${r.recordCount || 0}</td>
       </tr>
-    `).join('');
+    `;
+  }).join('');
   
-  // Show modal
-  document.getElementById('periodDetailModal').classList.remove('hidden');
+  document.getElementById('modalTableCount').textContent = `${sorted.length} workers`;
+}
+
+function sortModalTable(column) {
+  if (ModalState.currentSort.column === column) {
+    ModalState.currentSort.direction = ModalState.currentSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    ModalState.currentSort.column = column;
+    ModalState.currentSort.direction = 'desc';
+  }
+  
+  filterModalTable(); // Re-render with new sort
+}
+
+function filterModalTable() {
+  const searchTerm = document.getElementById('modalSearchInput').value.toLowerCase();
+  const processFilter = document.getElementById('modalProcessFilter').value;
+  const shiftFilter = document.getElementById('modalShiftFilter').value;
+  
+  let filtered = ModalState.currentData.filter(r => {
+    const matchesSearch = !searchTerm || 
+      (r.workerName && r.workerName.toLowerCase().includes(searchTerm)) ||
+      (r.foDesc2 && r.foDesc2.toLowerCase().includes(searchTerm));
+    
+    const matchesProcess = processFilter === 'all' || r.foDesc2 === processFilter;
+    const matchesShift = shiftFilter === 'all' || r.workingShift === shiftFilter;
+    
+    return matchesSearch && matchesProcess && matchesShift;
+  });
+  
+  renderModalTable(filtered);
+}
+
+function resetModalFilters() {
+  document.getElementById('modalSearchInput').value = '';
+  document.getElementById('modalProcessFilter').value = 'all';
+  document.getElementById('modalShiftFilter').value = 'all';
+  ModalState.currentSort = { column: 'utilization', direction: 'desc' };
+  renderModalTable(ModalState.currentData);
+}
+
+function formatMinutes(mins) {
+  if (mins < 60) return `${Math.round(mins)}m`;
+  const hours = Math.floor(mins / 60);
+  const remainingMins = Math.round(mins % 60);
+  return `${hours}h ${remainingMins}m`;
 }
 
 function closePeriodModal() {
