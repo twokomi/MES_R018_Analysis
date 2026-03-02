@@ -5329,32 +5329,65 @@ function updateFlightDeck(data) {
     console.log('📊 Sample record:', data[0]);
   }
   
-  const workers = new Set(data.map(r => r.workerName)).size;
-  const records = data.length;
+  // Calculate KPIs from raw data by aggregating by worker
+  const workerStats = new Map();
   
-  let totalUtil = 0, countUtil = 0, totalEff = 0, countEff = 0;
   data.forEach(r => {
-    if (r.utilizationRate >= 0 && r.utilizationRate <= 1000) {
-      totalUtil += r.utilizationRate;
-      countUtil++;
+    if (!r.workerName || !r.valid) return;
+    
+    const key = r.workerName;
+    if (!workerStats.has(key)) {
+      workerStats.set(key, {
+        totalMinutes: 0,
+        assignedStandardTime: 0,
+        shiftCount: new Set()
+      });
     }
-    if (r.efficiencyRate >= 0 && r.efficiencyRate <= 1000) {
-      totalEff += r.efficiencyRate;
-      countEff++;
+    
+    const stats = workerStats.get(key);
+    stats.totalMinutes += (r.workerActualTime || 0);
+    stats.assignedStandardTime += (r.workerStandardTime || 0);
+    if (r.workingDay && r.shift) {
+      stats.shiftCount.add(`${r.workingDay}_${r.shift}`);
     }
   });
   
-  console.log(`📈 KPI Counts: Util=${countUtil}, Eff=${countEff}, Total Util=${totalUtil.toFixed(1)}, Total Eff=${totalEff.toFixed(1)}`);
+  console.log(`📊 Aggregated ${workerStats.size} workers from ${data.length} records`);
   
-  const avgUtil = countUtil > 0 ? (totalUtil / countUtil).toFixed(1) : 0;
-  const avgEff = countEff > 0 ? (totalEff / countEff).toFixed(1) : 0;
+  // Calculate average utilization and efficiency
+  let totalUtil = 0, totalEff = 0, countWorkers = 0;
   
-  console.log(`📊 Final KPIs: Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
+  workerStats.forEach((stats, workerName) => {
+    const shiftCount = stats.shiftCount.size;
+    if (shiftCount === 0) return;
+    
+    // Utilization = Total Work Time / (660 min/shift * shift count) * 100
+    const utilizationRate = (stats.totalMinutes / (660 * shiftCount)) * 100;
+    
+    // Efficiency = Assigned S/T / Total Work Time * 100
+    const shiftTime = shiftCount * 660;
+    const efficiencyRate = stats.totalMinutes > 0 
+      ? (stats.assignedStandardTime / stats.totalMinutes) * 100 
+      : 0;
+    
+    totalUtil += utilizationRate;
+    totalEff += efficiencyRate;
+    countWorkers++;
+    
+    if (countWorkers <= 3) {
+      console.log(`  Worker: ${workerName}, Util: ${utilizationRate.toFixed(1)}%, Eff: ${efficiencyRate.toFixed(1)}%`);
+    }
+  });
   
-  document.getElementById('flightWorkers').textContent = workers;
+  const avgUtil = countWorkers > 0 ? (totalUtil / countWorkers).toFixed(1) : 0;
+  const avgEff = countWorkers > 0 ? (totalEff / countWorkers).toFixed(1) : 0;
+  
+  console.log(`📊 Final KPIs: Workers=${countWorkers}, Avg Util=${avgUtil}%, Avg Eff=${avgEff}%`);
+  
+  document.getElementById('flightWorkers').textContent = countWorkers;
   document.getElementById('flightUtil').textContent = avgUtil + '%';
   document.getElementById('flightEff').textContent = avgEff + '%';
-  document.getElementById('flightRecords').textContent = records.toLocaleString();
+  document.getElementById('flightRecords').textContent = data.length.toLocaleString();
   
   // WoW change (simplified)
   document.getElementById('flightWorkersChange').textContent = 'WoW: -';
