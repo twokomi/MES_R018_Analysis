@@ -7225,9 +7225,15 @@ function openAIInsightModal() {
 }
 
 function updateAIInsightContent() {
-  // Use filtered data from Report tab instead of raw aggregatedData
+  // Use the EXACT same data as Report tab
   const aggregated = getFilteredData();
   if (aggregated.length === 0) return;
+  
+  // Get the average rate directly from Report KPI card (same calculation as Report)
+  const reportAvgRateText = document.getElementById('kpiAvgWorkRate')?.textContent || '0%';
+  const reportAvgRate = parseFloat(reportAvgRateText.replace('%', ''));
+  
+  console.log(`🔍 AI Insight using Report KPI value: ${reportAvgRate}%`);
   
   // Group by worker to calculate metrics
   const workerMap = {};
@@ -7265,10 +7271,12 @@ function updateAIInsightContent() {
     effBtn.className = 'px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 text-white hover:bg-white hover:bg-opacity-20';
   }
   
+  // Use Report page's average rate
+  const avgRate = reportAvgRate;
+  
   // Calculate statistics
   const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
   const rates = workers.map(w => w[metric] || 0);
-  const avgRate = rates.reduce((sum, r) => sum + r, 0) / rates.length;
   
   const topPerformers = workers.filter(w => (w[metric] || 0) >= (isEfficiency ? 100 : 80));
   const atRiskWorkers = workers.filter(w => (w[metric] || 0) < (isEfficiency ? 60 : 30));
