@@ -6052,11 +6052,12 @@ function generateWarnings(data) {
   }
   
   // Rule 3: High variance (inconsistent performance)
-  if (countUtil >= 10) {
+  // Use aggregated data length for variance calculation
+  if (aggregated.length >= 10) {
     const utilVariance = aggregated.reduce((sum, r) => {
       const diff = r.utilizationRate - avgUtil;
       return sum + (diff * diff);
-    }, 0) / countUtil;
+    }, 0) / aggregated.length;
     const utilStdDev = Math.sqrt(utilVariance);
     
     if (utilStdDev > 20) {
