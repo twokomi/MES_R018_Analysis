@@ -2756,6 +2756,9 @@ function updateKPIs(workerAgg) {
     document.getElementById('kpiThirdValue').textContent = Math.round(thirdValue).toLocaleString();
     document.getElementById('kpiAvgWorkRate').textContent = avgRate.toFixed(1) + '%';
     
+    // Calculate Week-over-Week (WoW) changes
+    calculateAndDisplayWoW(workerAgg, totalWorkers, secondValue, thirdValue, avgRate);
+    
     // Show/hide Outlier Threshold control based on metric type
     const outlierControl = document.getElementById('outlierThresholdControl');
     if (outlierControl) {
@@ -2778,6 +2781,88 @@ function updateKPIs(workerAgg) {
             shiftWarning.classList.remove('hidden');
         }
     }
+}
+
+// Calculate and display Week-over-Week (WoW) changes
+function calculateAndDisplayWoW(currentWorkerAgg, currentWorkers, currentSecond, currentThird, currentRate) {
+    const aggregated = AppState.aggregatedData || [];
+    
+    if (aggregated.length === 0) {
+        // No data, show '-'
+        document.getElementById('kpiWorkersWoW').textContent = '-';
+        document.getElementById('kpiSecondWoW').textContent = '-';
+        document.getElementById('kpiThirdWoW').textContent = '-';
+        document.getElementById('kpiAvgRateWoW').textContent = '-';
+        return;
+    }
+    
+    // Get all unique dates and sort
+    const dates = [...new Set(aggregated.map(r => r.workingDay))].sort();
+    
+    if (dates.length < 2) {
+        // Not enough historical data
+        document.getElementById('kpiWorkersWoW').textContent = '-';
+        document.getElementById('kpiSecondWoW').textContent = '-';
+        document.getElementById('kpiThirdWoW').textContent = '-';
+        document.getElementById('kpiAvgRateWoW').textContent = '-';
+        return;
+    }
+    
+    // Get latest date and 7 days ago
+    const latestDate = dates[dates.length - 1];
+    const latestDateObj = new Date(latestDate);
+    const sevenDaysAgo = new Date(latestDateObj);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+    
+    // Filter data for 7 days ago
+    const previousData = aggregated.filter(r => r.workingDay === sevenDaysAgoStr);
+    
+    if (previousData.length === 0) {
+        // No data for 7 days ago
+        document.getElementById('kpiWorkersWoW').textContent = 'No data 7d ago';
+        document.getElementById('kpiSecondWoW').textContent = 'No data 7d ago';
+        document.getElementById('kpiThirdWoW').textContent = 'No data 7d ago';
+        document.getElementById('kpiAvgRateWoW').textContent = 'No data 7d ago';
+        return;
+    }
+    
+    // Calculate previous week's metrics
+    const isEfficiency = AppState.currentMetricType === 'efficiency';
+    const prevWorkers = new Set(previousData.map(r => r.workerName)).size;
+    
+    let prevSecond, prevThird, prevRate;
+    
+    if (isEfficiency) {
+        prevSecond = previousData.reduce((sum, r) => sum + (r.totalStandardTime || 0), 0);
+        const prevShifts = previousData.reduce((sum, r) => sum + (r.shiftCount || 0), 0);
+        prevThird = prevShifts * 660;
+        prevRate = prevThird > 0 ? (prevSecond / prevThird) * 100 : 0;
+    } else {
+        const prevShifts = previousData.reduce((sum, r) => sum + (r.shiftCount || 0), 0);
+        prevSecond = prevShifts * 660;
+        prevThird = previousData.reduce((sum, r) => sum + (r.totalActualMins || 0), 0);
+        prevRate = prevSecond > 0 ? (prevThird / prevSecond) * 100 : 0;
+    }
+    
+    // Calculate WoW percentages
+    const workersWoW = prevWorkers > 0 ? ((currentWorkers - prevWorkers) / prevWorkers) * 100 : 0;
+    const secondWoW = prevSecond > 0 ? ((currentSecond - prevSecond) / prevSecond) * 100 : 0;
+    const thirdWoW = prevThird > 0 ? ((currentThird - prevThird) / prevThird) * 100 : 0;
+    const rateWoW = prevRate > 0 ? ((currentRate - prevRate) / prevRate) * 100 : 0;
+    
+    // Format and display with colors
+    const formatWoW = (value) => {
+        const sign = value >= 0 ? '+' : '';
+        const color = value >= 0 ? 'text-green-600' : 'text-red-600';
+        const icon = value >= 0 ? '▲' : '▼';
+        return `<span class="${color}">${icon} ${sign}${value.toFixed(1)}% WoW</span>`;
+    };
+    
+    document.getElementById('kpiWorkersWoW').innerHTML = formatWoW(workersWoW);
+    document.getElementById('kpiSecondWoW').innerHTML = formatWoW(secondWoW);
+    document.getElementById('kpiThirdWoW').innerHTML = formatWoW(thirdWoW);
+    document.getElementById('kpiAvgRateWoW').innerHTML = formatWoW(rateWoW);
 }
 
 // Update performance bands
@@ -6185,12 +6270,16 @@ function openPeriodModal(date, kpi) {
   
   // Calculate detailed summary statistics
   const workers = new Set(filtered.map(r => r.workerName)).size;
-  let totalUtil = 0, totalEff = 0, totalShiftTime = 0, totalWorkTime = 0, totalAdjustedST = 0;
+  let totalUtil = 0, totalEff = 0, totalWorkTime = 0, totalAdjustedST = 0;
+  
+  // Calculate Total Shift Time using the same logic as Report page (KPI Cards)
+  // Sum all shiftCount from filtered records, then multiply by 660
+  const totalShifts = filtered.reduce((sum, r) => sum + (r.shiftCount || 0), 0);
+  const totalShiftTime = totalShifts * 660; // Each shift = 11 hours = 660 minutes
   
   filtered.forEach(r => {
     totalUtil += r.utilizationRate || 0;
     totalEff += r.efficiencyRate || 0;
-    totalShiftTime += (r.shiftCount || 1) * 660; // 660 mins per shift
     totalWorkTime += r.totalActualMins || 0;
     totalAdjustedST += r.totalStandardTime || 0;
   });
@@ -6199,8 +6288,9 @@ function openPeriodModal(date, kpi) {
   const avgEff = filtered.length > 0 ? totalEff / filtered.length : 0;
   const totalRecords = filtered.reduce((sum, r) => sum + r.recordCount, 0);
   
-  console.log('Modal Summary:', {
+  console.log('✅ Modal Summary (Fixed):', {
     workers,
+    totalShifts,
     avgUtil: avgUtil.toFixed(1),
     avgEff: avgEff.toFixed(1),
     totalShiftTime,
@@ -6218,12 +6308,11 @@ function openPeriodModal(date, kpi) {
   document.getElementById('modalUtil').textContent = avgUtil.toFixed(1) + '%';
   document.getElementById('modalEff').textContent = avgEff.toFixed(1) + '%';
   
-  // Fix: Ensure Total Shift Time is displayed correctly
-  const totalShiftTimeHours = totalShiftTime / 60;
-  document.getElementById('modalTotalShiftTime').textContent = totalShiftTimeHours.toFixed(1) + ' hr';
+  // Display Total Shift Time in minutes (matching Report page format)
+  document.getElementById('modalTotalShiftTime').textContent = totalShiftTime.toLocaleString() + ' min';
   
-  const totalWorkTimeHours = totalWorkTime / 60;
-  document.getElementById('modalTotalWorkTime').textContent = totalWorkTimeHours.toFixed(1) + ' hr';
+  // Display Total Work Time in minutes
+  document.getElementById('modalTotalWorkTime').textContent = totalWorkTime.toLocaleString() + ' min';
   
   document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
@@ -6387,7 +6476,12 @@ function generateProcessBreakdown(data) {
   document.getElementById('modalProcessBreakdown').innerHTML = html;
 }
 
-// New function: Open Process Detail Modal (2nd level)
+// New function: Open Process Detail Modal (2nd level) with sorting support
+let ProcessModalState = {
+  data: [],
+  sort: { column: 'utilization', direction: 'desc' }
+};
+
 function openProcessDetailModal(processName) {
   const filtered = ModalState.currentData.filter(r => r.foDesc2 === processName);
   
@@ -6396,35 +6490,15 @@ function openProcessDetailModal(processName) {
     return;
   }
   
+  // Store data for sorting
+  ProcessModalState.data = filtered;
+  ProcessModalState.sort = { column: 'utilization', direction: 'desc' };
+  
   // Calculate summary
   const workers = new Set(filtered.map(r => r.workerName)).size;
   const avgUtil = filtered.reduce((sum, r) => sum + (r.utilizationRate || 0), 0) / filtered.length;
   const avgEff = filtered.reduce((sum, r) => sum + (r.efficiencyRate || 0), 0) / filtered.length;
   const totalRecords = filtered.reduce((sum, r) => sum + r.recordCount, 0);
-  
-  // Build worker list HTML
-  const sorted = [...filtered].sort((a, b) => (b.utilizationRate || 0) - (a.utilizationRate || 0));
-  const workersHtml = sorted.map(r => `
-    <tr class="hover:bg-gray-50">
-      <td class="px-3 py-2 text-sm text-gray-900">${r.workerName}</td>
-      <td class="px-3 py-2 text-sm text-center">
-        <span class="px-2 py-1 rounded text-xs ${r.workingShift === 'Day' ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-800'}">
-          ${r.workingShift || '-'}
-        </span>
-      </td>
-      <td class="px-3 py-2 text-sm text-right">
-        <span class="font-semibold ${r.utilizationRate >= 70 ? 'text-green-700' : r.utilizationRate >= 50 ? 'text-yellow-700' : 'text-red-700'}">
-          ${r.utilizationRate.toFixed(1)}%
-        </span>
-      </td>
-      <td class="px-3 py-2 text-sm text-right">
-        <span class="font-semibold ${r.efficiencyRate >= 70 ? 'text-green-700' : r.efficiencyRate >= 50 ? 'text-yellow-700' : 'text-red-700'}">
-          ${r.efficiencyRate.toFixed(1)}%
-        </span>
-      </td>
-      <td class="px-3 py-2 text-sm text-right text-gray-600">${r.recordCount || 0}</td>
-    </tr>
-  `).join('');
   
   // Build modal HTML
   const modalHtml = `
@@ -6459,7 +6533,7 @@ function openProcessDetailModal(processName) {
             </div>
           </div>
           
-          <!-- Workers Table -->
+          <!-- Workers Table with Sorting -->
           <div class="bg-white rounded-lg border border-gray-200">
             <div class="p-3 bg-gray-50 border-b border-gray-200">
               <h4 class="font-bold text-gray-800 text-sm">Worker Details</h4>
@@ -6468,15 +6542,22 @@ function openProcessDetailModal(processName) {
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700">Worker</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortProcessModal('worker')">
+                      Worker <i class="fas fa-sort text-xs ml-1"></i>
+                    </th>
                     <th class="px-3 py-2 text-center text-xs font-semibold text-gray-700">Shift</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700">Utilization</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700">Efficiency</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700">Records</th>
+                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortProcessModal('utilization')">
+                      Utilization <i class="fas fa-sort text-xs ml-1"></i>
+                    </th>
+                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortProcessModal('efficiency')">
+                      Efficiency <i class="fas fa-sort text-xs ml-1"></i>
+                    </th>
+                    <th class="px-3 py-2 text-right text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100" onclick="sortProcessModal('records')">
+                      Records <i class="fas fa-sort text-xs ml-1"></i>
+                    </th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
-                  ${workersHtml}
+                <tbody id="processModalTableBody" class="divide-y divide-gray-200">
                 </tbody>
               </table>
             </div>
@@ -6491,11 +6572,263 @@ function openProcessDetailModal(processName) {
   modalContainer.id = 'processDetailModal';
   modalContainer.innerHTML = modalHtml;
   document.body.appendChild(modalContainer);
+  
+  // Render table with initial sort
+  renderProcessModalTable();
+}
+
+function sortProcessModal(column) {
+  // Toggle direction if same column
+  if (ProcessModalState.sort.column === column) {
+    ProcessModalState.sort.direction = ProcessModalState.sort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    ProcessModalState.sort.column = column;
+    ProcessModalState.sort.direction = 'desc';
+  }
+  
+  renderProcessModalTable();
+}
+
+function renderProcessModalTable() {
+  const tbody = document.getElementById('processModalTableBody');
+  if (!tbody) return;
+  
+  const { data, sort } = ProcessModalState;
+  
+  // Sort data
+  const sorted = [...data].sort((a, b) => {
+    let valA, valB;
+    
+    switch (sort.column) {
+      case 'worker':
+        valA = a.workerName || '';
+        valB = b.workerName || '';
+        break;
+      case 'utilization':
+        valA = a.utilizationRate || 0;
+        valB = b.utilizationRate || 0;
+        break;
+      case 'efficiency':
+        valA = a.efficiencyRate || 0;
+        valB = b.efficiencyRate || 0;
+        break;
+      case 'records':
+        valA = a.recordCount || 0;
+        valB = b.recordCount || 0;
+        break;
+      default:
+        valA = a.utilizationRate || 0;
+        valB = b.utilizationRate || 0;
+    }
+    
+    if (typeof valA === 'string') {
+      return sort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else {
+      return sort.direction === 'asc' ? valA - valB : valB - valA;
+    }
+  });
+  
+  // Render rows
+  tbody.innerHTML = sorted.map(r => `
+    <tr class="hover:bg-gray-50">
+      <td class="px-3 py-2 text-sm text-gray-900">${r.workerName}</td>
+      <td class="px-3 py-2 text-sm text-center">
+        <span class="px-2 py-1 rounded text-xs ${r.workingShift === 'Day' ? 'bg-yellow-100 text-yellow-800' : r.workingShift === 'Night' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}">
+          ${r.workingShift || '-'}
+        </span>
+      </td>
+      <td class="px-3 py-2 text-sm text-right">
+        <span class="font-semibold ${r.utilizationRate >= 70 ? 'text-green-700' : r.utilizationRate >= 50 ? 'text-yellow-700' : 'text-red-700'}">
+          ${r.utilizationRate.toFixed(1)}%
+        </span>
+      </td>
+      <td class="px-3 py-2 text-sm text-right">
+        <span class="font-semibold ${r.efficiencyRate >= 70 ? 'text-green-700' : r.efficiencyRate >= 50 ? 'text-yellow-700' : 'text-red-700'}">
+          ${r.efficiencyRate.toFixed(1)}%
+        </span>
+      </td>
+      <td class="px-3 py-2 text-sm text-right text-gray-600">${r.recordCount || 0}</td>
+    </tr>
+  `).join('');
 }
 
 function closeProcessDetailModal() {
   const modal = document.getElementById('processDetailModal');
   if (modal) modal.remove();
+}
+
+// AI Insight Modal functions
+function openAIInsightModal() {
+  const modal = document.getElementById('aiInsightModal');
+  if (!modal) return;
+  
+  // Generate AI insights from current data
+  const workerAgg = AppState.workerAggregated || [];
+  const isEfficiency = AppState.currentMetricType === 'efficiency';
+  
+  if (workerAgg.length === 0) {
+    alert('No data available for AI analysis. Please upload an Excel file first.');
+    return;
+  }
+  
+  // Calculate statistics
+  const metric = isEfficiency ? 'efficiencyRate' : 'utilizationRate';
+  const rates = workerAgg.map(w => w[metric] || 0);
+  const avgRate = rates.reduce((sum, r) => sum + r, 0) / rates.length;
+  
+  const topPerformers = workerAgg.filter(w => (w[metric] || 0) >= (isEfficiency ? 100 : 80));
+  const atRiskWorkers = workerAgg.filter(w => (w[metric] || 0) < (isEfficiency ? 60 : 30));
+  
+  // Update summary cards
+  document.getElementById('aiTopPerformersCount').textContent = topPerformers.length;
+  document.getElementById('aiAtRiskCount').textContent = atRiskWorkers.length;
+  document.getElementById('aiAvgPerformance').textContent = avgRate.toFixed(1) + '%';
+  
+  // Generate Key Findings
+  const keyFindings = [];
+  
+  if (topPerformers.length > 0) {
+    keyFindings.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-check-circle text-green-500 mt-1"></i>
+      <span><strong>${topPerformers.length} workers</strong> are performing excellently with ${isEfficiency ? '≥100%' : '≥80%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
+    </li>`);
+  }
+  
+  if (atRiskWorkers.length > 0) {
+    keyFindings.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-exclamation-circle text-orange-500 mt-1"></i>
+      <span><strong>${atRiskWorkers.length} workers</strong> need attention with ${isEfficiency ? '<60%' : '<30%'} ${isEfficiency ? 'efficiency' : 'utilization'} rate.</span>
+    </li>`);
+  }
+  
+  keyFindings.push(`<li class="flex items-start gap-2">
+    <i class="fas fa-chart-bar text-blue-500 mt-1"></i>
+    <span>Average ${isEfficiency ? 'efficiency' : 'utilization'} rate across all workers is <strong>${avgRate.toFixed(1)}%</strong>.</span>
+  </li>`);
+  
+  // Find best and worst performers
+  const sorted = [...workerAgg].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+  const best = sorted[0];
+  const worst = sorted[sorted.length - 1];
+  
+  keyFindings.push(`<li class="flex items-start gap-2">
+    <i class="fas fa-star text-purple-500 mt-1"></i>
+    <span>Best performer: <strong>${best.workerName}</strong> (${(best[metric] || 0).toFixed(1)}%)</span>
+  </li>`);
+  
+  keyFindings.push(`<li class="flex items-start gap-2">
+    <i class="fas fa-flag text-red-500 mt-1"></i>
+    <span>Needs most support: <strong>${worst.workerName}</strong> (${(worst[metric] || 0).toFixed(1)}%)</span>
+  </li>`);
+  
+  document.getElementById('aiKeyFindings').innerHTML = keyFindings.join('');
+  
+  // Generate Anomalies
+  const anomalies = [];
+  
+  // Check for outliers (>2 standard deviations)
+  const mean = avgRate;
+  const variance = rates.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / rates.length;
+  const stdDev = Math.sqrt(variance);
+  const outliers = workerAgg.filter(w => Math.abs((w[metric] || 0) - mean) > 2 * stdDev);
+  
+  if (outliers.length > 0) {
+    anomalies.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-bolt text-orange-500 mt-1"></i>
+      <span><strong>${outliers.length} workers</strong> show performance significantly different from the average (>2σ deviation).</span>
+    </li>`);
+  }
+  
+  // Check for process-specific issues
+  const processes = {};
+  workerAgg.forEach(w => {
+    const proc = w.foDesc2 || 'Unknown';
+    if (!processes[proc]) processes[proc] = [];
+    processes[proc].push(w[metric] || 0);
+  });
+  
+  const processAvgs = Object.entries(processes).map(([name, rates]) => ({
+    name,
+    avg: rates.reduce((sum, r) => sum + r, 0) / rates.length,
+    count: rates.length
+  }));
+  
+  const sortedProcs = processAvgs.sort((a, b) => a.avg - b.avg);
+  if (sortedProcs.length > 0) {
+    const lowest = sortedProcs[0];
+    if (lowest.count >= 3 && lowest.avg < avgRate * 0.7) {
+      anomalies.push(`<li class="flex items-start gap-2">
+        <i class="fas fa-exclamation-triangle text-red-500 mt-1"></i>
+        <span>Process <strong>${lowest.name}</strong> shows consistently low performance (${lowest.avg.toFixed(1)}% avg).</span>
+      </li>`);
+    }
+  }
+  
+  if (anomalies.length === 0) {
+    anomalies.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-check-circle text-green-500 mt-1"></i>
+      <span>No significant performance anomalies detected. All workers are within expected ranges.</span>
+    </li>`);
+  }
+  
+  document.getElementById('aiAnomalies').innerHTML = anomalies.join('');
+  
+  // Generate Recommendations
+  const recommendations = [];
+  
+  if (atRiskWorkers.length > 0) {
+    recommendations.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-arrow-right text-green-500 mt-1"></i>
+      <span>Provide additional training or support for <strong>${atRiskWorkers.length} at-risk workers</strong> to improve their ${isEfficiency ? 'efficiency' : 'utilization'} rates.</span>
+    </li>`);
+  }
+  
+  if (topPerformers.length > 0) {
+    recommendations.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-arrow-right text-green-500 mt-1"></i>
+      <span>Analyze best practices from top ${topPerformers.length} performers and share knowledge across the team.</span>
+    </li>`);
+  }
+  
+  if (sortedProcs.length > 1) {
+    const highest = sortedProcs[sortedProcs.length - 1];
+    const lowest = sortedProcs[0];
+    recommendations.push(`<li class="flex items-start gap-2">
+      <i class="fas fa-arrow-right text-green-500 mt-1"></i>
+      <span>Compare processes: <strong>${highest.name}</strong> (${highest.avg.toFixed(1)}%) vs <strong>${lowest.name}</strong> (${lowest.avg.toFixed(1)}%) to identify improvement opportunities.</span>
+    </li>`);
+  }
+  
+  recommendations.push(`<li class="flex items-start gap-2">
+    <i class="fas fa-arrow-right text-green-500 mt-1"></i>
+    <span>Consider implementing peer mentoring programs pairing high and low performers.</span>
+  </li>`);
+  
+  recommendations.push(`<li class="flex items-start gap-2">
+    <i class="fas fa-arrow-right text-green-500 mt-1"></i>
+    <span>Monitor trends weekly using the KPI Trend Intelligence chart to detect early warning signs.</span>
+  </li>`);
+  
+  document.getElementById('aiRecommendations').innerHTML = recommendations.join('');
+  
+  // Show modal
+  modal.classList.remove('hidden');
+}
+
+function closeAIInsightModal() {
+  const modal = document.getElementById('aiInsightModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Glossary Modal functions
+function openGlossaryModal() {
+  const modal = document.getElementById('glossaryModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeGlossaryModal() {
+  const modal = document.getElementById('glossaryModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function generateTopBottomPerformers(data) {
