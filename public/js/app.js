@@ -6778,8 +6778,8 @@ function openPeriodModal(date, kpi) {
   const totalShiftTimeHr = totalShiftTime / 60;
   const totalWorkTimeHr = totalWorkTime / 60;
   
-  document.getElementById('modalTotalShiftTime').textContent = totalShiftTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
-  document.getElementById('modalTotalWorkTime').textContent = totalWorkTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
+  document.getElementById('periodModalTotalShiftTime').textContent = totalShiftTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
+  document.getElementById('periodModalTotalWorkTime').textContent = totalWorkTimeHr.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
   
   document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
