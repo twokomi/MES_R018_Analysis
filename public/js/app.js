@@ -4288,7 +4288,16 @@ async function loadUploadById(uploadId) {
         }
         
         // Aggregate data for dashboard (SAME ORDER AS EXCEL UPLOAD)
+        console.log(`🔄 Aggregating ${AppState.processedData.length} processed records for dashboard...`);
         AppState.aggregatedData = aggregateDataForDashboard(AppState.processedData);
+        console.log(`✅ Dashboard aggregation complete: ${AppState.aggregatedData ? AppState.aggregatedData.length : 0} entries`);
+        
+        // DEBUG: Check date range in aggregatedData
+        if (AppState.aggregatedData && AppState.aggregatedData.length > 0) {
+            const dates = [...new Set(AppState.aggregatedData.map(d => d.workingDay))].sort();
+            console.log(`📅 Date range in aggregatedData: ${dates[0]} to ${dates[dates.length - 1]} (${dates.length} unique dates)`);
+            console.log(`📊 Sample aggregatedData:`, AppState.aggregatedData.slice(0, 3));
+        }
         
         updateProgress(100);
         
@@ -4315,8 +4324,8 @@ async function loadUploadById(uploadId) {
             }, 500);
         }
         
-        // Switch to Report tab
-        switchTab('report');
+        // Don't switch tabs - let user stay where they are (like Excel upload)
+        // switchTab('report'); // REMOVED: Keep current tab
         
         console.log(' Data loaded successfully!');
         console.log(` Loaded ${AppState.processedData.length} records from upload #${uploadId}`);
