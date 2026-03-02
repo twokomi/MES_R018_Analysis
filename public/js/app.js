@@ -6294,10 +6294,11 @@ function refreshContributionChart() {
     totalPreviousValue += prev.rate * prev.weight;
     totalPreviousWeight += prev.weight;
     
-    // Contribution = (current value - previous value)
-    const currentValue = curr.rate * curr.weight;
-    const previousValue = prev.rate * prev.weight;
-    contributions[proc] = currentValue - previousValue;
+    // FIXED: Contribution = (rate change) * average weight
+    // This properly captures whether a process improved (+) or declined (-)
+    const rateChange = curr.rate - prev.rate;
+    const avgWeight = (curr.weight + prev.weight) / 2;
+    contributions[proc] = rateChange * avgWeight;
   });
   
   // Calculate overall change
@@ -6619,11 +6620,12 @@ function openPeriodModal(date, kpi) {
   document.getElementById('modalUtil').textContent = avgUtil.toFixed(1) + '%';
   document.getElementById('modalEff').textContent = avgEff.toFixed(1) + '%';
   
-  // Display Total Shift Time in minutes (matching Report page format)
-  document.getElementById('modalTotalShiftTime').textContent = totalShiftTime.toLocaleString() + ' min';
+  // FIXED: Display in hours (hr) like Report page, not minutes
+  const totalShiftTimeHr = totalShiftTime / 60;
+  const totalWorkTimeHr = totalWorkTime / 60;
   
-  // Display Total Work Time in minutes
-  document.getElementById('modalTotalWorkTime').textContent = totalWorkTime.toLocaleString() + ' min';
+  document.getElementById('modalTotalShiftTime').textContent = totalShiftTimeHr.toFixed(1) + ' hr';
+  document.getElementById('modalTotalWorkTime').textContent = totalWorkTimeHr.toFixed(1) + ' hr';
   
   document.getElementById('modalRecords').textContent = totalRecords.toLocaleString();
   
