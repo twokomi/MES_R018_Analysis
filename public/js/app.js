@@ -6580,6 +6580,10 @@ function refreshShiftComparison() {
     return;
   }
   
+  // DEBUG: Check sample data structure
+  console.log('📋 Sample aggregated entry:', aggregated[0]);
+  console.log('📋 Available fields:', Object.keys(aggregated[0]));
+  
   // Get selected period
   const periodDays = parseInt(document.getElementById('shiftComparisonDays')?.value || '30');
   
@@ -6610,7 +6614,15 @@ function refreshShiftComparison() {
   
   console.log(`📅 Filtered to ${filteredData.length} entries for comparison`);
   
-  // Define process groups based on foDesc3
+  // DEBUG: Check unique foDesc2 values (categories)
+  const uniqueCategories = [...new Set(filteredData.map(r => r.foDesc2))].sort();
+  console.log('📋 Unique FO Desc 2 values (Categories):', uniqueCategories);
+  
+  // DEBUG: Check unique actualShift values
+  const uniqueShifts = [...new Set(filteredData.map(r => r.actualShift))].sort();
+  console.log('📋 Unique Actual Shift values:', uniqueShifts);
+  
+  // Define process groups based on foDesc2 (CATEGORY, not process!)
   const processGroups = {
     bt: ['BT Process', 'BT Complete', 'BT QC', 'DS'],
     wt: ['WT', 'WT QC'],
@@ -6618,8 +6630,21 @@ function refreshShiftComparison() {
   };
   
   // Calculate metrics for each group and shift
-  const calculateGroupMetrics = (groupProcesses) => {
-    const groupData = filteredData.filter(r => groupProcesses.includes(r.foDesc3));
+  const calculateGroupMetrics = (groupCategories) => {
+    // FIX: Filter by foDesc2 (category), not foDesc3 (process)!
+    const groupData = filteredData.filter(r => groupCategories.includes(r.foDesc2));
+    
+    console.log(`📊 Group categories [${groupCategories.join(', ')}]: ${groupData.length} entries`);
+    
+    if (groupData.length > 0) {
+      console.log('📋 Sample group entry:', {
+        actualShift: groupData[0].actualShift,
+        foDesc3: groupData[0].foDesc3,
+        totalActualMins: groupData[0].totalActualMins,
+        totalStandardTime: groupData[0].totalStandardTime,
+        shiftCount: groupData[0].shiftCount
+      });
+    }
     
     // Group by shift
     const shiftMetrics = {};
@@ -6643,6 +6668,8 @@ function refreshShiftComparison() {
       shiftMetrics[shift].totalStandardTime += r.totalStandardTime || 0;
       shiftMetrics[shift].shifts += (r.shiftCount || 1);
     });
+    
+    console.log('📊 Shift metrics:', shiftMetrics);
     
     // Calculate rates
     const result = {};
@@ -6708,6 +6735,11 @@ function refreshShiftComparison() {
       return;
     }
     
+    // Helper function to format numbers with thousand separators
+    const formatNumber = (num) => {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    };
+    
     const rows = shifts.map(shift => {
       const m = groupMetrics[shift];
       
@@ -6718,11 +6750,11 @@ function refreshShiftComparison() {
       return `
         <tr class="border-b border-gray-100 hover:bg-gray-50">
           <td class="px-3 py-2 font-semibold text-gray-800">Shift ${shift}</td>
-          <td class="px-3 py-2 text-right text-gray-700">${m.workers}</td>
-          <td class="px-3 py-2 text-right text-gray-600">${(m.totalShiftTime / 60).toFixed(1)} hrs</td>
-          <td class="px-3 py-2 text-right text-gray-600">${(m.totalWorkTime / 60).toFixed(1)} hrs</td>
+          <td class="px-3 py-2 text-right text-gray-700">${m.workers.toLocaleString()}</td>
+          <td class="px-3 py-2 text-right text-gray-600">${formatNumber(m.totalShiftTime / 60)} hrs</td>
+          <td class="px-3 py-2 text-right text-gray-600">${formatNumber(m.totalWorkTime / 60)} hrs</td>
           <td class="px-3 py-2 text-right ${utilColor}">${m.utilization.toFixed(1)}%</td>
-          <td class="px-3 py-2 text-right text-gray-600">${(m.totalStandardTime / 60).toFixed(1)} hrs</td>
+          <td class="px-3 py-2 text-right text-gray-600">${formatNumber(m.totalStandardTime / 60)} hrs</td>
           <td class="px-3 py-2 text-right ${effColor}">${m.efficiency.toFixed(1)}%</td>
         </tr>
       `;
