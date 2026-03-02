@@ -2508,14 +2508,14 @@ function updatePivotReport(workerAgg) {
     if (isEfficiency) {
         pivotGlossary.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Metric Explained (Shift Productivity):</strong><br>
-            �� <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
-            �� <strong>Rate(%)</strong>: Worker performance multiplier (portion of task completed by this worker)<br>
-            �� <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T � Rate ÷ 100<br>
-            �� <strong>Efficiency(%)</strong>: Daily efficiency = (Adjusted S/T ÷ (Shift Count � 660 min)) � 100%<br>
-            �� <strong>WO#</strong>: Number of work orders completed<br>
-            �� <strong>� Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
+            📊 <strong>S/T(m)</strong>: Standard Time - the baseline time expected for the task<br>
+            📈 <strong>Rate(%)</strong>: Worker performance multiplier (portion of task completed by this worker)<br>
+            ⚙️ <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Rate ÷ 100<br>
+            💯 <strong>Efficiency(%)</strong>: Daily efficiency = (Adjusted S/T ÷ (Shift Count × 660 min)) × 100%<br>
+            📝 <strong>WO#</strong>: Number of work orders completed<br>
+            🚨 <strong>⚠️ Icon</strong>: Outlier (Efficiency > ${AppState.outlierThreshold || 1000}%, excluded from charts/KPIs)<br>
             <br>
-            <strong class="text-sm">� Note:</strong><br>
+            <strong class="text-sm">📌 Note:</strong><br>
             <span class="text-xs">
             This table shows daily breakdown of work. Efficiency is calculated per date based on shifts worked that day.
             </span>
@@ -2523,9 +2523,9 @@ function updatePivotReport(workerAgg) {
     } else {
         pivotGlossary.innerHTML = `
             <strong class="text-blue-700">Time Utilization Metric:</strong><br>
-            �� <strong>WO Count</strong>: Number of valid work orders completed<br>
-            �� <strong>Std Time(m)</strong>: Total work time after removing overlapping intervals<br>
-            �� <strong>Work Rate</strong>: Utilization = Actual time ÷ Available shift time � 100%<br>
+            📊 <strong>WO Count</strong>: Number of valid work orders completed<br>
+            ⏱️ <strong>Std Time(m)</strong>: Total work time after removing overlapping intervals<br>
+            📊 <strong>Work Rate</strong>: Utilization = Actual time ÷ Available shift time × 100%<br>
             <span class="text-xs italic">Note: Overlapping time periods are detected and excluded</span>
         `;
     }
@@ -3315,10 +3315,10 @@ function updatePerformanceChart(workerAgg) {
     
     // Dynamic labels based on metric type
     const labels = isEfficiency
-        ? ['Excellent (��100%)', 'Normal (80-<100%)', 'Poor (60-<80%)', 'At-Risk (<60%)']
-        : ['Excellent (��80%)', 'Normal (50-<80%)', 'Poor (30-<50%)', 'At-Risk (<30%)'];
+        ? ['Excellent (≥100%)', 'Normal (80-<100%)', 'Poor (60-<80%)', 'At-Risk (<60%)']
+        : ['Excellent (≥80%)', 'Normal (50-<80%)', 'Poor (30-<50%)', 'At-Risk (<30%)'];
     
-    console.log(`� Donut chart updating: Metric=${AppState.currentMetricType}, Labels=${JSON.stringify(labels)}`);
+    console.log(`🍩 Donut chart updating: Metric=${AppState.currentMetricType}, Labels=${JSON.stringify(labels)}`);
     
     AppState.charts.performance = new Chart(ctx, {
         type: 'doughnut',
@@ -4707,22 +4707,22 @@ function showWorkerDetail(workerName) {
     if (isEfficiency) {
         glossaryDiv.innerHTML = `
             <strong class="text-purple-700">Work Efficiency Glossary (Shift Productivity):</strong><br>
-            �� <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
-            �� <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
-            �� <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T � Worker Rate ÷ 100<br>
-            �� <strong>Shift Time</strong>: Available shift time (660 minutes = 11 hours)<br>
-            �� <strong>Efficiency(%)</strong>: Shift productivity = Adjusted S/T ÷ Shift Time � 100<br>
-            �� <strong>� Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (shown in red for visual reference, but <strong>included in all calculations</strong>)<br>
+            📊 <strong>S/T</strong>: Standard Time - Expected time to complete a task<br>
+            📈 <strong>Worker Rate(%)</strong>: Work Progress Rate - Portion of the task completed by this worker (e.g., 60% of the task)<br>
+            ⚙️ <strong>Adjusted S/T(m)</strong>: Adjusted Standard Time = S/T × Worker Rate ÷ 100<br>
+            ⏰ <strong>Shift Time</strong>: Available shift time (660 minutes = 11 hours)<br>
+            💯 <strong>Efficiency(%)</strong>: Shift productivity = Adjusted S/T ÷ Shift Time × 100<br>
+            🚨 <strong>⚠️ Outlier</strong>: Records with efficiency > ${AppState.outlierThreshold || 1000}% (shown in red for visual reference, but <strong>included in all calculations</strong>)<br>
             <br>
-            <strong class="text-purple-600"> Note:</strong> Efficiency (also called "Shift Productivity") measures how much standard work was completed per shift. 100% = completed exactly the standard amount of work in one shift (660 min).
+            <strong class="text-purple-600">📌 Note:</strong> Efficiency (also called "Shift Productivity") measures how much standard work was completed per shift. 100% = completed exactly the standard amount of work in one shift (660 min).
         `;
     } else {
         glossaryDiv.innerHTML = `
             <strong class="text-blue-700">Time Utilization Glossary:</strong><br>
-            �� <strong>Original(m)</strong>: Time calculated from End - Start time<br>
-            �� <strong>Adjusted(m)</strong>: Original time after removing overlapping intervals<br>
-            �� <strong>Removed overlap</strong>: Duplicate time periods detected and excluded<br>
-            �� <strong>Utilization Rate</strong>: Adjusted time ÷ Available shift time � 100
+            🕐 <strong>Original(m)</strong>: Time calculated from End - Start time<br>
+            ✅ <strong>Adjusted(m)</strong>: Original time after removing overlapping intervals<br>
+            🔄 <strong>Removed overlap</strong>: Duplicate time periods detected and excluded<br>
+            📊 <strong>Utilization Rate</strong>: Adjusted time ÷ Available shift time × 100
         `;
     }
     
