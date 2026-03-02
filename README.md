@@ -7,8 +7,8 @@
 ### 프로덕션
 - **메인 URL**: https://mes-r018-analysis.pages.dev
 - **GitHub**: https://github.com/twokomi/MES_R018_Analysis
-- **최신 버전**: v4.3.0 (2026-03-02)
-- **최근 수정**: Shift Performance Comparison 테이블 추가 및 Dashboard AI Insights 버그 수정
+- **최신 버전**: v4.3.2 (2026-03-02)
+- **최근 수정**: Performance Bands W/O Count 표시 수정
 
 ---
 
@@ -559,6 +559,24 @@ npx wrangler pages deploy dist --project-name mes-r018-analysis
 
 ## 📝 개발 히스토리
 
+### v4.3.2 (2026-03-02) 🐛 **Performance Bands W/O Count 표시 수정**
+- ✅ **validCount 기반 W/O Count 표시**
+  - Excel 파일에 W/O 컬럼이 없을 때 `validCount` (레코드 수)를 W/O Count로 사용
+  - Worker Performance Report by Date와 동일한 로직 적용
+  - 이제 두 곳의 W/O Count가 일치함
+- ✅ **W/O 컬럼 인식 개선**
+  - `HEADER_SYNONYMS`에 W/O 관련 동의어 추가
+  - 지원 컬럼명: `wo`, `w/o`, `wo#`, `wonumber`, `workorder`, `work_order`, `workordernumber`, `work_order_number`, `orderno`, `order_no`
+- ✅ **디버그 로깅 강화**
+  - `aggregateByWorkerOnly()` 함수에서 `validCount`, `woNumbers.size`, `final woCount` 출력
+  - WO# Set 추적 로그 추가
+
+### v4.3.1 (2026-03-02) 🔧 **Performance Bands에 W/O Count 추가 시도**
+- ⚠️ **초기 구현 (작동 안 함)**
+  - Performance Band 카드에 "⚙️ Process | 📄 X W/Os" 형식으로 W/O Count 표시 시도
+  - Excel 파일에 W/O 컬럼이 없어 항상 0으로 표시되는 문제 발견
+  - v4.3.2에서 근본 해결
+
 ### v4.3.0 (2026-03-02) 🎯 **Shift Performance Comparison 테이블 추가**
 - ✅ **Process Health Matrix → Shift Performance Comparison 교체**
   - Bubble Chart 제거, 테이블 형태로 변경
@@ -701,7 +719,7 @@ npx wrangler pages deploy dist --project-name mes-r018-analysis
 ---
 
 **제작자**: twokomi  
-**최종 업데이트**: 2026-03-02 (v4.3.0)  
+**최종 업데이트**: 2026-03-02 (v4.3.2)  
 **라이선스**: MIT
 
 ---
