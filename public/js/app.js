@@ -3938,7 +3938,6 @@ function initCalendarNavigation() {
 }
 
 // Save data to database
-// Chunked upload function to replace saveToDatabase
 async function saveToDatabase() {
     const saveBtn = document.getElementById('saveToDatabaseBtn');
     const saveStatus = document.getElementById('saveStatus');
@@ -3949,89 +3948,68 @@ async function saveToDatabase() {
     }
     
     try {
-        showLoadingOverlay('Starting chunked upload...');
+        // Show loading overlay
+        showLoadingOverlay('Starting upload...');
+        
+        // Disable button and show loading
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
         saveStatus.classList.add('hidden');
         
-        console.log('💾 Starting chunked upload to database...');
+        console.log('� Saving data to database...');
         
-        const metadata = {
+        const payload = {
             filename: AppState.currentFileName || 'Unknown',
             fileSize: AppState.currentFileSize || 0,
-            totalRecords: AppState.processedData.length,
-            uniqueWorkers: new Set(AppState.processedData.map(d => d.workerName)).size,
-            dateRangeStart: AppState.processedData[0]?.workingDay || null,
-            dateRangeEnd: AppState.processedData[AppState.processedData.length - 1]?.workingDay || null,
+            rawData: AppState.rawData,
+            processedData: AppState.processedData,
             processMapping: AppState.processMapping,
             shiftCalendar: AppState.shiftCalendar
         };
         
-        const CHUNK_SIZE = 5000;
-        const chunks = [];
-        for (let i = 0; i < AppState.processedData.length; i += CHUNK_SIZE) {
-            chunks.push(AppState.processedData.slice(i, i + CHUNK_SIZE));
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
         
-        console.log(`📦 Split ${AppState.processedData.length} records into ${chunks.length} chunks`);
+        const result = await response.json();
         
-        let uploadId = null;
-        
-        for (let i = 0; i < chunks.length; i++) {
-            const isFirst = i === 0;
-            const isLast = i === chunks.length - 1;
+        if (result.success) {
+            console.log(' Upload started in background!', result);
             
-            showLoadingOverlay(`Uploading chunk ${i + 1}/${chunks.length}...`);
-            saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Chunk ${i + 1}/${chunks.length}`;
+            // Hide loading overlay
+            hideLoadingOverlay();
             
-            const chunkPayload = {
-                uploadId: uploadId,
-                chunk: chunks[i],
-                chunkIndex: i,
-                totalChunks: chunks.length,
-                isFirst: isFirst,
-                isLast: isLast,
-                metadata: (isFirst || isLast) ? metadata : null
-            };
+            // Show simple success message
+            showSuccessMessage('Data uploaded successfully! Processing in background...');
             
-            const response = await fetch('/api/upload-chunk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(chunkPayload)
-            });
+            // Refresh uploads list after 3 seconds
+            setTimeout(() => {
+                loadUploadsList();
+            }, 3000);
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server error on chunk ${i + 1}: ${response.status} - ${errorText}`);
-            }
+            // Re-enable button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
             
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.error || `Failed to upload chunk ${i + 1}`);
-            }
-            
-            if (isFirst) {
-                uploadId = result.uploadId;
-                console.log(`✅ Created upload #${uploadId}`);
-            }
-            
-            console.log(`✅ Chunk ${i + 1}/${chunks.length} uploaded (${chunks[i].length} records)`);
+        } else {
+            throw new Error(result.error || 'Failed to start upload');
         }
-        
-        console.log(`🎉 All chunks uploaded! Upload ID: ${uploadId}, Total: ${AppState.processedData.length} records`);
-        
-        hideLoadingOverlay();
-        showSuccessMessage(`✅ Upload complete! ${AppState.processedData.length} records saved.`);
-        
-        setTimeout(() => loadUploadsList(), 1000);
-        
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
         
     } catch (error) {
-        console.error('❌ Chunked upload failed:', error);
+        console.error(' Failed to save to database:', error);
         hideLoadingOverlay();
         alert('Failed to save to database:\n' + error.message);
+        
+        // Reset button
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save to Database';
     }
