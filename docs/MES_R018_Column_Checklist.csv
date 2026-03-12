@@ -1,0 +1,42 @@
+Priority,MES R018 Column Name,Code Field Name,Usage Count,Purpose,Impact if Missing
+🔴 CRITICAL,Worker Name,workerName,80,Worker identification and grouping,Application will not work
+🔴 CRITICAL,FO Desc,fdDesc,9,Process mapping and categorization,No process analysis
+🔴 CRITICAL,Start Datetime,startDatetime,13,Time calculation and shift detection,No time-based metrics
+🔴 CRITICAL,*End Datetime,endDatetime,8,Time range and overlap detection,Inaccurate time calculations
+🔴 CRITICAL,Worker Act,workerAct / workerActMins,31,Actual work time in minutes,No utilization metrics
+🔴 CRITICAL,Result Cnt,resultCnt,3,Valid record filtering,Incorrect record counting
+🟡 RECOMMENDED,Worker S/T,workerST,5,Standard time for efficiency,Efficiency will be 0%
+🟡 RECOMMENDED,Worker Rate(%),workerRate,3,Worker rate for adjusted standard time,Efficiency will be 0%
+🟡 RECOMMENDED,Rework,rework,3,Filter out rework records,Rework included in analysis
+🟢 OPTIONAL,Actual Shift,actualShift,19,Shift classification (A/B/C/D),No shift comparison charts
+🟢 OPTIONAL,Section ID,sectionId,2,Display in detail table,Section column empty
+❌ UNUSED,SAP PO No,wo (parsed only),0,"Parsed but never used, validCount is used instead",No impact
+❌ UNUSED,Plant,-,0,Not used,No impact
+❌ UNUSED,Operation Code,-,0,Not used,No impact
+❌ UNUSED,Result Date,-,0,Not used,No impact
+❌ UNUSED,Shift Group Desc,-,0,Not used,No impact
+❌ UNUSED,Machine Code,-,0,Not used,No impact
+❌ UNUSED,Machine Desc,-,0,Not used,No impact
+❌ UNUSED,Work Team Desc,-,0,Not used,No impact
+❌ UNUSED,Worker Code,-,0,Not used,No impact
+❌ UNUSED,Inside Pass Count,-,0,Not used,No impact
+❌ UNUSED,Outside Pass Count,-,0,Not used,No impact
+❌ UNUSED,Order Total Inside,-,0,Not used,No impact
+❌ UNUSED,Order Total Outside,-,0,Not used,No impact
+❌ UNUSED,Status,-,0,Not used,No impact
+❌ UNUSED,Machine S/T,-,0,Not used,No impact
+❌ UNUSED,Rework Reason Code,-,0,Not used,No impact
+❌ UNUSED,Rework Reason Desc,-,0,Not used,No impact
+❌ UNUSED,Created By,-,0,Not used,No impact
+❌ UNUSED,Created On,-,0,Not used,No impact
+❌ UNUSED,Modified By,-,0,Not used,No impact
+❌ UNUSED,Modified On,-,0,Not used,No impact
+❌ UNUSED,Created IP,-,0,Not used,No impact
+❌ UNUSED,Modified IP,-,0,Not used,No impact
+❌ UNUSED,Worker Input,-,0,Not used,No impact
+❌ UNUSED,Sub FlowOp Desc,-,0,Not used,No impact
+❌ UNUSED,Heat No,-,0,Not used,No impact
+❌ UNUSED,Plate No,-,0,Not used,No impact
+❌ UNUSED,Thickness(mm),-,0,Not used,No impact
+❌ UNUSED,Length shorter side(mm),-,0,Not used,No impact
+❌ UNUSED,Length longer side(mm),-,0,Not used,No impact

@@ -1028,6 +1028,8 @@ function mergeOverlappingIntervals(records) {
                 record.workerActMins = adjustedMinutes;
                 record.originalWorkerActMins = originalMinutes; // Keep original for reference
                 record.overlapAdjusted = recordIndices.length > 1; // Flag if adjusted
+                // v4.3.4: Store adjustment ratio for Efficiency calculation
+                record.overlapAdjustmentRatio = originalMinutes > 0 ? adjustedMinutes / originalMinutes : 1;
             });
         });
     });
@@ -2626,20 +2628,25 @@ function aggregateByWorker(data) {
             const rate = record['Worker Rate(%)'] || 0;
             const assigned = (st * rate / 100);
             
+            // v4.3.4: Apply overlap adjustment ratio to Assigned S/T (for concurrent tasks like 2-head cutting)
+            const adjustmentRatio = record.overlapAdjustmentRatio || 1;
+            const adjustedAssigned = assigned * adjustmentRatio;
+            
             //  DEBUG: Log first few records to check S/T values
             if (totalRecords <= 3) {
-                console.log(` Record ${totalRecords}: Worker="${record.workerName}", S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}, WO#=${record['WO#']}`, {
+                console.log(` Record ${totalRecords}: Worker="${record.workerName}", S/T=${st}, Rate=${rate}%, Assigned=${assigned.toFixed(1)}, AdjRatio=${adjustmentRatio.toFixed(2)}, AdjAssigned=${adjustedAssigned.toFixed(1)}, WO#=${record['WO#']}`, {
                     process: record.foDesc3,
                     date: record.workingDay,
                     resultCnt: record.resultCnt,
                     workerActMins: record.workerActMins,
                     'WO#': record['WO#'],
+                    overlapAdjusted: record.overlapAdjusted,
                     availableFields: Object.keys(record).filter(k => k.includes('S/T') || k.includes('Rate') || k.includes('WO'))
                 });
             }
             
             aggregated[key]['Worker S/T'] += st;  // Accumulate S/T
-            aggregated[key].assignedStandardTime += assigned;  // Accumulate Adjusted S/T
+            aggregated[key].assignedStandardTime += adjustedAssigned;  // v4.3.4: Use adjusted value
             aggregated[key].totalMinutesOriginal += record['Worker Act'] || 0;  // Accumulate Actual
         } else {
             invalidRecords++;  // No work time recorded
@@ -4605,23 +4612,32 @@ function showWorkerDetail(workerName) {
     
     // Get raw individual records for table display
     const rawDataSource = AppState.filteredData || AppState.processedData;
-    const rawRecords = rawDataSource.filter(r => r.workerName === workerName && !r.rework);
+    
+    // 🔥 NEW: Get records with and without rework for comparison
+    const allRecords = rawDataSource.filter(r => r.workerName === workerName); // Include rework
+    const rawRecords = rawDataSource.filter(r => r.workerName === workerName && !r.rework); // Exclude rework
+    const reworkRecords = rawDataSource.filter(r => r.workerName === workerName && r.rework); // Only rework
     
     //  FIX: Aggregate rawRecords directly to match current filter state
     // Don't use cachedWorkerAgg because it may be out of sync with filters
-    const aggregatedRecords = aggregateByWorker(rawRecords);
     
-    let dataForSummary, dataForTable;
+    // 🔥 NEW: Aggregate both with and without rework
+    const aggregatedRecords = aggregateByWorker(rawRecords); // Exclude rework (for charts)
+    const aggregatedAllRecords = aggregateByWorker(allRecords); // Include rework (for main rate)
+    
+    let dataForSummary, dataForSummaryExclRework, dataForTable;
     
     if (isEfficiency) {
         // Efficiency: Use ALL aggregated data for KPI (including outliers)
         // Outliers are real work and should be included in calculations
-        dataForSummary = aggregatedRecords; //  Include outliers in KPI
-        dataForTable = rawRecords; // Show individual activity records
+        dataForSummary = aggregatedAllRecords; // 🔥 NEW: Include rework (main rate)
+        dataForSummaryExclRework = aggregatedRecords; // 🔥 NEW: Exclude rework (for reference)
+        dataForTable = rawRecords; // Show individual activity records (exclude rework)
     } else {
         // Utilization: Use aggregated data for KPI, raw data for table
-        dataForSummary = aggregatedRecords; // For KPI calculation (aggregated)
-        dataForTable = rawRecords; // Show individual records with start/end times
+        dataForSummary = aggregatedAllRecords; // 🔥 NEW: Include rework (main rate)
+        dataForSummaryExclRework = aggregatedRecords; // 🔥 NEW: Exclude rework (for reference)
+        dataForTable = rawRecords; // Show individual records with start/end times (exclude rework)
     }
     
     // Check if we have any records to display
@@ -4700,6 +4716,11 @@ function showWorkerDetail(workerName) {
         const assignedHours = assignedStandardTime / 60;
         const shiftHours = shiftTime / 60;
         
+        // 🔥 v4.3.4: Calculate Rework-excluded rate
+        const assignedStandardTimeExclRework = dataForSummaryExclRework.reduce((sum, r) => sum + (r.assignedStandardTime || 0), 0);
+        const rateExclRework = shiftTime > 0 ? (assignedStandardTimeExclRework / shiftTime) * 100 : 0;
+        const reworkCount = reworkRecords.length;
+        
         // Update card labels for Efficiency
         document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shifts';
         document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Adjusted S/T';
@@ -4712,6 +4733,14 @@ function showWorkerDetail(workerName) {
         document.getElementById('modalTotalMinutes').textContent = shiftHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
         document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
         
+        // 🔥 v4.3.4: Add Rework-excluded rate if rework exists
+        const modalWorkRateElement = document.getElementById('modalWorkRate');
+        if (reworkCount > 0) {
+            modalWorkRateElement.innerHTML = `${currentRate.toFixed(1)}%<br><span class="text-xs text-gray-500">Excl. rework: ${rateExclRework.toFixed(1)}% (${reworkCount} records)</span>`;
+        } else {
+            modalWorkRateElement.textContent = currentRate.toFixed(1) + '%';
+        }
+        
         // Update descriptions
         document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'shifts';
         document.querySelector('#modalTotalShiftTime').nextElementSibling.textContent = 'standard time';
@@ -4723,6 +4752,11 @@ function showWorkerDetail(workerName) {
         const totalShiftHours = totalShiftMinutes / 60;
         const totalValueHours = totalValue / 60;
         
+        // 🔥 v4.3.4: Calculate Rework-excluded rate
+        const totalMinutesExclRework = dataForSummaryExclRework.reduce((sum, r) => sum + (r.totalMinutes || 0), 0);
+        const rateExclRework = totalShiftMinutes > 0 ? (totalMinutesExclRework / totalShiftMinutes) * 100 : 0;
+        const reworkCount = reworkRecords.length;
+        
         // Update card labels for Utilization
         document.querySelector('#modalTotalShifts').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shifts';
         document.querySelector('#modalTotalShiftTime').closest('.bg-white').querySelector('.text-gray-600').textContent = 'Total Shift Time';
@@ -4733,7 +4767,14 @@ function showWorkerDetail(workerName) {
         document.getElementById('modalTotalShifts').textContent = shiftCount.toLocaleString();
         document.getElementById('modalTotalShiftTime').textContent = totalShiftHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
         document.getElementById('modalTotalMinutes').textContent = totalValueHours.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' hr';
-        document.getElementById('modalWorkRate').textContent = currentRate.toFixed(1) + '%';
+        
+        // 🔥 v4.3.4: Add Rework-excluded rate if rework exists
+        const modalWorkRateElement = document.getElementById('modalWorkRate');
+        if (reworkCount > 0) {
+            modalWorkRateElement.innerHTML = `${currentRate.toFixed(1)}%<br><span class="text-xs text-gray-500">Excl. rework: ${rateExclRework.toFixed(1)}% (${reworkCount} records)</span>`;
+        } else {
+            modalWorkRateElement.textContent = currentRate.toFixed(1) + '%';
+        }
         
         // Update descriptions
         document.querySelector('#modalTotalShifts').nextElementSibling.textContent = 'shifts';
